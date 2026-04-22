@@ -14,7 +14,9 @@ export default function HomePage() {
       <main className="page-container">
         {/* Hero Section */}
         <section className="hero">
-          <div className="hero-avatar">A</div>
+          <div className="hero-avatar" style={{ background: 'transparent' }}>
+            <img src="/logo.png" alt="LHC Logo" style={{ width: '80px', height: 'auto', borderRadius: '12px' }} />
+          </div>
           <div className="hero-content">
             <h1>{t('greeting').split('LHC')[0]}<span>LHC</span>{t('greeting').split('LHC')[1]}</h1>
             <p>{t('bio')}</p>
