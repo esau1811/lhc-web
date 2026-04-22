@@ -6,6 +6,7 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { useLang } from '@/components/LangProvider';
 import { WEAPON_CATEGORIES, detectWeaponFromFilenames } from '@/lib/weapons';
+import JSZip from 'jszip';
 import { extractFilenames, extractFromFilename } from '@/lib/rpfParser';
 
 export default function ConverterPage() {
@@ -13,7 +14,7 @@ export default function ConverterPage() {
   const { t } = useLang();
   const fileInputRef = useRef(null);
 
-  const [file, setFile] = useState(null);
+  const [files, setFiles] = useState([]);
   const [fileInfo, setFileInfo] = useState(null);
   const [detectedWeapon, setDetectedWeapon] = useState(null);
   const [sourceWeapon, setSourceWeapon] = useState('');
@@ -29,34 +30,42 @@ export default function ConverterPage() {
     return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
   };
 
-  const handleFile = useCallback(async (selectedFile) => {
+  const handleFiles = useCallback(async (selectedFiles) => {
     setError('');
     setDetectedWeapon(null);
     setSourceWeapon('');
     setTargetWeapon('');
 
-    if (!selectedFile) return;
+    if (!selectedFiles || selectedFiles.length === 0) return;
 
-    if (!selectedFile.name.toLowerCase().endsWith('.rpf')) {
-      setError(t('invalidFile') || 'Solo archivos .rpf permitidos');
-      return;
+    const fileArray = Array.from(selectedFiles);
+    setFiles(fileArray);
+    if (fileArray.length === 1) {
+      setFileInfo({
+        name: fileArray[0].name,
+        size: formatFileSize(fileArray[0].size),
+      });
+    } else {
+      const totalSize = fileArray.reduce((acc, f) => acc + f.size, 0);
+      setFileInfo({
+        name: `${fileArray.length} archivos sueltos`,
+        size: formatFileSize(totalSize),
+      });
     }
 
-    setFile(selectedFile);
-    setFileInfo({
-      name: selectedFile.name,
-      size: formatFileSize(selectedFile.size),
-    });
-
-    // Analyze locally in-memory without uploading
     setIsUploading(true);
     try {
-      const arrayBuffer = await selectedFile.arrayBuffer();
-      // Only extract names; validation logic from rpfParser runs instantly locally
-      const internalFiles = extractFilenames(new Uint8Array(arrayBuffer));
-      const filenameHints = extractFromFilename(selectedFile.name);
+      let allNames = [];
+      if (fileArray.length === 1 && fileArray[0].name.toLowerCase().endsWith('.rpf')) {
+        const arrayBuffer = await fileArray[0].arrayBuffer();
+        allNames = extractFilenames(new Uint8Array(arrayBuffer));
+      } else {
+        allNames = fileArray.map(f => f.name);
+      }
       
-      const allFiles = [...internalFiles, ...filenameHints];
+      // Auto detect target weapon
+      const filenameHints = fileArray.flatMap(f => extractFromFilename(f.name));
+      const allFiles = [...allNames, ...filenameHints];
       const detected = detectWeaponFromFilenames(allFiles);
 
       if (detected) {
@@ -74,76 +83,71 @@ export default function ConverterPage() {
   const handleDrop = useCallback((e) => {
     e.preventDefault();
     setDragOver(false);
-    const droppedFile = e.dataTransfer.files[0];
-    if (droppedFile) handleFile(droppedFile);
-  }, [handleFile]);
+    if (e.dataTransfer.files.length > 0) handleFiles(e.dataTransfer.files);
+  }, [handleFiles]);
 
   const handleConvert = async () => {
-    if (!file || !sourceWeapon || !targetWeapon || isConverting) return;
+    if (files.length === 0 || !sourceWeapon || !targetWeapon || isConverting) return;
 
     setIsConverting(true);
     setError('');
 
+    const BACKEND_URL = 'https://187.33.157.103.nip.io/api/WeaponConverter/convert';
+
     try {
-      const arrayBuffer = await file.arrayBuffer();
-      const u8 = new Uint8Array(arrayBuffer);
-      const encoder = new TextEncoder();
-      
-      // Calculate JOAAT (Jenkins One At A Time) Hash exact as GTA V Engine
-      const joaat = (key) => {
-          let hash = 0;
-          const k = key.toLowerCase();
-          for (let i = 0; i < k.length; i++) {
-              hash = (hash + k.charCodeAt(i)) | 0;
-              hash = (hash + (hash << 10)) | 0;
-              hash = (hash ^ (hash >>> 6)) | 0;
-          }
-          hash = (hash + (hash << 3)) | 0;
-          hash = (hash ^ (hash >>> 11)) | 0;
-          hash = (hash + (hash << 15)) | 0;
-          return hash >>> 0;
-      };
+      if (files.length === 1 && files[0].name.toLowerCase().endsWith('.rpf')) {
+        // ENVIAR AL SERVIDOR VPS (Clouding.io)
+        const formData = new FormData();
+        formData.append('file', files[0]);
+        formData.append('sourceWeapon', sourceWeapon);
+        formData.append('targetWeapon', targetWeapon);
 
-      // 1. Identify all files in the archive that belong to the source weapon
-      const internalFiles = extractFilenames(u8);
-      const view = new DataView(u8.buffer, u8.byteOffset, u8.byteLength);
-      
-      internalFiles.forEach((fname) => {
-        const lowerFName = fname.toLowerCase();
-        if (lowerFName.includes(sourceWeapon.toLowerCase())) {
-          // Calculate Target filename
-          const newFName = lowerFName.replace(sourceWeapon.toLowerCase(), targetWeapon.toLowerCase());
-          
-          // Calculate Hashes
-          const oldHash = joaat(lowerFName);
-          const newHash = joaat(newFName);
-          
-          // Scan TOC limit (usually first 2MB) for the oldHash Little Endian and overwrite it!
-          const limit = Math.min(u8.length, 2 * 1024 * 1024) - 4;
-          for(let i = 0; i <= limit; i++) {
-            if (view.getUint32(i, true) === oldHash) {
-              view.setUint32(i, newHash, true);
-            }
-          }
+        const response = await fetch(BACKEND_URL, {
+          method: 'POST',
+          body: formData,
+        });
+
+        if (!response.ok) {
+            throw new Error(`Error del servidor: ${response.statusText}`);
         }
-      });
 
-      // No modificamos las cadenas de texto crudas del archivo completo (replaceInU8)
-      // porque el motor gráfico de GTA V comprime los modelos (.ydr) y alterar bytes
-      // a la fuerza truncando cadenas corrompe la malla 3D y las texturas de la skin.
-      // Al cambiar EXCLUSIVAMENTE los Hashes Binarios (arriba), el juego ya vincula todo 
-      // automáticamente manteniendo la skin 100% intacta.
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${targetWeapon}.rpf`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+      } else {
+        // LOOSE FILES METHOD (ZIP)
+        const zip = new JSZip();
+        
+        for (const f of files) {
+          const lowerName = f.name.toLowerCase();
+          let parsedName = f.name;
+          // Si el nombre del archivo contiene la id del arma orígen, renómbralo
+          if (lowerName.includes(sourceWeapon.toLowerCase())) {
+            // Buscamos usar case regex para preservar las extensiones
+            const regex = new RegExp(sourceWeapon, 'gi');
+            parsedName = f.name.replace(regex, targetWeapon);
+          }
+          // Agregamos el archivo renombrado al Zip
+          const arrayBuffer = await f.arrayBuffer();
+          zip.file(parsedName, arrayBuffer);
+        }
 
-      // Download the converted file directly from RAM
-      const blob = new Blob([u8], { type: 'application/octet-stream' });
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `${targetWeapon}.rpf`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      window.URL.revokeObjectURL(url);
+        const zipBlob = await zip.generateAsync({ type: 'blob' });
+        const url = window.URL.createObjectURL(zipBlob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${targetWeapon}_lhc.zip`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+      }
     } catch (err) {
       console.error(err);
       setError('Error processing file on browser limit');
@@ -153,7 +157,7 @@ export default function ConverterPage() {
   };
 
   const removeFile = () => {
-    setFile(null);
+    setFiles([]);
     setFileInfo(null);
     setDetectedWeapon(null);
     setSourceWeapon('');
@@ -162,7 +166,7 @@ export default function ConverterPage() {
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
-  const isReady = file && sourceWeapon && targetWeapon && !isConverting;
+  const isReady = files.length > 0 && sourceWeapon && targetWeapon && !isConverting;
 
   // Auth gate
   if (status === 'loading') {
@@ -216,14 +220,15 @@ export default function ConverterPage() {
               onDrop={handleDrop}
             >
               <div className="upload-icon">📁</div>
-              <div className="upload-text">{t('dragDrop')}</div>
-              <div className="upload-subtext">{t('orClick')}</div>
+              <div className="upload-text">{t('dragDrop')} o Archivos Sueltos</div>
+              <div className="upload-subtext">Selecciona tu .RPF o múltiples archivos .ytd/.ydr listos para empaquetarse en ZIP.</div>
               <input
                 ref={fileInputRef}
                 type="file"
-                accept=".rpf"
+                multiple
+                accept=".rpf,.ytd,.ydr,.yft,.xml,.meta"
                 className="upload-input"
-                onChange={(e) => handleFile(e.target.files[0])}
+                onChange={(e) => handleFiles(e.target.files)}
               />
             </div>
           ) : (
@@ -275,10 +280,10 @@ export default function ConverterPage() {
                   className="weapon-select"
                   value={sourceWeapon}
                   onChange={(e) => setSourceWeapon(e.target.value)}
-                  disabled={!file}
+                  disabled={files.length === 0}
                 >
                   <option value="">
-                    {file ? t('selectSource') : t('uploadFirst')}
+                    {files.length > 0 ? t('selectSource') : t('uploadFirst')}
                   </option>
                   {Object.entries(WEAPON_CATEGORIES).map(([catId, cat]) => (
                     <optgroup key={catId} label={cat.label}>
@@ -299,10 +304,10 @@ export default function ConverterPage() {
                 className="weapon-select"
                 value={targetWeapon}
                 onChange={(e) => setTargetWeapon(e.target.value)}
-                disabled={!file}
+                disabled={files.length === 0}
               >
                 <option value="">
-                  {file ? t('chooseDest') : t('uploadFirst')}
+                  {files.length > 0 ? t('chooseDest') : t('uploadFirst')}
                 </option>
                 {Object.entries(WEAPON_CATEGORIES).map(([catId, cat]) => (
                   <optgroup key={catId} label={cat.label}>
