@@ -128,39 +128,11 @@ export default function ConverterPage() {
         }
       });
 
-      // 2. Do the standard string replacement (truncating/padding) so OpenIV reads the corrupted table safely
-      const replaceInU8 = (bufferArray, srcStr, tgtStr) => {
-        const srcBytes = encoder.encode(srcStr);
-        const tgtBytesRaw = encoder.encode(tgtStr);
-        const tgtBytes = new Uint8Array(srcBytes.length);
-        tgtBytes.set(tgtBytesRaw.slice(0, Math.min(tgtBytesRaw.length, srcBytes.length)));
-
-        const indexOf = (arr, search, start) => {
-          for (let i = start; i <= arr.length - search.length; i++) {
-            let found = true;
-            for (let j = 0; j < search.length; j++) {
-              if (arr[i + j] !== search[j]) { found = false; break; }
-            }
-            if (found) return i;
-          }
-          return -1;
-        };
-
-        let offset = 0;
-        while (offset < bufferArray.length - srcBytes.length) {
-          const idx = indexOf(bufferArray, srcBytes, offset);
-          if (idx === -1) break;
-          bufferArray.set(tgtBytes, idx);
-          offset = idx + srcBytes.length;
-        }
-      };
-
-      // Replace standard string
-      replaceInU8(u8, sourceWeapon, targetWeapon);
-      // Replace lowercased variants
-      if (sourceWeapon.toLowerCase() !== sourceWeapon) {
-        replaceInU8(u8, sourceWeapon.toLowerCase(), targetWeapon.toLowerCase());
-      }
+      // No modificamos las cadenas de texto crudas del archivo completo (replaceInU8)
+      // porque el motor gráfico de GTA V comprime los modelos (.ydr) y alterar bytes
+      // a la fuerza truncando cadenas corrompe la malla 3D y las texturas de la skin.
+      // Al cambiar EXCLUSIVAMENTE los Hashes Binarios (arriba), el juego ya vincula todo 
+      // automáticamente manteniendo la skin 100% intacta.
 
       // Download the converted file directly from RAM
       const blob = new Blob([u8], { type: 'application/octet-stream' });
