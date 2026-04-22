@@ -26,8 +26,9 @@ export default function Header({ showBack = false, title = 'LHC v2.1', highlight
             ←
           </Link>
         )}
-        <Link href="/" className="header-logo" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center' }}>
+        <Link href="/" className="header-logo" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '8px' }}>
           <img src="/logo.png" alt="LHC Logo" style={{ height: '36px', width: 'auto' }} />
+          <span style={{ fontSize: '10px', opacity: 0.5, marginTop: '12px' }}>v2.1</span>
         </Link>
         <div className="header-flags">
           {flags.map((f) => (
