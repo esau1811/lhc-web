@@ -167,8 +167,9 @@ export function detectWeaponFromFilenames(filenames) {
 
   for (const [techId, friendlyName] of sortedWeapons) {
     for (const fname of lowerNames) {
-      // Check if filename contains weapon technical ID
-      if (fname.includes(techId)) {
+      // Normalize MKII to MK2 for matching
+      const normalizedFname = fname.replace(/mkii/g, 'mk2');
+      if (normalizedFname.includes(techId)) {
         return { id: techId, name: friendlyName };
       }
     }

@@ -150,7 +150,7 @@ export default function ConverterPage() {
       }
     } catch (err) {
       console.error(err);
-      setError('Error processing file on browser limit');
+      setError((err.message || 'Error de conexión con el servidor de conversión') + ' [v2.1]');
     } finally {
       setIsConverting(false);
     }

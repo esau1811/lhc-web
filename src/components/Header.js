@@ -11,7 +11,7 @@ const flags = [
   { code: 'pt', label: 'PT' },
 ];
 
-export default function Header({ showBack = false, title = 'LHC', highlight = 'tools' }) {
+export default function Header({ showBack = false, title = 'LHC v2.1', highlight = 'tools' }) {
   const { data: session } = useSession();
   const { lang, changeLang, t } = useLang();
 
