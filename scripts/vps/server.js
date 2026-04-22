@@ -32,8 +32,9 @@ app.post('/api/WeaponConverter/convert', upload.single('file'), (req, res) => {
 
     console.log(`Recibido RPF para ${sourceId} -> ${targetId}. Tamaño: ${req.file.size} bytes`);
 
-    // In-memory byte replacement
+    // In-memory byte replacement with counter
     const result = Buffer.from(req.file.buffer);
+    let replacementCount = 0;
 
     const sourceBytes = Buffer.from(sourceId, 'ascii');
     const targetBytes = Buffer.from(targetId, 'ascii');
@@ -44,7 +45,9 @@ app.post('/api/WeaponConverter/convert', upload.single('file'), (req, res) => {
     while (offset < result.length - sourceBytes.length) {
         const idx = result.indexOf(sourceBytes, offset);
         if (idx === -1) break;
+        
         paddedTarget.copy(result, idx);
+        replacementCount++;
         offset = idx + sourceBytes.length;
     }
 
@@ -59,14 +62,19 @@ app.post('/api/WeaponConverter/convert', upload.single('file'), (req, res) => {
             const i = result.indexOf(srcBuf, off);
             if (i === -1) break;
             tgtBuf.copy(result, i);
+            replacementCount++;
             off = i + srcBuf.length;
         }
     }
 
-    // Devolver el buffer modificado
+    console.log(`Conversión terminada: ${replacementCount} referencias cambiadas.`);
+
+    // Devolver el buffer modificado con el conteo en headers
     res.setHeader('Content-Type', 'application/octet-stream');
     res.setHeader('Content-Disposition', `attachment; filename="${targetId}.rpf"`);
     res.setHeader('Content-Length', result.length);
+    res.setHeader('X-Replacement-Count', replacementCount);
+    res.setHeader('Access-Control-Expose-Headers', 'X-Replacement-Count');
     res.send(result);
 });
 

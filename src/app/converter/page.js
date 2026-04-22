@@ -22,6 +22,7 @@ export default function ConverterPage() {
   const [isUploading, setIsUploading] = useState(false);
   const [isConverting, setIsConverting] = useState(false);
   const [error, setError] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
   const [dragOver, setDragOver] = useState(false);
 
   const formatFileSize = (bytes) => {
@@ -32,6 +33,7 @@ export default function ConverterPage() {
 
   const handleFiles = useCallback(async (selectedFiles) => {
     setError('');
+    setSuccessMessage('');
     setDetectedWeapon(null);
     setSourceWeapon('');
     setTargetWeapon('');
@@ -91,6 +93,7 @@ export default function ConverterPage() {
 
     setIsConverting(true);
     setError('');
+    setSuccessMessage('');
 
     const BACKEND_URL = 'https://187.33.157.103.nip.io/api/WeaponConverter/convert';
 
@@ -110,6 +113,9 @@ export default function ConverterPage() {
         if (!response.ok) {
             throw new Error(`Error del servidor: ${response.statusText}`);
         }
+
+        const count = response.headers.get('X-Replacement-Count') || '0';
+        setSuccessMessage(`✓ Conversión completada — ${count} referencias actualizadas.`);
 
         const blob = await response.blob();
         const url = window.URL.createObjectURL(blob);
@@ -163,6 +169,7 @@ export default function ConverterPage() {
     setSourceWeapon('');
     setTargetWeapon('');
     setError('');
+    setSuccessMessage('');
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
@@ -340,6 +347,12 @@ export default function ConverterPage() {
               t('convert')
             )}
           </button>
+
+          {successMessage && (
+            <div className="success-msg">
+              {successMessage}
+            </div>
+          )}
         </div>
 
         {/* Legal Banner */}
