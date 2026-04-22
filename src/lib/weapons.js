@@ -160,33 +160,47 @@ export function getAllWeapons() {
  * Detect weapon from a list of filenames found inside an RPF
  */
 export function detectWeaponFromFilenames(filenames) {
-  const lowerNames = filenames.map((f) => f.toLowerCase());
+  const lowerNames = filenames.map((f) => f.toLowerCase().replace(/mkii/g, 'mk2'));
+  const allWeapons = getAllWeapons();
 
-  // Sort by length descending to match more specific IDs first (e.g. pistolmk2 before pistol)
-  const sortedWeapons = Object.entries(WEAPON_MAP).sort((a, b) => b[0].length - a[0].length);
+  // 1. Try strict matching first
+  for (const fname of lowerNames) {
+    for (const w of allWeapons) {
+      const techId = w.id.toLowerCase();
+      const techIdClean = techId.replace(/_/g, '');
+      const fnameClean = fname.replace(/_/g, '');
 
-  for (const [techId, friendlyName] of sortedWeapons) {
-    for (const fname of lowerNames) {
-      // Normalize MKII to MK2 for matching
-      const normalizedFname = fname.replace(/mkii/g, 'mk2');
-      
-      // Strict matching: Check for full techId or surrounded by non-alphanumeric
-      const regex = new RegExp(`(^|[^a-zA-Z0-9])${techId}([^a-zA-Z0-9]|$)`, 'i');
-      if (regex.test(normalizedFname) || normalizedFname.includes(`_${techId}`) || normalizedFname.includes(`${techId}_`)) {
-        return { id: techId, name: friendlyName };
+      if (fnameClean.includes(techIdClean)) {
+        // If file contains 'mk2' and weapon isn't mk2, skip it for now to find a better match
+        if (fnameClean.includes('mk2') && !techIdClean.includes('mk2')) continue;
+        return { id: w.id, name: w.name };
       }
     }
   }
 
-  // Try partial matching with common patterns
+  // 2. Try matching by short name (e.g. 'pistol', 'vintagepistol')
   for (const fname of lowerNames) {
-    for (const [techId, friendlyName] of Object.entries(WEAPON_MAP)) {
-      const shortId = techId.replace('w_', '').replace('pi_', '').replace('sb_', '')
+    const hasMk2 = fname.includes('mk2');
+    
+    // Sort weapons to prefer MK2 if fname has it, or prefer longer names (more specific)
+    const sorted = [...allWeapons].sort((a, b) => {
+      if (hasMk2) {
+        const aMk2 = a.id.includes('mk2') ? 1 : 0;
+        const bMk2 = b.id.includes('mk2') ? 1 : 0;
+        if (aMk2 !== bMk2) return bMk2 - aMk2;
+      }
+      return b.id.length - a.id.length;
+    });
+
+    for (const w of sorted) {
+      const shortId = w.id.replace('w_', '').replace('pi_', '').replace('sb_', '')
         .replace('ar_', '').replace('sg_', '').replace('mg_', '')
         .replace('sr_', '').replace('lr_', '').replace('me_', '')
-        .replace('ex_', '');
-      if (fname.includes(shortId) && shortId.length > 3) {
-        return { id: techId, name: friendlyName };
+        .replace('ex_', '').replace(/_/g, '');
+      
+      const fnameClean = fname.replace(/_/g, '');
+      if (fnameClean.includes(shortId) && shortId.length >= 3) {
+        return { id: w.id, name: w.name };
       }
     }
   }
