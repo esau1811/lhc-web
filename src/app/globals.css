@@ -189,7 +189,9 @@ a:hover {
 }
 
 .header-flag {
-  font-size: 22px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-secondary);
   cursor: pointer;
   opacity: 0.5;
   transition: all var(--transition-fast);
@@ -203,6 +205,7 @@ a:hover {
 .header-flag:hover,
 .header-flag.active {
   opacity: 1;
+  color: var(--accent-gold);
   transform: scale(1.15);
 }
 
