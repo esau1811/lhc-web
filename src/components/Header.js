@@ -5,10 +5,10 @@ import { useLang } from './LangProvider';
 import Link from 'next/link';
 
 const flags = [
-  { code: 'en', emoji: '🇬🇧' },
-  { code: 'es', emoji: '🇪🇸' },
-  { code: 'it', emoji: '🇮🇹' },
-  { code: 'pt', emoji: '🇧🇷' },
+  { code: 'en', label: 'EN' },
+  { code: 'es', label: 'ES' },
+  { code: 'it', label: 'IT' },
+  { code: 'pt', label: 'PT' },
 ];
 
 export default function Header({ showBack = false, title = 'LHC', highlight = 'tools' }) {
@@ -36,8 +36,9 @@ export default function Header({ showBack = false, title = 'LHC', highlight = 't
               className={`header-flag ${lang === f.code ? 'active' : ''}`}
               onClick={() => changeLang(f.code)}
               aria-label={`Switch to ${f.code}`}
+              style={{ fontSize: '13px', fontWeight: 'bold' }}
             >
-              {f.emoji}
+              {f.label}
             </button>
           ))}
         </div>
