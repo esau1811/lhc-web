@@ -89,13 +89,52 @@ export default function ConverterPage() {
       const u8 = new Uint8Array(arrayBuffer);
       const encoder = new TextEncoder();
       
+      // Calculate JOAAT (Jenkins One At A Time) Hash exact as GTA V Engine
+      const joaat = (key) => {
+          let hash = 0;
+          const k = key.toLowerCase();
+          for (let i = 0; i < k.length; i++) {
+              hash = (hash + k.charCodeAt(i)) | 0;
+              hash = (hash + (hash << 10)) | 0;
+              hash = (hash ^ (hash >>> 6)) | 0;
+          }
+          hash = (hash + (hash << 3)) | 0;
+          hash = (hash ^ (hash >>> 11)) | 0;
+          hash = (hash + (hash << 15)) | 0;
+          return hash >>> 0;
+      };
+
+      // 1. Identify all files in the archive that belong to the source weapon
+      const internalFiles = extractFilenames(u8);
+      const view = new DataView(u8.buffer, u8.byteOffset, u8.byteLength);
+      
+      internalFiles.forEach((fname) => {
+        const lowerFName = fname.toLowerCase();
+        if (lowerFName.includes(sourceWeapon.toLowerCase())) {
+          // Calculate Target filename
+          const newFName = lowerFName.replace(sourceWeapon.toLowerCase(), targetWeapon.toLowerCase());
+          
+          // Calculate Hashes
+          const oldHash = joaat(lowerFName);
+          const newHash = joaat(newFName);
+          
+          // Scan TOC limit (usually first 2MB) for the oldHash Little Endian and overwrite it!
+          const limit = Math.min(u8.length, 2 * 1024 * 1024) - 4;
+          for(let i = 0; i <= limit; i++) {
+            if (view.getUint32(i, true) === oldHash) {
+              view.setUint32(i, newHash, true);
+            }
+          }
+        }
+      });
+
+      // 2. Do the standard string replacement (truncating/padding) so OpenIV reads the corrupted table safely
       const replaceInU8 = (bufferArray, srcStr, tgtStr) => {
         const srcBytes = encoder.encode(srcStr);
         const tgtBytesRaw = encoder.encode(tgtStr);
         const tgtBytes = new Uint8Array(srcBytes.length);
         tgtBytes.set(tgtBytesRaw.slice(0, Math.min(tgtBytesRaw.length, srcBytes.length)));
 
-        // Custom fast indexOf for Uint8Array
         const indexOf = (arr, search, start) => {
           for (let i = start; i <= arr.length - search.length; i++) {
             let found = true;
