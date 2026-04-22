@@ -169,7 +169,10 @@ export function detectWeaponFromFilenames(filenames) {
     for (const fname of lowerNames) {
       // Normalize MKII to MK2 for matching
       const normalizedFname = fname.replace(/mkii/g, 'mk2');
-      if (normalizedFname.includes(techId)) {
+      
+      // Strict matching: Check for full techId or surrounded by non-alphanumeric
+      const regex = new RegExp(`(^|[^a-zA-Z0-9])${techId}([^a-zA-Z0-9]|$)`, 'i');
+      if (regex.test(normalizedFname) || normalizedFname.includes(`_${techId}`) || normalizedFname.includes(`${techId}_`)) {
         return { id: techId, name: friendlyName };
       }
     }
