@@ -5,7 +5,8 @@ import { useSession } from 'next-auth/react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { useLang } from '@/components/LangProvider';
-import { WEAPON_CATEGORIES } from '@/lib/weapons';
+import { WEAPON_CATEGORIES, detectWeaponFromFilenames } from '@/lib/weapons';
+import { extractFilenames, extractFromFilename } from '@/lib/rpfParser';
 
 export default function ConverterPage() {
   const { data: session, status } = useSession();
@@ -37,7 +38,7 @@ export default function ConverterPage() {
     if (!selectedFile) return;
 
     if (!selectedFile.name.toLowerCase().endsWith('.rpf')) {
-      setError(t('invalidFile'));
+      setError(t('invalidFile') || 'Solo archivos .rpf permitidos');
       return;
     }
 
@@ -47,29 +48,24 @@ export default function ConverterPage() {
       size: formatFileSize(selectedFile.size),
     });
 
-    // Upload for analysis
+    // Analyze locally in-memory without uploading
     setIsUploading(true);
     try {
-      const formData = new FormData();
-      formData.append('file', selectedFile);
+      const arrayBuffer = await selectedFile.arrayBuffer();
+      // Only extract names; validation logic from rpfParser runs instantly locally
+      const internalFiles = extractFilenames(new Uint8Array(arrayBuffer));
+      const filenameHints = extractFromFilename(selectedFile.name);
+      
+      const allFiles = [...internalFiles, ...filenameHints];
+      const detected = detectWeaponFromFilenames(allFiles);
 
-      const res = await fetch('/api/upload', {
-        method: 'POST',
-        body: formData,
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        setError(data.error || 'Upload failed');
-        setFile(null);
-        setFileInfo(null);
-      } else if (data.detectedWeapon) {
-        setDetectedWeapon(data.detectedWeapon);
-        setSourceWeapon(data.detectedWeapon.id);
+      if (detected) {
+        setDetectedWeapon(detected);
+        setSourceWeapon(detected.id);
       }
     } catch (err) {
-      setError('Network error, please try again');
+      console.error(err);
+      setError('Error parsing the internal file');
     } finally {
       setIsUploading(false);
     }
@@ -89,24 +85,46 @@ export default function ConverterPage() {
     setError('');
 
     try {
-      const formData = new FormData();
-      formData.append('file', file);
-      formData.append('sourceWeapon', sourceWeapon);
-      formData.append('targetWeapon', targetWeapon);
+      const arrayBuffer = await file.arrayBuffer();
+      const u8 = new Uint8Array(arrayBuffer);
+      const encoder = new TextEncoder();
+      
+      const replaceInU8 = (bufferArray, srcStr, tgtStr) => {
+        const srcBytes = encoder.encode(srcStr);
+        const tgtBytesRaw = encoder.encode(tgtStr);
+        const tgtBytes = new Uint8Array(srcBytes.length);
+        tgtBytes.set(tgtBytesRaw.slice(0, Math.min(tgtBytesRaw.length, srcBytes.length)));
 
-      const res = await fetch('/api/convert', {
-        method: 'POST',
-        body: formData,
-      });
+        // Custom fast indexOf for Uint8Array
+        const indexOf = (arr, search, start) => {
+          for (let i = start; i <= arr.length - search.length; i++) {
+            let found = true;
+            for (let j = 0; j < search.length; j++) {
+              if (arr[i + j] !== search[j]) { found = false; break; }
+            }
+            if (found) return i;
+          }
+          return -1;
+        };
 
-      if (!res.ok) {
-        const errData = await res.json().catch(() => ({}));
-        setError(errData.error || 'Conversion failed');
-        return;
+        let offset = 0;
+        while (offset < bufferArray.length - srcBytes.length) {
+          const idx = indexOf(bufferArray, srcBytes, offset);
+          if (idx === -1) break;
+          bufferArray.set(tgtBytes, idx);
+          offset = idx + srcBytes.length;
+        }
+      };
+
+      // Replace standard string
+      replaceInU8(u8, sourceWeapon, targetWeapon);
+      // Replace lowercased variants
+      if (sourceWeapon.toLowerCase() !== sourceWeapon) {
+        replaceInU8(u8, sourceWeapon.toLowerCase(), targetWeapon.toLowerCase());
       }
 
-      // Download the converted file
-      const blob = await res.blob();
+      // Download the converted file directly from RAM
+      const blob = new Blob([u8], { type: 'application/octet-stream' });
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
@@ -116,7 +134,8 @@ export default function ConverterPage() {
       document.body.removeChild(a);
       window.URL.revokeObjectURL(url);
     } catch (err) {
-      setError('Network error during conversion');
+      console.error(err);
+      setError('Error processing file on browser limit');
     } finally {
       setIsConverting(false);
     }

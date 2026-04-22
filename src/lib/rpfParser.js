@@ -22,11 +22,16 @@ const RPF0_MAGIC = 0x52504630;
  * by checking the magic number header.
  */
 export function validateRPF(buffer) {
-  if (!buffer || buffer.length < 16) {
+  // buffer should be an ArrayBuffer or Uint8Array
+  const u8 = buffer instanceof Uint8Array ? buffer : new Uint8Array(buffer);
+  
+  if (!u8 || u8.length < 4) {
     return { valid: false, error: 'File too small to be a valid RPF archive' };
   }
 
-  const magic = buffer.readUInt32BE(0);
+  // Get BE uint32
+  const view = new DataView(u8.buffer, u8.byteOffset, u8.byteLength);
+  const magic = view.getUint32(0, false); // false = big endian
 
   if (magic === RPF7_MAGIC) {
     return { valid: true, version: 7 };
@@ -38,10 +43,10 @@ export function validateRPF(buffer) {
     return { valid: true, version: 0 };
   }
 
-  // Also check for the string "RPF" at start (covers all versions)
-  const magicStr = buffer.slice(0, 3).toString('ascii');
+  // Also check for the string "RPF" at start
+  const magicStr = String.fromCharCode(u8[0], u8[1], u8[2]);
   if (magicStr === 'RPF') {
-    const version = parseInt(buffer.slice(3, 4).toString('ascii'), 10);
+    const version = parseInt(String.fromCharCode(u8[3]), 10);
     return { valid: true, version: isNaN(version) ? -1 : version };
   }
 
@@ -57,14 +62,19 @@ export function validateRPF(buffer) {
  */
 export function extractFilenames(buffer) {
   const filenames = new Set();
+  
+  const u8 = buffer instanceof Uint8Array ? buffer : new Uint8Array(buffer);
 
   // Method 1: Scan for null-terminated ASCII strings that match weapon/asset patterns
   const extensions = ['.ytd', '.ydr', '.yft', '.ydd', '.ycd', '.xml', '.meta', '.dat'];
   const weaponPrefixes = ['w_pi_', 'w_sb_', 'w_ar_', 'w_sg_', 'w_mg_', 'w_sr_', 'w_lr_', 'w_me_', 'w_ex_'];
 
   let currentStr = '';
-  for (let i = 0; i < buffer.length; i++) {
-    const byte = buffer[i];
+  // Check up to first 2MB where TOC is usually located to avoid freezing browser on 50MB files
+  const maxSearch = Math.min(u8.length, 2 * 1024 * 1024);
+  
+  for (let i = 0; i < maxSearch; i++) {
+    const byte = u8[i];
     // Printable ASCII range
     if (byte >= 0x20 && byte <= 0x7E) {
       currentStr += String.fromCharCode(byte);
