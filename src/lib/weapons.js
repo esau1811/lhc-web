@@ -162,7 +162,10 @@ export function getAllWeapons() {
 export function detectWeaponFromFilenames(filenames) {
   const lowerNames = filenames.map((f) => f.toLowerCase());
 
-  for (const [techId, friendlyName] of Object.entries(WEAPON_MAP)) {
+  // Sort by length descending to match more specific IDs first (e.g. pistolmk2 before pistol)
+  const sortedWeapons = Object.entries(WEAPON_MAP).sort((a, b) => b[0].length - a[0].length);
+
+  for (const [techId, friendlyName] of sortedWeapons) {
     for (const fname of lowerNames) {
       // Check if filename contains weapon technical ID
       if (fname.includes(techId)) {
