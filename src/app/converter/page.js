@@ -96,13 +96,13 @@ export default function ConverterPage() {
 
     try {
       if (files.length === 1 && files[0].name.toLowerCase().endsWith('.rpf')) {
-        // ENVIAR AL SERVIDOR VPS (Clouding.io)
+        // ENVIAR AL SERVIDOR VPS
         const formData = new FormData();
         formData.append('file', files[0]);
         formData.append('sourceWeapon', sourceWeapon);
         formData.append('targetWeapon', targetWeapon);
 
-        const response = await fetch(BACKEND_URL, {
+        const response = await fetch('https://187.33.157.103.nip.io/api/WeaponConverter/convert', {
           method: 'POST',
           body: formData,
         });
