@@ -6,11 +6,13 @@ import { useSession, signIn } from 'next-auth/react';
 import { motion } from 'framer-motion';
 import { Crown, Menu, X } from 'lucide-react';
 import { useState } from 'react';
+import { useLang } from '@/components/LangProvider';
 
 export default function Header() {
   const pathname = usePathname();
   const { data: session } = useSession();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const { lang, changeLang } = useLang();
 
   const navLinks = [
     { name: 'Inicio', path: '/' },
@@ -20,14 +22,40 @@ export default function Header() {
     { name: 'Soporte', path: 'https://discord.gg/lhcds' },
   ];
 
+  const languages = [
+    { id: 'en', flag: '🇬🇧' },
+    { id: 'es', flag: '🇪🇸' },
+    { id: 'it', flag: '🇮🇹' },
+    { id: 'pt', flag: '🇧🇷' },
+  ];
+
   return (
     <>
       <nav className="absolute top-0 left-0 right-0 z-50 px-6 py-6">
         <div className="max-w-[1400px] mx-auto flex items-center justify-between">
           
-          <Link href="/" className="flex items-center gap-2">
-            <img src="/logo.png" alt="LHC" className="h-8 w-auto" />
-          </Link>
+          <div className="flex items-center gap-8">
+            <Link href="/" className="flex items-center gap-2">
+              <img src="/logo.png" alt="LHC" className="h-8 w-auto" />
+            </Link>
+
+            {/* Language Selector Desktop */}
+            <div className="hidden md:flex items-center gap-2 bg-white/5 p-1 rounded-full border border-white/5">
+              {languages.map((l) => (
+                <button
+                  key={l.id}
+                  onClick={() => changeLang(l.id)}
+                  className={`w-7 h-7 rounded-full flex items-center justify-center text-sm transition-all ${
+                    lang === l.id 
+                    ? 'bg-yellow-500/20 border border-yellow-500/50 scale-110 shadow-[0_0_10px_rgba(234,179,8,0.2)]' 
+                    : 'grayscale opacity-50 hover:grayscale-0 hover:opacity-100 hover:bg-white/10'
+                  }`}
+                >
+                  <span className="leading-none mb-0.5">{l.flag}</span>
+                </button>
+              ))}
+            </div>
+          </div>
 
           {/* Desktop Nav */}
           <div className="hidden lg:flex items-center gap-10">
@@ -97,6 +125,31 @@ export default function Header() {
             </Link>
           ))}
           <div className="h-[1px] bg-white/10 my-4"></div>
+          
+          <div className="flex flex-col gap-4">
+            <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Idioma / Language</span>
+            <div className="flex items-center gap-4">
+              {languages.map((l) => (
+                <button
+                  key={l.id}
+                  onClick={() => {
+                    changeLang(l.id);
+                    setIsMobileMenuOpen(false);
+                  }}
+                  className={`w-10 h-10 rounded-full flex items-center justify-center text-xl transition-all ${
+                    lang === l.id 
+                    ? 'bg-yellow-500/20 border-2 border-yellow-500/50 scale-110' 
+                    : 'bg-white/5 border border-white/10 grayscale opacity-50'
+                  }`}
+                >
+                  {l.flag}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="h-[1px] bg-white/10 my-4"></div>
+          
           <Link 
             href="/premium" 
             onClick={() => setIsMobileMenuOpen(false)}
