@@ -51,3 +51,17 @@
   z-index: -1;
   pointer-events: none;
 }
+
+.ai-icon-blend {
+  mix-blend-mode: screen;
+  filter: drop-shadow(0 0 15px rgba(255, 179, 0, 0.2));
+  pointer-events: none;
+}
+
+.nitro-glow {
+  filter: drop-shadow(0 0 15px rgba(168, 85, 247, 0.4));
+}
+
+.boost-glow {
+  filter: drop-shadow(0 0 15px rgba(236, 72, 153, 0.4));
+}

@@ -92,7 +92,7 @@ export default function HomePage() {
         {/* OPTIMIZATION GRID */}
         <section className="mb-32">
           <div className="flex items-center gap-4 mb-12">
-            <img src="/opti_icon.png" alt="Opti" className="w-16 h-16 object-contain" />
+            <img src="/opti_v2.png" alt="Opti" className="w-20 h-20 object-contain ai-icon-blend" />
             <div>
               <h2 className="text-3xl font-bold">⚡ SERVICIOS OPTI</h2>
               <p className="text-zinc-500">Máximo rendimiento garantizado para tu PC.</p>
@@ -104,13 +104,13 @@ export default function HomePage() {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {optiPlans.map((plan, idx) => (
-              <GlassCard key={idx} className="p-8 flex flex-col group">
+              <GlassCard key={idx} className="p-8 flex flex-col group overflow-hidden">
                 <div className="mb-6 flex justify-between items-start">
                   <div>
                     <h3 className="text-zinc-400 font-bold text-xs tracking-widest uppercase mb-1">OPTI {plan.name}</h3>
                     <div className="text-4xl font-black">{plan.price}</div>
                   </div>
-                  <img src="/opti_icon.png" alt="Opti" className="w-12 h-12 opacity-20 group-hover:opacity-100 transition-opacity" />
+                  <img src="/opti_v2.png" alt="Opti" className="w-16 h-16 ai-icon-blend opacity-20 group-hover:opacity-100 group-hover:scale-110 transition-all duration-500" />
                 </div>
                 <ul className="space-y-4 mb-10 flex-1">
                   {plan.features.map((feat, fidx) => (
@@ -119,7 +119,7 @@ export default function HomePage() {
                     </li>
                   ))}
                 </ul>
-                <Link href={`/premium?tab=OPTI#opti-${idx}`} className="btn-pill btn-gold w-full text-sm text-center">
+                <Link href={`/premium?tab=OPTI#opti-${idx}`} className="btn-pill btn-gold w-full text-sm text-center relative z-10">
                   Comprar ahora
                 </Link>
               </GlassCard>
@@ -130,18 +130,18 @@ export default function HomePage() {
         {/* SHOP SECTION (Boosts & Nitros) */}
         <section className="mb-32">
           <div className="flex items-center gap-4 mb-12">
-            <img src="/nitro_icon.png" alt="Nitro" className="w-16 h-16 object-contain" />
+            <img src="/nitro_v2.png" alt="Nitro" className="w-20 h-20 object-contain ai-icon-blend nitro-glow" />
             <h2 className="text-3xl font-bold uppercase tracking-tight">TIENDA DISCORD</h2>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <GlassCard className="p-8 flex flex-col justify-between group">
+            <GlassCard className="p-8 flex flex-col justify-between group overflow-hidden">
               <div>
                 <div className="flex justify-between items-start mb-4">
                   <h3 className="text-xl font-bold">NITRO BASIC</h3>
-                  <img src="/nitro_icon.png" alt="Nitro" className="w-10 h-10 opacity-30 group-hover:opacity-100 transition-opacity" />
+                  <img src="/nitro_v2.png" alt="Nitro" className="w-14 h-14 ai-icon-blend nitro-glow opacity-30 group-hover:opacity-100 group-hover:rotate-6 transition-all duration-500" />
                 </div>
-                <p className="text-zinc-500 text-xs mb-6">Insignia y emojis globales para tu cuenta.</p>
+                <p className="text-zinc-500 text-xs mb-6">Insignia y emojis globales para tu cuenta personal.</p>
                 <div className="bg-white/5 px-4 py-3 rounded-xl border border-white/5 inline-block mb-6">
                   <span className="text-2xl font-black">1.50€</span>
                 </div>
@@ -151,16 +151,16 @@ export default function HomePage() {
               </Link>
             </GlassCard>
 
-            <GlassCard className="p-8 flex flex-col justify-between border-purple-500/30 ring-1 ring-purple-500/20 group">
+            <GlassCard className="p-8 flex flex-col justify-between border-purple-500/30 ring-1 ring-purple-500/20 group overflow-hidden">
               <div>
                 <div className="flex justify-between items-start mb-4">
                   <div className="flex flex-col">
                     <h3 className="text-xl font-bold">NITRO BOOST</h3>
                     <span className="bg-purple-600 text-[10px] w-fit px-2 py-0.5 rounded-full font-black mt-1">LEGAL</span>
                   </div>
-                  <img src="/nitro_icon.png" alt="Nitro" className="w-12 h-12 group-hover:scale-110 transition-transform" />
+                  <img src="/nitro_v2.png" alt="Nitro" className="w-16 h-16 ai-icon-blend nitro-glow group-hover:scale-110 transition-all duration-500" />
                 </div>
-                <p className="text-zinc-500 text-xs mb-6">2 Boosts y streaming 4K con máxima calidad.</p>
+                <p className="text-zinc-500 text-xs mb-6">2 Boosts y streaming 4K con la máxima calidad garantizada.</p>
                 <div className="bg-white/5 px-4 py-3 rounded-xl border border-white/5 inline-block mb-6">
                   <span className="text-2xl font-black text-purple-400">4.30€</span>
                 </div>
@@ -170,13 +170,13 @@ export default function HomePage() {
               </Link>
             </GlassCard>
 
-            <GlassCard className="p-8 flex flex-col justify-between border-pink-500/30 ring-1 ring-pink-500/20 group">
+            <GlassCard className="p-8 flex flex-col justify-between border-pink-500/30 ring-1 ring-pink-500/20 group overflow-hidden">
               <div>
                 <div className="flex justify-between items-start mb-4">
                   <h3 className="text-xl font-bold">X14 BOOSTS</h3>
-                  <img src="/boost_icon.png" alt="Boost" className="w-12 h-12 group-hover:rotate-12 transition-transform" />
+                  <img src="/boost_v2.png" alt="Boost" className="w-16 h-16 ai-icon-blend boost-glow group-hover:rotate-12 group-hover:scale-110 transition-all duration-500" />
                 </div>
-                <p className="text-zinc-500 text-xs mb-6">Sube tu servidor al nivel 3 instantáneamente.</p>
+                <p className="text-zinc-500 text-xs mb-6">Sube tu servidor al nivel 3 instantáneamente con 14 boosts.</p>
                 <div className="bg-white/5 px-4 py-3 rounded-xl border border-white/5 inline-block mb-6">
                   <span className="text-2xl font-black text-pink-400">4€</span>
                 </div>

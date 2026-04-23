@@ -108,9 +108,11 @@ function PremiumContent() {
                       <div className="text-5xl font-black">{service.price}</div>
                     </div>
                     <img 
-                      src={activeTab === 'OPTI' ? '/opti_icon.png' : (service.name.includes('BOOSTS') ? '/boost_icon.png' : '/nitro_icon.png')} 
+                      src={activeTab === 'OPTI' ? '/opti_v2.png' : (service.name.includes('BOOSTS') ? '/boost_v2.png' : '/nitro_v2.png')} 
                       alt="Icon" 
-                      className="w-16 h-16 object-contain opacity-40 group-hover:opacity-100 transition-opacity" 
+                      className={`w-20 h-20 object-contain ai-icon-blend opacity-40 group-hover:opacity-100 transition-all duration-500 ${
+                        activeTab === 'SHOP' ? (service.name.includes('BOOSTS') ? 'boost-glow' : 'nitro-glow') : ''
+                      }`} 
                     />
                   </div>
                   
