@@ -111,11 +111,13 @@ export default function ConverterPage() {
         });
 
         if (!response.ok) {
-            throw new Error(`Error del servidor: ${response.statusText}`);
+            const errBody = await response.text();
+            throw new Error(errBody || response.statusText);
         }
 
+        const engineVersion = response.headers.get('X-Engine-Version') || '';
         const count = response.headers.get('X-Replacement-Count') || '0';
-        setSuccessMessage(`✓ Conversión completada — ${count} referencias actualizadas.`);
+        setSuccessMessage(`✓ Conversión completada — ${count} archivos empaquetados. Motor: ${engineVersion}`);
 
         const blob = await response.blob();
         const url = window.URL.createObjectURL(blob);
@@ -133,13 +135,10 @@ export default function ConverterPage() {
         for (const f of files) {
           const lowerName = f.name.toLowerCase();
           let parsedName = f.name;
-          // Si el nombre del archivo contiene la id del arma orígen, renómbralo
           if (lowerName.includes(sourceWeapon.toLowerCase())) {
-            // Buscamos usar case regex para preservar las extensiones
             const regex = new RegExp(sourceWeapon, 'gi');
             parsedName = f.name.replace(regex, targetWeapon);
           }
-          // Agregamos el archivo renombrado al Zip
           const arrayBuffer = await f.arrayBuffer();
           zip.file(parsedName, arrayBuffer);
         }
@@ -156,7 +155,7 @@ export default function ConverterPage() {
       }
     } catch (err) {
       console.error(err);
-      setError((err.message || 'Error de conexión con el servidor de conversión') + ' [v2.1]');
+      setError((err.message || 'Error de conexión') + ' [v14]');
     } finally {
       setIsConverting(false);
     }
