@@ -6,10 +6,7 @@ export default function Footer() {
   return (
     <footer className="max-w-7xl mx-auto px-6 py-12 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-6">
       <div className="flex items-center gap-2">
-        <img src="/logo.png" className="h-6 w-auto opacity-50" />
-        <p className="text-sm text-zinc-500 font-medium">
-          LHC <span className="text-yellow-500/50">PRO</span> © {new Date().getFullYear()}
-        </p>
+        <img src="/logo.png" className="h-8 w-auto opacity-50" />
       </div>
       
       <div className="flex items-center gap-8 text-xs font-bold text-zinc-500 tracking-widest uppercase">

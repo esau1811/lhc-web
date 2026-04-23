@@ -21,8 +21,7 @@ export default function Header() {
       <div className="max-w-7xl mx-auto flex items-center justify-between bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl px-6 py-3">
         
         <Link href="/" className="flex items-center gap-2">
-          <img src="/logo.png" alt="LHC" className="h-8 w-auto" />
-          <span className="font-black text-xl tracking-tighter">LHC</span>
+          <img src="/logo.png" alt="LHC" className="h-10 w-auto" />
         </Link>
 
         <div className="hidden md:flex items-center gap-8">
