@@ -90,6 +90,7 @@ export default function HomePage() {
         </section>
 
         {/* OPTIMIZATION GRID */}
+        <section className="mb-32">
           <div className="flex items-center gap-4 mb-12">
             <img src="/opti_icon.png" alt="Opti" className="w-16 h-16 object-contain" />
             <div>
