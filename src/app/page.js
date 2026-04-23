@@ -14,18 +14,31 @@ import {
 
 export default function HomePage() {
   const [discordStats, setDiscordStats] = useState({ total: '10K+', online: '31' });
+  const [activeCategory, setActiveCategory] = useState('Todas');
 
   const categories = [
-    { name: 'Todas', icon: LayoutGrid, active: true },
+    { name: 'Todas', icon: LayoutGrid },
     { name: 'Optimización', icon: Zap },
-    { name: 'Personalización', icon: Settings },
-    { name: 'Utilidades', icon: Shield },
+    { name: 'Tienda', icon: ShoppingBag },
     { name: 'Comunidad', icon: User },
+  ];
+
+  const optiPlans = [
+    { name: 'ESSENTIAL', price: '7€', features: ['FPS Boost', 'Win Opti', 'Nvidia Config', 'Basic Support'], icon: '/opti_v2.png', glow: 'opti-glow' },
+    { name: 'ADVANCED', price: '14€', features: ['FPS Boost', 'Win Opti', 'Nvidia Config', 'Power Plan', 'AMD Support'], icon: '/opti_v2.png', glow: 'opti-glow' },
+    { name: 'PERFORMANCE', price: '22€', features: ['FPS Boost', 'Win Opti', 'Nvidia Config', 'Registry Fix', 'BIOS Opti'], icon: '/opti_v2.png', glow: 'opti-glow' },
+  ];
+
+  const shopPlans = [
+    { name: 'NITRO BASIC', price: '1.50€', desc: 'Insignia y emojis globales.', icon: '/nitro_v2.png', glow: 'nitro-glow' },
+    { name: 'NITRO BOOST', price: '4.30€', desc: '2 Boosts y streaming 4K.', icon: '/nitro_v2.png', glow: 'nitro-glow' },
+    { name: 'X14 BOOSTS', price: '4€', desc: 'Sube tu servidor al nivel 3.', icon: '/boost_v2.png', glow: 'boost-glow' },
   ];
 
   const featuredTools = [
     { 
       id: 'conv',
+      category: 'Todas',
       name: 'LHCConverter', 
       desc: 'Convierte y optimiza tus armas. Compatible con +50 juegos.', 
       icon: '/icon_conv.png', 
@@ -37,6 +50,7 @@ export default function HomePage() {
     },
     { 
       id: 'sound',
+      category: 'Todas',
       name: 'LHCSound', 
       desc: 'Personaliza sonidos y efectos. Biblioteca de +1000 sonidos.', 
       icon: '/icon_sound.png', 
@@ -48,6 +62,7 @@ export default function HomePage() {
     },
     { 
       id: 'res',
+      category: 'Todas',
       name: 'LHCResolution', 
       desc: 'Optimiza tu experiencia visual. Perfiles para cada sistema.', 
       icon: '/icon_res.png', 
@@ -59,6 +74,7 @@ export default function HomePage() {
     },
     { 
       id: 'train',
+      category: 'Todas',
       name: 'LHCTrainer', 
       desc: 'Herramientas de entrenamiento. Mejora tus habilidades.', 
       icon: '/icon_train.png', 
@@ -91,7 +107,7 @@ export default function HomePage() {
             {/* Background Glow */}
             <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-yellow-500/10 blur-[120px] rounded-full -mr-40 -mt-40"></div>
             
-            <div className="relative z-10 max-w-xl">
+            <div className="relative z-10 max-w-xl pb-24">
               <motion.h1 
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -115,15 +131,15 @@ export default function HomePage() {
 
 
             {/* Stats Bar Integrated in Hero */}
-            <div className="absolute bottom-10 left-12 flex gap-8 items-center">
+            <div className="absolute bottom-4 left-12 flex gap-8 items-center">
               <div className="flex flex-col">
                 <span className="text-xl font-black text-white">10K+</span>
                 <span className="text-[10px] uppercase tracking-widest text-zinc-500 font-bold">Usuarios Activos</span>
               </div>
               <div className="w-[1px] h-8 bg-white/10"></div>
               <div className="flex flex-col">
-                <span className="text-xl font-black text-white">25+</span>
-                <span className="text-[10px] uppercase tracking-widest text-zinc-500 font-bold">Herramientas</span>
+                <span className="text-xl font-black text-orange-500">4+</span>
+                <span className="text-[10px] uppercase tracking-widest text-zinc-500 font-bold">Tools</span>
               </div>
               <div className="w-[1px] h-8 bg-white/10"></div>
               <div className="flex flex-col">
@@ -186,11 +202,12 @@ export default function HomePage() {
                 {categories.map(cat => (
                   <button 
                     key={cat.name}
+                    onClick={() => setActiveCategory(cat.name)}
                     className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-[13px] font-bold transition-all ${
-                      cat.active ? 'bg-white/10 text-white' : 'text-zinc-500 hover:text-white hover:bg-white/5'
+                      activeCategory === cat.name ? 'bg-white/10 text-white' : 'text-zinc-500 hover:text-white hover:bg-white/5'
                     }`}
                   >
-                    <cat.icon size={18} className={cat.active ? 'text-yellow-500' : ''} />
+                    <cat.icon size={18} className={activeCategory === cat.name ? 'text-yellow-500' : ''} />
                     {cat.name}
                   </button>
                 ))}
@@ -211,48 +228,101 @@ export default function HomePage() {
             </Link>
           </div>
 
-          {/* CENTER: FEATURED TOOLS GRID */}
+          {/* CENTER: DYNAMIC GRID */}
           <div className="lg:col-span-7">
             <div className="flex items-center justify-between mb-8">
               <div className="flex items-center gap-3">
                 <Zap size={20} className="text-yellow-500" />
-                <h3 className="text-xl font-black uppercase tracking-tight">Herramientas Destacadas</h3>
+                <h3 className="text-xl font-black uppercase tracking-tight">{activeCategory === 'Todas' ? 'Herramientas Destacadas' : activeCategory}</h3>
               </div>
-              <Link href="/converter" className="text-xs font-bold text-zinc-500 hover:text-white flex items-center gap-1 transition-colors">
+              <Link href={activeCategory === 'Todas' ? '/converter' : '/premium'} className="text-xs font-bold text-zinc-500 hover:text-white flex items-center gap-1 transition-colors">
                 Ver todas <ChevronRight size={14} />
               </Link>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {featuredTools.map((tool, idx) => (
-                <GlassCard key={idx} className="p-6 group cursor-pointer hover:border-white/10 transition-all">
-                  <div className="flex justify-between items-start mb-6">
-                    <div className="p-3 bg-white/5 rounded-2xl group-hover:scale-110 transition-transform">
-                      <img src={tool.icon} alt={tool.name} className={`w-12 h-12 object-contain ai-icon-blend opacity-20 group-hover:opacity-100 transition-all duration-500 ${tool.glowClass}`} />
-                    </div>
-                    <span className={`${tool.badgeColor} text-[9px] font-black px-2 py-1 rounded-md`}>
-                      {tool.badge}
-                    </span>
-                  </div>
-                  <h4 className="text-lg font-black mb-2 group-hover:text-yellow-500 transition-colors">{tool.name}</h4>
-                  <p className="text-zinc-500 text-xs font-medium leading-relaxed mb-6">
-                    {tool.desc}
-                  </p>
-                  <div className="flex items-center justify-between pt-4 border-t border-white/5">
-                    <div className="flex items-center gap-4">
-                      <div className="flex items-center gap-1">
-                        <User size={12} className="text-zinc-500" />
-                        <span className="text-[10px] font-bold text-zinc-400">{tool.users}</span>
+              {/* ALL TOOLS */}
+              {activeCategory === 'Todas' && featuredTools.map((tool, idx) => (
+                <Link key={idx} href={tool.id === 'conv' ? '/converter' : '/premium'}>
+                  <GlassCard className="p-6 group cursor-pointer hover:border-white/10 transition-all h-full">
+                    <div className="flex justify-between items-start mb-6">
+                      <div className="p-3 bg-white/5 rounded-2xl group-hover:scale-110 transition-transform">
+                        <img src={tool.icon} alt={tool.name} className={`w-12 h-12 object-contain ai-icon-blend opacity-20 group-hover:opacity-100 transition-all duration-500 ${tool.glowClass}`} />
                       </div>
-                      <div className="flex items-center gap-1">
-                        <Star size={12} className="text-yellow-500" />
-                        <span className="text-[10px] font-bold text-zinc-400">{tool.rating}</span>
-                      </div>
+                      <span className={`${tool.badgeColor} text-[9px] font-black px-2 py-1 rounded-md`}>
+                        {tool.badge}
+                      </span>
                     </div>
-                    <ChevronRight size={14} className="text-zinc-700 group-hover:text-white group-hover:translate-x-1 transition-all" />
-                  </div>
-                </GlassCard>
+                    <h4 className="text-lg font-black mb-2 group-hover:text-yellow-500 transition-colors">{tool.name}</h4>
+                    <p className="text-zinc-500 text-xs font-medium leading-relaxed mb-6">
+                      {tool.desc}
+                    </p>
+                    <div className="flex items-center justify-between pt-4 border-t border-white/5">
+                      <div className="flex items-center gap-4">
+                        <div className="flex items-center gap-1">
+                          <User size={12} className="text-zinc-500" />
+                          <span className="text-[10px] font-bold text-zinc-400">{tool.users}</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Star size={12} className="text-yellow-500" />
+                          <span className="text-[10px] font-bold text-zinc-400">{tool.rating}</span>
+                        </div>
+                      </div>
+                      <ChevronRight size={14} className="text-zinc-700 group-hover:text-white group-hover:translate-x-1 transition-all" />
+                    </div>
+                  </GlassCard>
+                </Link>
               ))}
+
+              {/* OPTIMIZATION PLANS */}
+              {activeCategory === 'Optimización' && optiPlans.map((plan, idx) => (
+                <Link key={idx} href={`/premium?tab=OPTI#opti-${idx}`}>
+                  <GlassCard className="p-6 group cursor-pointer hover:border-white/10 transition-all h-full">
+                    <div className="flex justify-between items-start mb-4">
+                      <div>
+                        <h4 className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">OPTI {plan.name}</h4>
+                        <p className="text-2xl font-black">{plan.price}</p>
+                      </div>
+                      <img src={plan.icon} className={`w-12 h-12 ai-icon-blend opacity-20 group-hover:opacity-100 group-hover:rotate-6 transition-all ${plan.glow}`} />
+                    </div>
+                    <ul className="space-y-2 mb-6">
+                      {plan.features.slice(0, 3).map((f, fi) => (
+                        <li key={fi} className="text-[11px] text-zinc-400 flex items-center gap-2">
+                          <Check size={12} className="text-yellow-500" /> {f}
+                        </li>
+                      ))}
+                    </ul>
+                    <div className="btn-pill btn-gold py-2 text-[10px]">VER DETALLES</div>
+                  </GlassCard>
+                </Link>
+              ))}
+
+              {/* SHOP PLANS */}
+              {activeCategory === 'Tienda' && shopPlans.map((plan, idx) => (
+                <Link key={idx} href={`/premium?tab=SHOP#shop-${idx}`}>
+                  <GlassCard className="p-6 group cursor-pointer hover:border-white/10 transition-all h-full">
+                    <div className="flex justify-between items-start mb-4">
+                      <div>
+                        <h4 className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">{plan.name}</h4>
+                        <p className="text-2xl font-black">{plan.price}</p>
+                      </div>
+                      <img src={plan.icon} className={`w-12 h-12 ai-icon-blend opacity-20 group-hover:opacity-100 group-hover:rotate-6 transition-all ${plan.glow}`} />
+                    </div>
+                    <p className="text-[11px] text-zinc-400 mb-6">{plan.desc}</p>
+                    <div className="btn-pill bg-white/10 py-2 text-[10px] hover:bg-white/20 transition-all">COMPRAR</div>
+                  </GlassCard>
+                </Link>
+              ))}
+
+              {/* COMUNIDAD */}
+              {activeCategory === 'Comunidad' && (
+                <div className="col-span-full py-12 text-center border-2 border-dashed border-white/5 rounded-3xl">
+                  <User size={40} className="mx-auto text-zinc-700 mb-4" />
+                  <h4 className="text-lg font-black mb-2">Comunidad LHC</h4>
+                  <p className="text-zinc-500 text-sm mb-6">Únete a nuestro Discord para herramientas comunitarias exclusivas.</p>
+                  <Link href="https://discord.gg/AS46Hlp2vO" className="btn-pill btn-gold inline-flex px-8">Unirse al Discord</Link>
+                </div>
+              )}
             </div>
 
             {/* BOTTOM BANNER */}
