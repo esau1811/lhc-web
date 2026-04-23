@@ -68,3 +68,11 @@
 .boost-glow {
   filter: drop-shadow(0 0 20px rgba(236, 72, 153, 0.6));
 }
+
+.green-glow {
+  filter: drop-shadow(0 0 20px rgba(34, 197, 94, 0.6));
+}
+
+.blue-glow {
+  filter: drop-shadow(0 0 20px rgba(59, 130, 246, 0.6));
+}

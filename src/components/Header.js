@@ -11,26 +11,27 @@ export default function Header() {
 
   const navLinks = [
     { name: 'Inicio', path: '/' },
-    { name: 'Servicios', path: '/premium' },
-    { name: 'Converter', path: '/converter' },
+    { name: 'Herramientas', path: '/converter' },
     { name: 'Comunidad', path: 'https://discord.gg/AS46Hlp2vO' },
+    { name: 'Premium', path: '/premium' },
+    { name: 'Soporte', path: 'https://discord.gg/AS46Hlp2vO' },
   ];
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 px-6 py-4">
-      <div className="max-w-7xl mx-auto flex items-center justify-between bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl px-6 py-3">
+    <nav className="fixed top-0 left-0 right-0 z-50 px-6 py-6">
+      <div className="max-w-[1400px] mx-auto flex items-center justify-between">
         
         <Link href="/" className="flex items-center gap-2">
-          <img src="/logo.png" alt="LHC" className="h-10 w-auto" />
+          <img src="/logo.png" alt="LHC" className="h-8 w-auto" />
         </Link>
 
-        <div className="hidden md:flex items-center gap-8">
+        <div className="hidden lg:flex items-center gap-10">
           {navLinks.map(link => (
             <Link 
               key={link.name} 
               href={link.path}
-              className={`text-sm font-bold tracking-wide uppercase transition-colors ${
-                pathname === link.path ? 'text-yellow-500' : 'text-zinc-400 hover:text-white'
+              className={`text-[13px] font-bold tracking-tight transition-colors ${
+                pathname === link.path ? 'text-yellow-500' : 'text-zinc-500 hover:text-white'
               }`}
             >
               {link.name}
@@ -38,23 +39,27 @@ export default function Header() {
           ))}
         </div>
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-6">
+          <Link href="/premium" className="hidden md:flex items-center gap-2 bg-yellow-500/5 border border-yellow-500/20 px-4 py-2 rounded-lg text-[11px] font-black text-yellow-500 hover:bg-yellow-500/10 transition-all">
+            <span className="text-[14px]">👑</span> Hazte Premium
+          </Link>
+          
           {session ? (
-            <div className="flex items-center gap-3">
-              <img src={session.user.image} className="w-8 h-8 rounded-full border border-yellow-500" />
-              <button onClick={() => signOut()} className="text-xs font-bold text-zinc-500 hover:text-white">SALIR</button>
+            <div className="flex items-center gap-3 bg-white/5 p-1.5 pr-4 rounded-full border border-white/5">
+              <img src={session.user.image} className="w-8 h-8 rounded-full" />
+              <div className="flex flex-col">
+                <span className="text-[11px] font-black text-white leading-tight uppercase">{session.user.name.split(' ')[0]}</span>
+                <span className="text-[9px] text-zinc-500 font-bold uppercase tracking-tighter">Conectado</span>
+              </div>
             </div>
           ) : (
             <button 
               onClick={() => signIn('discord')}
-              className="bg-indigo-600 hover:bg-indigo-500 px-5 py-2 rounded-full text-xs font-black transition-all"
+              className="bg-indigo-600 hover:bg-indigo-500 px-6 py-2 rounded-lg text-[11px] font-black transition-all"
             >
               LOGIN
             </button>
           )}
-          <Link href="/premium" className="bg-gradient-to-r from-yellow-400 to-orange-500 text-black px-5 py-2 rounded-full text-xs font-black hover:scale-105 transition-all">
-            PREMIUM
-          </Link>
         </div>
 
       </div>
