@@ -406,8 +406,8 @@ export default function HomePage() {
                   <span className="absolute top-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-black animate-pulse"></span>
                 </div>
                 <div>
-                  <p className="text-[11px] font-black uppercase tracking-tight">{t('todos_sistemas')}</p>
-                  <p className="text-[10px] text-green-500 font-black uppercase tracking-tighter">{t('operativo')}</p>
+                  <p className="text-[11px] font-black uppercase tracking-wider">{t('todos_sistemas')}</p>
+                  <p className="text-[10px] text-green-500 font-black uppercase tracking-wide">{t('operativo')}</p>
                 </div>
               </div>
             </GlassCard>
