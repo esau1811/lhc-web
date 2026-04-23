@@ -200,12 +200,16 @@ export default function ConverterPage() {
       <Header />
       <main className="max-w-4xl mx-auto px-6 pt-32 pb-32">
         
-        <div className="mb-12">
-          <h1 className="text-4xl font-black mb-2 tracking-tight flex items-center gap-4">
-            <span className="p-3 bg-yellow-500/10 rounded-xl"><Download className="text-yellow-500" /></span>
-            CONVERSOR DE ARMAS
-          </h1>
-          <p className="text-zinc-500 font-medium">Sube tu archivo .RPF o múltiples texturas para adaptarlas a otra arma.</p>
+        <div className="mb-12 flex flex-col md:flex-row md:items-center gap-6">
+          <img src="/converter_icon.png" alt="Converter" className="w-24 h-24 object-contain ai-icon-blend opti-glow" />
+          <div>
+            <h1 className="text-4xl font-black mb-2 tracking-tight uppercase">
+              CONVERSOR DE ARMAS
+            </h1>
+            <p className="text-zinc-500 font-medium max-w-xl">
+              Nuestra herramienta inteligente detecta automáticamente tus archivos y los adapta a cualquier arma de GTA V / FiveM en segundos.
+            </p>
+          </div>
         </div>
 
         <div className="space-y-8">
