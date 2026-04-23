@@ -23,9 +23,9 @@ export default function PremiumPage() {
       { name: 'OPTI PERFORMANCE', price: '22€', features: ['Aumento de FPS', 'Optimización Windows', 'Configuración Nvidia', 'Plan de energía optimizado', 'Soporte AMD', 'Ajustes de registro avanzados', 'Optimización de BIOS'] },
     ],
     SHOP: [
+      { name: 'NITRO BASIC', price: '1.50€', features: ['Insignia Basic', 'Archivos 50MB', 'Emojis personalizados', 'Uso global'] },
       { name: 'X14 SERVER BOOSTS', price: '4€', features: ['Nivel 3 Instantáneo', '3 meses de duración', 'Entrega inmediata', 'Soporte 24/7'] },
       { name: 'NITRO BOOST (LEGAL)', price: '4.30€', features: ['2 Boosts incluidos', 'Insignia de Nitro', 'Streaming 4K', 'Emojis animados'], popular: true },
-      { name: 'NITRO BASIC', price: '1.50€', features: ['Insignia Basic', 'Archivos 50MB', 'Emojis personalizados', 'Uso global'] },
     ]
   };
 
