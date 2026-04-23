@@ -7,6 +7,7 @@ import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import GlassCard from '@/components/GlassCard';
+import { useLang } from '@/components/LangProvider';
 import { 
   Check, Rocket, Shield, Zap, ShoppingBag, Crown, 
   LayoutGrid, Settings, User, MessageSquare, ExternalLink,
@@ -14,14 +15,15 @@ import {
 } from 'lucide-react';
 
 export default function HomePage() {
+  const { t, lang } = useLang();
   const [discordStats, setDiscordStats] = useState({ total: '10K+', online: '31' });
   const [activeCategory, setActiveCategory] = useState('Todas');
 
   const categories = [
-    { name: 'Todas', icon: LayoutGrid },
-    { name: 'Optimización', icon: Zap },
-    { name: 'Tienda', icon: ShoppingBag },
-    { name: 'Comunidad', icon: User },
+    { name: 'Todas', displayName: t('cat_todas'), icon: LayoutGrid },
+    { name: 'Optimización', displayName: t('cat_opti'), icon: Zap },
+    { name: 'Tienda', displayName: t('cat_tienda'), icon: ShoppingBag },
+    { name: 'Comunidad', displayName: t('cat_comunidad'), icon: User },
   ];
 
   const optiPlans = [
@@ -31,19 +33,19 @@ export default function HomePage() {
   ];
 
   const shopPlans = [
-    { name: 'NITRO BASIC', price: '1.50€', desc: 'Insignia y emojis globales.', icon: '/nitro_v2.png', glow: 'nitro-glow' },
-    { name: 'NITRO BOOST', price: '4.30€', desc: '2 Boosts y streaming 4K.', icon: '/nitro_v2.png', glow: 'nitro-glow' },
-    { name: 'X14 BOOSTS', price: '4€', desc: 'Sube tu servidor al nivel 3.', icon: '/boost_v2.png', glow: 'boost-glow' },
+    { name: 'NITRO BASIC', price: '1.50€', desc: t('nitro_basic_desc') || 'Insignia y emojis globales.', icon: '/nitro_v2.png', glow: 'nitro-glow' },
+    { name: 'NITRO BOOST', price: '4.30€', desc: t('nitro_boost_desc') || '2 Boosts y streaming 4K.', icon: '/nitro_v2.png', glow: 'nitro-glow' },
+    { name: 'X14 BOOSTS', price: '4€', desc: t('boost_desc') || 'Sube tu servidor al nivel 3.', icon: '/boost_v2.png', glow: 'boost-glow' },
   ];
 
   const featuredTools = [
     { 
       id: 'conv',
       category: 'Todas',
-      name: 'LHCConverter', 
-      desc: 'Convierte y optimiza tus armas. Compatible con +50 juegos.', 
+      name: t('converterTitle'), 
+      desc: t('converterDesc'), 
       icon: '/icon_conv.png', 
-      badge: 'GRATIS', 
+      badge: t('free'), 
       badgeColor: 'bg-green-500',
       glowClass: 'green-glow',
       users: '5.2K',
@@ -52,10 +54,10 @@ export default function HomePage() {
     { 
       id: 'sound',
       category: 'Todas',
-      name: 'LHCSound', 
-      desc: 'Personaliza sonidos y efectos. Biblioteca de +1000 sonidos.', 
+      name: t('soundTitle'), 
+      desc: t('soundDesc'), 
       icon: '/icon_sound.png', 
-      badge: 'PRONTO', 
+      badge: t('soon'), 
       badgeColor: 'bg-purple-500',
       glowClass: 'nitro-glow',
       users: '3.1K',
@@ -64,10 +66,10 @@ export default function HomePage() {
     { 
       id: 'res',
       category: 'Todas',
-      name: 'LHCResolution', 
-      desc: 'Optimiza tu experiencia visual. Perfiles para cada sistema.', 
+      name: t('resolutionTitle'), 
+      desc: t('resolutionDesc'), 
       icon: '/icon_res.png', 
-      badge: 'PREMIUM', 
+      badge: t('premium'), 
       badgeColor: 'bg-blue-500',
       glowClass: 'blue-glow',
       users: '2.8K',
@@ -77,9 +79,9 @@ export default function HomePage() {
       id: 'train',
       category: 'Todas',
       name: 'LHCTrainer', 
-      desc: 'Herramientas de entrenamiento. Mejora tus habilidades.', 
+      desc: t('trainerDesc') || 'Herramientas de entrenamiento. Mejora tus habilidades.', 
       icon: '/icon_train.png', 
-      badge: 'PREMIUM', 
+      badge: t('premium'), 
       badgeColor: 'bg-yellow-500',
       glowClass: 'opti-glow',
       users: '1.5K',
@@ -88,10 +90,10 @@ export default function HomePage() {
   ];
 
   const recentActivity = [
-    { name: 'LHCConverter', action: 'Actualizado v2.1.4', time: 'Hace 2h', icon: '/icon_conv.png' },
-    { name: 'LHCSound', action: 'Nueva biblioteca', time: 'Hace 4h', icon: '/icon_sound.png' },
-    { name: 'LHCResolution', action: 'Perfil agregado', time: 'Hace 6h', icon: '/icon_res.png' },
-    { name: 'Nuevo usuario', action: 'Se unió a la comunidad', time: 'Hace 8h', isUser: true },
+    { name: 'LHCConverter', action: t('act_updated') || 'Actualizado v2.1.4', time: t('time_2h') || 'Hace 2h', icon: '/icon_conv.png' },
+    { name: 'LHCSound', action: t('act_new_lib') || 'Nueva biblioteca', time: t('time_4h') || 'Hace 4h', icon: '/icon_sound.png' },
+    { name: 'LHCResolution', action: t('act_profile') || 'Perfil agregado', time: t('time_6h') || 'Hace 6h', icon: '/icon_res.png' },
+    { name: t('new_user') || 'Nuevo usuario', action: t('act_joined') || 'Se unió a la comunidad', time: t('time_8h') || 'Hace 8h', isUser: true },
   ];
 
   return (
@@ -114,18 +116,18 @@ export default function HomePage() {
                 animate={{ opacity: 1, y: 0 }}
                 className="text-4xl md:text-7xl font-black mb-6 leading-[0.9] tracking-tighter"
               >
-                ELEVA TU <br />
-                <span className="text-yellow-500">EXPERIENCIA</span>
+                {t('eleva_tu')} <br />
+                <span className="text-yellow-500">{t('experiencia')}</span>
               </motion.h1>
               <p className="text-zinc-400 text-sm md:text-lg mb-8 md:text-lg mb-10 max-w-md font-medium leading-relaxed">
-                Herramientas premium para jugadores que buscan más. Optimiza, personaliza y domina tu entorno de juego.
+                {t('hero_desc')}
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
                 <Link href="/converter" className="btn-pill btn-gold px-8 py-4 text-xs md:text-sm font-black flex items-center justify-center gap-2">
-                  <Rocket size={18} /> Explorar Herramientas
+                  <Rocket size={18} /> {t('explorar_herramientas')}
                 </Link>
                 <Link href="/premium" className="btn-pill bg-white/5 border border-white/10 hover:bg-white/10 px-8 py-4 text-xs md:text-sm font-black flex items-center justify-center gap-2">
-                  <Crown size={18} /> Ver Beneficios Premium
+                  <Crown size={18} /> {t('ver_beneficios')}
                 </Link>
               </div>
             </div>
@@ -135,7 +137,7 @@ export default function HomePage() {
             <div className="absolute bottom-4 left-6 md:left-12 flex flex-wrap md:flex-nowrap gap-4 md:gap-8 items-center bg-black/40 backdrop-blur-md md:bg-transparent p-4 md:p-0 rounded-2xl md:rounded-none border border-white/5 md:border-none">
               <div className="flex flex-col">
                 <span className="text-sm md:text-xl font-black text-white">10K+</span>
-                <span className="text-[8px] md:text-[10px] uppercase tracking-widest text-zinc-500 font-bold">Usuarios</span>
+                <span className="text-[8px] md:text-[10px] uppercase tracking-widest text-zinc-500 font-bold">{t('usuarios')}</span>
               </div>
               <div className="hidden md:block w-[1px] h-8 bg-white/10"></div>
               <div className="flex flex-col">
@@ -145,12 +147,12 @@ export default function HomePage() {
               <div className="hidden md:block w-[1px] h-8 bg-white/10"></div>
               <div className="flex flex-col">
                 <span className="text-sm md:text-xl font-black text-white">99.9%</span>
-                <span className="text-[8px] md:text-[10px] uppercase tracking-widest text-zinc-500 font-bold">Uptime</span>
+                <span className="text-[8px] md:text-[10px] uppercase tracking-widest text-zinc-500 font-bold">{t('uptime')}</span>
               </div>
               <div className="hidden md:block w-[1px] h-8 bg-white/10"></div>
               <div className="flex flex-col">
                 <span className="text-sm md:text-xl font-black text-white">24/7</span>
-                <span className="text-[8px] md:text-[10px] uppercase tracking-widest text-zinc-500 font-bold">Soporte</span>
+                <span className="text-[8px] md:text-[10px] uppercase tracking-widest text-zinc-500 font-bold">{t('soporte')}</span>
               </div>
             </div>
           </div>
@@ -168,15 +170,15 @@ export default function HomePage() {
                   <Crown size={16} className="text-yellow-500" />
                   <span className="text-[11px] font-black uppercase tracking-widest text-yellow-500">Premium</span>
                 </div>
-                <h3 className="text-xl md:text-2xl font-black mb-4 md:mb-6">Desbloquea todo el potencial</h3>
+                <h3 className="text-xl md:text-2xl font-black mb-4 md:mb-6">{t('desbloquea_potencial')}</h3>
                 <ul className="space-y-3 md:space-y-4 mb-6 md:mb-8">
                   {[
-                    'Acceso a herramientas exclusivas',
-                    'Actualizaciones prioritarias',
-                    'Soporte VIP 24/7'
+                    t('acc_exclusive'),
+                    t('prior_updates'),
+                    t('vip_support')
                   ].map((item, i) => (
                     <li key={i} className="flex items-center gap-3 text-[10px] md:text-xs font-bold text-zinc-300">
-                      <Check size={14} className="text-yellow-500" /> {item}
+                      <Check size={14} className="text-yellow-500" /> {item || 'Premium feature'}
                     </li>
                   ))}
                 </ul>
@@ -184,9 +186,9 @@ export default function HomePage() {
 
               <div>
                 <Link href="/premium" className="w-full py-3 md:py-4 bg-yellow-500 text-black rounded-xl text-[10px] md:text-xs font-black flex items-center justify-center gap-2 hover:bg-yellow-400 transition-all shadow-[0_0_20px_rgba(234,179,8,0.3)]">
-                  <Crown size={14} /> Mejorar a Premium
+                  <Crown size={14} /> {t('mejora_premium')}
                 </Link>
-                <p className="text-center text-[9px] md:text-[10px] text-zinc-500 mt-4 font-bold uppercase tracking-tight">Desde $4.99/mes</p>
+                <p className="text-center text-[9px] md:text-[10px] text-zinc-500 mt-4 font-bold uppercase tracking-tight">{t('desde')} $4.99/mes</p>
               </div>
             </GlassCard>
           </div>
@@ -198,7 +200,7 @@ export default function HomePage() {
           {/* LEFT SIDEBAR: CATEGORIES */}
           <div className="lg:col-span-2 space-y-8">
             <div className="overflow-x-auto pb-4 lg:pb-0 -mx-6 px-6 lg:mx-0 lg:px-0">
-              <h4 className="hidden lg:block text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500 mb-6 px-2">Categorías</h4>
+              <h4 className="hidden lg:block text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500 mb-6 px-2">{t('categorias')}</h4>
               <nav className="flex lg:flex-col gap-2 lg:gap-1 min-w-max lg:min-w-0">
                 {categories.map(cat => (
                   <button 
@@ -224,8 +226,8 @@ export default function HomePage() {
                     </svg>
                   </div>
                   <div>
-                    <p className="text-[11px] font-black uppercase leading-none text-white">Únete a Discord</p>
-                    <p className="text-[9px] font-bold text-white/70">Comunidad activa</p>
+                    <p className="text-[11px] font-black uppercase leading-none text-white">{t('unete_discord')}</p>
+                    <p className="text-[9px] font-bold text-white/70">{t('comunidad_activa')}</p>
                   </div>
                 </div>
                 <ChevronRight size={16} className="relative z-10 text-white group-hover:translate-x-1 transition-transform" />
@@ -238,10 +240,10 @@ export default function HomePage() {
             <div className="flex items-center justify-between mb-8">
               <div className="flex items-center gap-3">
                 <Zap size={20} className="text-yellow-500" />
-                <h3 className="text-xl font-black uppercase tracking-tight">{activeCategory === 'Todas' ? 'Herramientas Destacadas' : activeCategory}</h3>
+                <h3 className="text-xl font-black uppercase tracking-tight">{activeCategory === 'Todas' ? t('herramientas_destacadas') : t(`cat_${activeCategory === 'Optimización' ? 'opti' : activeCategory === 'Tienda' ? 'tienda' : 'comunidad'}`)}</h3>
               </div>
               <Link href={activeCategory === 'Todas' ? '/converter' : '/premium'} className="text-xs font-bold text-zinc-500 hover:text-white flex items-center gap-1 transition-colors">
-                Ver todas <ChevronRight size={14} />
+                {t('ver_todas')} <ChevronRight size={14} />
               </Link>
             </div>
 
@@ -297,7 +299,7 @@ export default function HomePage() {
                         </li>
                       ))}
                     </ul>
-                    <div className="btn-pill btn-gold py-2 text-[10px]">VER DETALLES</div>
+                    <div className="btn-pill btn-gold py-2 text-[10px]">{t('ver_detalles')}</div>
                   </GlassCard>
                 </Link>
               ))}
@@ -314,7 +316,7 @@ export default function HomePage() {
                       <img src={plan.icon} className={`w-12 h-12 ai-icon-blend opacity-20 group-hover:opacity-100 group-hover:rotate-6 transition-all ${plan.glow}`} />
                     </div>
                     <p className="text-[11px] text-zinc-400 mb-6">{plan.desc}</p>
-                    <div className="btn-pill btn-gold py-2 text-[10px]">VER DETALLES</div>
+                    <div className="btn-pill btn-gold py-2 text-[10px]">{t('ver_detalles')}</div>
                   </GlassCard>
                 </Link>
               ))}
@@ -323,9 +325,9 @@ export default function HomePage() {
               {activeCategory === 'Comunidad' && (
                 <div className="col-span-full py-12 text-center border-2 border-dashed border-white/5 rounded-3xl">
                   <User size={40} className="mx-auto text-zinc-700 mb-4" />
-                  <h4 className="text-lg font-black mb-2">Comunidad LHC</h4>
-                  <p className="text-zinc-500 text-sm mb-6">Únete a nuestro Discord para herramientas comunitarias exclusivas.</p>
-                  <Link href="https://discord.gg/lhcds" className="btn-pill btn-gold inline-flex px-8">Unirse al Discord</Link>
+                  <h4 className="text-lg font-black mb-2">{t('cat_comunidad')} LHC</h4>
+                  <p className="text-zinc-500 text-sm mb-6">{t('discordJoinDesc')}</p>
+                  <Link href="https://discord.gg/lhcds" className="btn-pill btn-gold inline-flex px-8">{t('unete_ahora')}</Link>
                 </div>
               )}
             </div>
@@ -340,8 +342,8 @@ export default function HomePage() {
                     </svg>
                   </div>
                   <div>
-                    <p className="text-sm font-black uppercase leading-none text-white">Únete a nuestra comunidad</p>
-                    <p className="text-xs font-bold text-white/70 mt-1">Discord oficial de LHC</p>
+                    <p className="text-sm font-black uppercase leading-none text-white">{t('unete_miles')}</p>
+                    <p className="text-xs font-bold text-white/70 mt-1">{t('comunidad_activa')}</p>
                   </div>
                 </div>
                 <ChevronRight size={24} className="relative z-10 text-white" />
@@ -355,17 +357,17 @@ export default function HomePage() {
                   <Trophy size={32} />
                 </div>
                 <div>
-                  <h4 className="text-lg md:text-xl font-black uppercase tracking-tight leading-none mb-2">Únete a miles de jugadores</h4>
-                  <p className="text-xs md:text-sm text-zinc-500 font-bold">Forma parte de la comunidad #1 en herramientas para gamers</p>
+                  <h4 className="text-lg md:text-xl font-black uppercase tracking-tight leading-none mb-2">{t('unete_miles')}</h4>
+                  <p className="text-xs md:text-sm text-zinc-500 font-bold">{t('forma_parte')}</p>
                 </div>
               </div>
               <div className="flex items-center gap-8 w-full lg:w-auto justify-center lg:justify-end border-t lg:border-t-0 border-white/5 pt-6 lg:pt-0">
                 <div className="flex flex-col items-center lg:items-end">
                   <span className="text-xl font-black">10K+</span>
-                  <span className="text-[10px] text-zinc-500 font-bold uppercase">Miembros</span>
+                  <span className="text-[10px] text-zinc-500 font-bold uppercase">{t('miembros')}</span>
                 </div>
                 <Link href="https://discord.gg/lhcds" className="bg-yellow-500 text-black px-8 py-3 rounded-xl text-xs font-black flex items-center gap-2 hover:bg-yellow-400 transition-all">
-                  Únete ahora <ArrowRight size={14} />
+                  {t('unete_ahora')} <ArrowRight size={14} />
                 </Link>
               </div>
             </div>
@@ -374,7 +376,7 @@ export default function HomePage() {
           {/* RIGHT SIDEBAR: ACTIVITY & STATUS */}
           <div className="lg:col-span-3 space-y-6">
             <GlassCard className="p-6" hideBorder>
-              <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500 mb-6">Actividad Reciente</h4>
+              <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500 mb-6">{t('actividad_reciente')}</h4>
               <div className="space-y-6">
                 {recentActivity.map((act, i) => (
                   <div key={i} className="flex items-center gap-4">
@@ -404,8 +406,8 @@ export default function HomePage() {
                   <span className="absolute top-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-black animate-pulse"></span>
                 </div>
                 <div>
-                  <p className="text-[11px] font-black uppercase tracking-tight">Todos los sistemas</p>
-                  <p className="text-[10px] text-green-500 font-black uppercase tracking-tighter">Operativo</p>
+                  <p className="text-[11px] font-black uppercase tracking-tight">{t('todos_sistemas')}</p>
+                  <p className="text-[10px] text-green-500 font-black uppercase tracking-tighter">{t('operativo')}</p>
                 </div>
               </div>
             </GlassCard>

@@ -12,14 +12,14 @@ export default function Header() {
   const pathname = usePathname();
   const { data: session } = useSession();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const { lang, changeLang } = useLang();
+  const { lang, changeLang, t } = useLang();
 
   const navLinks = [
-    { name: 'Inicio', path: '/' },
-    { name: 'Herramientas', path: '/converter' },
-    { name: 'Comunidad', path: 'https://discord.gg/lhcds' },
-    { name: 'Premium', path: '/premium' },
-    { name: 'Soporte', path: 'https://discord.gg/lhcds' },
+    { name: t('nav_inicio'), path: '/' },
+    { name: t('nav_herramientas'), path: '/converter' },
+    { name: t('nav_comunidad'), path: 'https://discord.gg/lhcds' },
+    { name: t('nav_premium'), path: '/premium' },
+    { name: t('nav_soporte'), path: 'https://discord.gg/lhcds' },
   ];
 
   const languages = [
@@ -77,7 +77,7 @@ export default function Header() {
 
           <div className="flex items-center gap-4">
             <Link href="/premium" className="hidden md:flex items-center gap-2 bg-yellow-500/5 border border-yellow-500/20 px-4 py-2 rounded-lg text-[11px] font-black text-yellow-500 hover:bg-yellow-500/10 transition-all">
-              <Crown size={14} /> Hazte Premium
+              <Crown size={14} /> {t('hazte_premium')}
             </Link>
             
             {session ? (
@@ -85,7 +85,7 @@ export default function Header() {
                 <img src={session.user.image} className="w-8 h-8 rounded-full" />
                 <div className="flex flex-col">
                   <span className="text-[11px] font-black text-white leading-tight uppercase">{session.user.name.split(' ')[0]}</span>
-                  <span className="text-[9px] text-zinc-500 font-bold uppercase tracking-tighter">Conectado</span>
+                  <span className="text-[9px] text-zinc-500 font-bold uppercase tracking-tighter">{t('conectado')}</span>
                 </div>
               </div>
             ) : (
@@ -93,7 +93,7 @@ export default function Header() {
                 onClick={() => signIn('discord')}
                 className="hidden md:block bg-indigo-600 hover:bg-indigo-500 px-6 py-2 rounded-lg text-[11px] font-black transition-all"
               >
-                LOGIN
+                {t('login_btn')}
               </button>
             )}
 
@@ -158,7 +158,7 @@ export default function Header() {
             onClick={() => setIsMobileMenuOpen(false)}
             className="flex items-center justify-between bg-yellow-500 text-black p-4 rounded-2xl font-black uppercase text-sm"
           >
-            Hazte Premium <Crown size={18} />
+            {t('hazte_premium')} <Crown size={18} />
           </Link>
           <button 
             onClick={() => {
@@ -167,7 +167,7 @@ export default function Header() {
             }}
             className="bg-[#5865F2] text-white p-4 rounded-2xl font-black uppercase text-sm"
           >
-            Login con Discord
+            {t('login')}
           </button>
         </motion.div>
       )}
