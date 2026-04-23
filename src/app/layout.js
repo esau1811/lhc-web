@@ -1,6 +1,7 @@
 import './globals.css';
 import SessionProvider from '@/components/SessionProvider';
 import { LangProvider } from '@/components/LangProvider';
+import { Analytics } from '@vercel/analytics/next';
 
 export const metadata = {
   title: 'LHC — GTA V Weapon Skin Converter for FiveM',
@@ -30,6 +31,7 @@ export default function RootLayout({ children }) {
             {children}
           </LangProvider>
         </SessionProvider>
+        <Analytics />
       </body>
     </html>
   );
