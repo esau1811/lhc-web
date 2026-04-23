@@ -58,11 +58,16 @@ export default function HomePage() {
 
     const postActivity = async () => {
       if (session?.user) {
+        // Only post once per session in this client instance
+        if (window.sessionStorage.getItem('lhc_activity_posted')) return;
+        
         try {
           await fetch('/api/activity', {
             method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ user: session.user }),
           });
+          window.sessionStorage.setItem('lhc_activity_posted', 'true');
           fetchActivity();
         } catch (e) { console.error(e); }
       }
