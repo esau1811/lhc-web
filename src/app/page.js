@@ -309,7 +309,7 @@ export default function HomePage() {
                       <img src={plan.icon} className={`w-12 h-12 ai-icon-blend opacity-20 group-hover:opacity-100 group-hover:rotate-6 transition-all ${plan.glow}`} />
                     </div>
                     <p className="text-[11px] text-zinc-400 mb-6">{plan.desc}</p>
-                    <div className="btn-pill bg-white/10 py-2 text-[10px] hover:bg-white/20 transition-all">COMPRAR</div>
+                    <div className="btn-pill btn-gold py-2 text-[10px]">VER DETALLES</div>
                   </GlassCard>
                 </Link>
               ))}
