@@ -23,10 +23,10 @@ export default function Header() {
   ];
 
   const languages = [
-    { id: 'en', flag: '🇬🇧' },
-    { id: 'es', flag: '🇪🇸' },
-    { id: 'it', flag: '🇮🇹' },
-    { id: 'pt', flag: '🇧🇷' },
+    { id: 'en', flag: '/flags/en.png' },
+    { id: 'es', flag: '/flags/es.png' },
+    { id: 'it', flag: '/flags/it.png' },
+    { id: 'pt', flag: '/flags/pt.png' },
   ];
 
   return (
@@ -40,18 +40,21 @@ export default function Header() {
             </Link>
 
             {/* Language Selector Desktop */}
-            <div className="hidden md:flex items-center gap-2 bg-white/5 p-1 rounded-full border border-white/5">
+            <div className="hidden md:flex items-center gap-1 bg-black/20 p-1 rounded-full border border-white/5 backdrop-blur-md">
               {languages.map((l) => (
                 <button
                   key={l.id}
                   onClick={() => changeLang(l.id)}
-                  className={`w-7 h-7 rounded-full flex items-center justify-center text-sm transition-all ${
+                  className={`w-7 h-7 rounded-full flex items-center justify-center transition-all overflow-hidden relative group ${
                     lang === l.id 
-                    ? 'bg-yellow-500/20 border border-yellow-500/50 scale-110 shadow-[0_0_10px_rgba(234,179,8,0.2)]' 
-                    : 'grayscale opacity-50 hover:grayscale-0 hover:opacity-100 hover:bg-white/10'
+                    ? 'ring-2 ring-yellow-500 scale-110 z-10' 
+                    : 'grayscale opacity-50 hover:grayscale-0 hover:opacity-100 hover:scale-105'
                   }`}
                 >
-                  <span className="leading-none mb-0.5">{l.flag}</span>
+                  <img src={l.flag} alt={l.id} className="w-full h-full object-cover" />
+                  {lang === l.id && (
+                    <div className="absolute inset-0 bg-yellow-500/10 shadow-[inset_0_0_8px_rgba(234,179,8,0.5)]"></div>
+                  )}
                 </button>
               ))}
             </div>
@@ -136,13 +139,13 @@ export default function Header() {
                     changeLang(l.id);
                     setIsMobileMenuOpen(false);
                   }}
-                  className={`w-10 h-10 rounded-full flex items-center justify-center text-xl transition-all ${
+                  className={`w-12 h-12 rounded-full flex items-center justify-center transition-all overflow-hidden border-2 ${
                     lang === l.id 
-                    ? 'bg-yellow-500/20 border-2 border-yellow-500/50 scale-110' 
-                    : 'bg-white/5 border border-white/10 grayscale opacity-50'
+                    ? 'border-yellow-500 scale-110' 
+                    : 'border-white/10 grayscale opacity-50'
                   }`}
                 >
-                  {l.flag}
+                  <img src={l.flag} alt={l.id} className="w-full h-full object-cover" />
                 </button>
               ))}
             </div>
