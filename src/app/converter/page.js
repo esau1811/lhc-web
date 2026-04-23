@@ -1,13 +1,16 @@
 'use client';
 
 import { useState, useRef, useCallback } from 'react';
-import { useSession } from 'next-auth/react';
+import { useSession, signIn } from 'next-auth/react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { useLang } from '@/components/LangProvider';
 import { WEAPON_CATEGORIES, detectWeaponFromFilenames } from '@/lib/weapons';
 import JSZip from 'jszip';
 import { extractFilenames, extractFromFilename } from '@/lib/rpfParser';
+import GlassCard from '@/components/GlassCard';
+import { motion } from 'framer-motion';
+import { Upload, FileText, ArrowRight, ShieldAlert, Download, Lock } from 'lucide-react';
 
 export default function ConverterPage() {
   const { data: session, status } = useSession();
@@ -65,7 +68,6 @@ export default function ConverterPage() {
         allNames = fileArray.map(f => f.name);
       }
       
-      // Auto detect target weapon
       const filenameHints = fileArray.flatMap(f => extractFromFilename(f.name));
       const allFiles = [...allNames, ...filenameHints];
       const detected = detectWeaponFromFilenames(allFiles);
@@ -80,7 +82,7 @@ export default function ConverterPage() {
     } finally {
       setIsUploading(false);
     }
-  }, [t]);
+  }, []);
 
   const handleDrop = useCallback((e) => {
     e.preventDefault();
@@ -95,11 +97,8 @@ export default function ConverterPage() {
     setError('');
     setSuccessMessage('');
 
-    const BACKEND_URL = 'https://187.33.157.103.nip.io/api/WeaponConverter/convert';
-
     try {
       if (files.length === 1 && files[0].name.toLowerCase().endsWith('.rpf')) {
-        // ENVIAR AL SERVIDOR VPS
         const formData = new FormData();
         formData.append('file', files[0]);
         formData.append('sourceWeapon', sourceWeapon);
@@ -115,9 +114,8 @@ export default function ConverterPage() {
             throw new Error(errBody || response.statusText);
         }
 
-        const engineVersion = response.headers.get('X-Engine-Version') || '';
         const count = response.headers.get('X-Replacement-Count') || '0';
-        setSuccessMessage(`✓ Conversión completada — ${count} archivos empaquetados. Motor: ${engineVersion}`);
+        setSuccessMessage(`✓ Conversión completada — ${count} archivos procesados.`);
 
         const blob = await response.blob();
         const url = window.URL.createObjectURL(blob);
@@ -129,9 +127,7 @@ export default function ConverterPage() {
         document.body.removeChild(a);
         window.URL.revokeObjectURL(url);
       } else {
-        // LOOSE FILES METHOD (ZIP)
         const zip = new JSZip();
-        
         for (const f of files) {
           const lowerName = f.name.toLowerCase();
           let parsedName = f.name;
@@ -154,8 +150,7 @@ export default function ConverterPage() {
         window.URL.revokeObjectURL(url);
       }
     } catch (err) {
-      console.error(err);
-      setError((err.message || 'Error de conexión') + ' [v14]');
+      setError(err.message || 'Error de conexión');
     } finally {
       setIsConverting(false);
     }
@@ -174,193 +169,166 @@ export default function ConverterPage() {
 
   const isReady = files.length > 0 && sourceWeapon && targetWeapon && !isConverting;
 
-  // Auth gate
   if (status === 'loading') {
     return (
-      <>
-        <Header showBack title="lhcconverter" highlight="converter" />
-        <main className="page-container">
-          <div className="auth-gate">
-            <div className="spinner" style={{ width: 32, height: 32 }} />
-          </div>
-        </main>
-      </>
+      <div className="min-h-screen bg-[#050505] flex items-center justify-center">
+        <div className="w-10 h-10 border-4 border-yellow-500 border-t-transparent rounded-full animate-spin"></div>
+      </div>
     );
   }
 
   if (!session) {
     return (
-      <>
-        <Header showBack title="lhcconverter" highlight="converter" />
-        <main className="page-container">
-          <div className="auth-gate">
-            <div style={{ fontSize: 48 }}>🔒</div>
-            <h2>{t('login')}</h2>
-            <p>You need to log in with Discord to access the weapon converter.</p>
+      <div className="min-h-screen bg-[#050505]">
+        <Header />
+        <main className="max-w-7xl mx-auto px-6 pt-40 flex flex-col items-center text-center">
+          <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center mb-6">
+            <Lock className="text-zinc-600" size={32} />
           </div>
+          <h2 className="text-4xl font-black mb-4 tracking-tight">ACCESO RESTRINGIDO</h2>
+          <p className="text-zinc-500 max-w-md mb-8">Debes iniciar sesión con Discord para utilizar el conversor de armas.</p>
+          <button onClick={() => signIn('discord')} className="btn-pill btn-gold px-12">
+            Login con Discord
+          </button>
         </main>
-      </>
+      </div>
     );
   }
 
   return (
-    <>
-      <Header showBack title="lhcconverter" highlight="converter" />
-      <main className="page-container">
-        {/* Title */}
-        <div className="converter-header">
-          <h1>{t('weaponConverter')}</h1>
-          <p>{t('converterSubtitle')}</p>
+    <div className="min-h-screen">
+      <Header />
+      <main className="max-w-4xl mx-auto px-6 pt-32 pb-32">
+        
+        <div className="mb-12">
+          <h1 className="text-4xl font-black mb-2 tracking-tight flex items-center gap-4">
+            <span className="p-3 bg-yellow-500/10 rounded-xl"><Download className="text-yellow-500" /></span>
+            CONVERSOR DE ARMAS
+          </h1>
+          <p className="text-zinc-500 font-medium">Sube tu archivo .RPF o múltiples texturas para adaptarlas a otra arma.</p>
         </div>
 
-        {/* Step 1 - Upload */}
-        <div className="step-card" id="step-upload">
-          <div className="step-label">{t('step1')}</div>
-
-          {!fileInfo ? (
-            <div
-              className={`upload-zone ${dragOver ? 'drag-over' : ''}`}
-              onClick={() => fileInputRef.current?.click()}
-              onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
-              onDragLeave={() => setDragOver(false)}
-              onDrop={handleDrop}
-            >
-              <div className="upload-icon">📁</div>
-              <div className="upload-text">{t('dragDrop')} o Archivos Sueltos</div>
-              <div className="upload-subtext">Selecciona tu .RPF o múltiples archivos .ytd/.ydr listos para empaquetarse en ZIP.</div>
-              <input
-                ref={fileInputRef}
-                type="file"
-                multiple
-                accept=".rpf,.ytd,.ydr,.yft,.xml,.meta"
-                className="upload-input"
-                onChange={(e) => handleFiles(e.target.files)}
-              />
+        <div className="space-y-8">
+          
+          {/* STEP 1 */}
+          <GlassCard className="p-8">
+            <div className="flex items-center gap-3 mb-6">
+              <span className="bg-white/10 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold">1</span>
+              <h3 className="font-bold text-zinc-400 text-sm tracking-widest uppercase">SUBIR ARCHIVO</h3>
             </div>
-          ) : (
-            <>
-              <div className="file-info">
-                <div className="file-icon">📄</div>
-                <div className="file-details">
-                  <div className="file-name">{fileInfo.name}</div>
-                  <div className="file-size">{fileInfo.size}</div>
-                </div>
-                {isUploading ? (
-                  <div className="spinner" />
-                ) : (
-                  <button className="file-remove" onClick={removeFile} aria-label="Remove file">
-                    ✕
-                  </button>
-                )}
-              </div>
-              {detectedWeapon && (
-                <div className="weapon-detected">
-                  <span className="weapon-detected-icon">🔍</span>
-                  <span className="weapon-detected-label">{t('detectedWeapon')}</span>
-                  <span className="weapon-detected-name">{detectedWeapon.name}</span>
-                </div>
-              )}
-            </>
-          )}
 
-          {error && (
-            <div className="error-msg">
-              ⚠️ {error}
-            </div>
-          )}
-        </div>
-
-        {/* Step 2 - From / To */}
-        <div className="step-card" id="step-convert-to">
-          <div className="step-label">{t('step2')}</div>
-          <div className="convert-row">
-            <div className="convert-col">
-              <label>{t('from')}</label>
-              {detectedWeapon ? (
-                <div className="source-display auto-detected">
-                  <span>{detectedWeapon.name}</span>
-                  <span className="auto-badge">{t('auto')}</span>
-                </div>
-              ) : (
-                <select
-                  className="weapon-select"
-                  value={sourceWeapon}
-                  onChange={(e) => setSourceWeapon(e.target.value)}
-                  disabled={files.length === 0}
-                >
-                  <option value="">
-                    {files.length > 0 ? t('selectSource') : t('uploadFirst')}
-                  </option>
-                  {Object.entries(WEAPON_CATEGORIES).map(([catId, cat]) => (
-                    <optgroup key={catId} label={cat.label}>
-                      {cat.weapons.map((w) => (
-                        <option key={w.id} value={w.id}>
-                          {w.name}
-                        </option>
-                      ))}
-                    </optgroup>
-                  ))}
-                </select>
-              )}
-            </div>
-            <div className="convert-arrow">→</div>
-            <div className="convert-col">
-              <label>{t('to')}</label>
-              <select
-                className="weapon-select"
-                value={targetWeapon}
-                onChange={(e) => setTargetWeapon(e.target.value)}
-                disabled={files.length === 0}
+            {!fileInfo ? (
+              <div
+                className={`border-2 border-dashed rounded-2xl p-12 transition-all duration-300 flex flex-col items-center justify-center cursor-pointer ${
+                  dragOver ? 'border-yellow-500 bg-yellow-500/5' : 'border-white/10 hover:border-white/20 hover:bg-white/5'
+                }`}
+                onClick={() => fileInputRef.current?.click()}
+                onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+                onDragLeave={() => setDragOver(false)}
+                onDrop={handleDrop}
               >
-                <option value="">
-                  {files.length > 0 ? t('chooseDest') : t('uploadFirst')}
-                </option>
-                {Object.entries(WEAPON_CATEGORIES).map(([catId, cat]) => (
-                  <optgroup key={catId} label={cat.label}>
-                    {cat.weapons.map((w) => (
-                      <option key={w.id} value={w.id}>
-                        {w.name}
-                      </option>
-                    ))}
-                  </optgroup>
-                ))}
-              </select>
-            </div>
-          </div>
-        </div>
-
-        {/* Step 3 - Convert */}
-        <div className="step-card" id="step-convert">
-          <div className="step-label">{t('step3')}</div>
-          <button
-            className={`btn-convert ${isReady ? 'ready' : ''} ${isConverting ? 'loading' : ''}`}
-            onClick={handleConvert}
-            disabled={!isReady}
-          >
-            {isConverting ? (
-              <>
-                <span className="spinner" />
-                {t('converting')}
-              </>
+                <Upload size={40} className="text-zinc-600 mb-4" />
+                <p className="font-bold text-lg mb-1">Arrastra tus archivos aquí</p>
+                <p className="text-zinc-500 text-sm">Soporta .RPF, .YTD, .YDR y más</p>
+                <input ref={fileInputRef} type="file" multiple className="hidden" onChange={(e) => handleFiles(e.target.files)} />
+              </div>
             ) : (
-              t('convert')
+              <div className="bg-white/5 rounded-2xl p-6 border border-white/5 flex items-center gap-4">
+                <div className="p-3 bg-white/5 rounded-xl"><FileText className="text-yellow-500" /></div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-bold truncate">{fileInfo.name}</p>
+                  <p className="text-xs text-zinc-500">{fileInfo.size}</p>
+                </div>
+                <button onClick={removeFile} className="text-zinc-500 hover:text-white p-2">✕</button>
+              </div>
             )}
-          </button>
+          </GlassCard>
 
-          {successMessage && (
-            <div className="success-msg">
-              {successMessage}
+          {/* STEP 2 */}
+          <GlassCard className="p-8">
+            <div className="flex items-center gap-3 mb-6">
+              <span className="bg-white/10 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold">2</span>
+              <h3 className="font-bold text-zinc-400 text-sm tracking-widest uppercase">DEFINIR CONVERSIÓN</h3>
             </div>
-          )}
-        </div>
 
-        {/* Legal Banner */}
-        <div className="legal-banner">
-          <span className="legal-banner-icon">⚠️</span>
-          <p>{t('legalBanner')}</p>
+            <div className="flex flex-col md:flex-row items-center gap-6">
+              <div className="flex-1 w-full">
+                <label className="text-xs font-bold text-zinc-500 mb-2 block tracking-widest">ORIGEN</label>
+                <div className="bg-white/5 border border-white/10 rounded-xl px-4 py-3 font-bold">
+                  {detectedWeapon ? (
+                    <div className="flex justify-between items-center">
+                      <span>{detectedWeapon.name}</span>
+                      <span className="text-[10px] bg-yellow-500 text-black px-2 py-0.5 rounded">AUTO</span>
+                    </div>
+                  ) : (
+                    <select 
+                      className="bg-transparent w-full outline-none"
+                      value={sourceWeapon}
+                      onChange={(e) => setSourceWeapon(e.target.value)}
+                    >
+                      <option value="" disabled className="bg-black">Selecciona arma...</option>
+                      {Object.entries(WEAPON_CATEGORIES).map(([id, cat]) => (
+                        <optgroup key={id} label={cat.label} className="bg-black">
+                          {cat.weapons.map(w => <option key={w.id} value={w.id} className="bg-black">{w.name}</option>)}
+                        </optgroup>
+                      ))}
+                    </select>
+                  )}
+                </div>
+              </div>
+
+              <div className="p-2 bg-white/5 rounded-full text-zinc-600"><ArrowRight /></div>
+
+              <div className="flex-1 w-full">
+                <label className="text-xs font-bold text-zinc-500 mb-2 block tracking-widest">DESTINO</label>
+                <div className="bg-white/5 border border-white/10 rounded-xl px-4 py-3 font-bold">
+                  <select 
+                    className="bg-transparent w-full outline-none"
+                    value={targetWeapon}
+                    onChange={(e) => setTargetWeapon(e.target.value)}
+                  >
+                    <option value="" disabled className="bg-black">Convertir a...</option>
+                    {Object.entries(WEAPON_CATEGORIES).map(([id, cat]) => (
+                      <optgroup key={id} label={cat.label} className="bg-black">
+                        {cat.weapons.map(w => <option key={w.id} value={w.id} className="bg-black">{w.name}</option>)}
+                      </optgroup>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            </div>
+          </GlassCard>
+
+          {/* STEP 3 */}
+          <GlassCard className="p-8">
+            <div className="flex items-center gap-3 mb-6">
+              <span className="bg-white/10 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold">3</span>
+              <h3 className="font-bold text-zinc-400 text-sm tracking-widest uppercase">EJECUTAR</h3>
+            </div>
+            
+            <button
+              onClick={handleConvert}
+              disabled={!isReady}
+              className={`w-full btn-pill py-4 text-lg ${isReady ? 'btn-gold' : 'bg-white/5 text-zinc-600 cursor-not-allowed border border-white/10'}`}
+            >
+              {isConverting ? <div className="w-5 h-5 border-2 border-black border-t-transparent rounded-full animate-spin"></div> : 'CONVERTIR Y DESCARGAR'}
+            </button>
+
+            {successMessage && <div className="mt-4 p-4 bg-green-500/10 border border-green-500/20 text-green-500 text-sm font-bold rounded-xl">{successMessage}</div>}
+            {error && <div className="mt-4 p-4 bg-red-500/10 border border-red-500/20 text-red-500 text-sm font-bold rounded-xl">{error}</div>}
+          </GlassCard>
+
+          <div className="p-6 bg-yellow-500/5 border border-yellow-500/10 rounded-2xl flex gap-4">
+            <ShieldAlert className="text-yellow-500 shrink-0" />
+            <p className="text-xs text-zinc-500 leading-relaxed font-medium">
+              Esta herramienta está diseñada para uso educativo y personal en entornos de desarrollo de FiveM. 
+              No apoyamos el uso de skins para obtener ventajas competitivas desleales.
+            </p>
+          </div>
+
         </div>
       </main>
-      <Footer highlight="converter" />
-    </>
+      <Footer />
+    </div>
   );
 }

@@ -5,6 +5,8 @@ import Footer from '@/components/Footer';
 import { useState } from 'react';
 import { Check, Shield, Zap, ShoppingCart } from 'lucide-react';
 import Link from 'next/link';
+import GlassCard from '@/components/GlassCard';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export default function PremiumPage() {
   const [activeTab, setActiveTab] = useState('OPTI');
@@ -31,68 +33,84 @@ export default function PremiumPage() {
   };
 
   return (
-    <>
+    <div className="min-h-screen">
       <Header />
-      <main className="new-layout-container" style={{ paddingTop: '80px', paddingBottom: '100px' }}>
-        <div style={{ textAlign: 'center', marginBottom: '60px' }}>
-          <h1 style={{ fontSize: '48px', fontWeight: '900', marginBottom: '20px' }}>SERVICIOS <span style={{ color: 'var(--accent-gold)' }}>LHC</span></h1>
-          <p style={{ color: 'var(--text-secondary)', maxWidth: '600px', margin: '0 auto', lineHeight: '1.6' }}>
-            Mejora tu rendimiento, consigue extras para tu cuenta o desbloquea herramientas profesionales de modding. 
-            Todo con soporte garantizado en nuestro Discord.
+      <main className="max-w-7xl mx-auto px-6 pt-32 pb-32">
+        
+        <div className="text-center mb-20">
+          <motion.h1 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="text-5xl md:text-7xl font-black mb-6 tracking-tighter"
+          >
+            SERVICIOS <span className="bg-clip-text text-transparent bg-gradient-to-r from-yellow-400 to-orange-500">LHC</span>
+          </motion.h1>
+          <p className="text-zinc-400 max-w-2xl mx-auto text-lg">
+            Mejora tu rendimiento, consigue extras para tu cuenta o desbloquea herramientas profesionales de modding.
           </p>
         </div>
 
-        <div style={{ display: 'flex', justifyContent: 'center', gap: '15px', marginBottom: '50px' }}>
+        <div className="flex flex-wrap justify-center gap-4 mb-16">
           {tabs.map(tab => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`btn-secondary ${activeTab === tab.id ? 'active' : ''}`}
-              style={{ 
-                borderRadius: '50px', 
-                padding: '12px 25px',
-                borderColor: activeTab === tab.id ? 'var(--accent-gold)' : 'var(--border-color)',
-                background: activeTab === tab.id ? 'rgba(255, 179, 0, 0.1)' : 'rgba(255,255,255,0.03)',
-                color: activeTab === tab.id ? 'var(--accent-gold)' : 'var(--text-secondary)'
-              }}
+              className={`btn-pill border ${
+                activeTab === tab.id 
+                ? 'bg-yellow-500/10 border-yellow-500 text-yellow-500' 
+                : 'bg-white/5 border-white/10 text-zinc-400 hover:text-white hover:bg-white/10'
+              }`}
             >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                {tab.icon} {tab.label}
-              </div>
+              {tab.icon} {tab.label}
             </button>
           ))}
         </div>
 
-        <div className="pricing-grid">
-          {services[activeTab].map((service, idx) => (
-            <div key={idx} className={`pricing-card ${service.popular ? 'popular' : ''}`}>
-              <div className="pricing-header">
-                <h3>{service.name}</h3>
-                <div className="pricing-price">{service.price}</div>
-              </div>
-              
-              <ul className="pricing-features">
-                {service.features.map((feat, fIdx) => (
-                  <li key={fIdx}>
-                    <Check size={16} className="check-icon" /> {feat}
-                  </li>
-                ))}
-              </ul>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <AnimatePresence mode="wait">
+            {services[activeTab].map((service, idx) => (
+              <motion.div
+                key={`${activeTab}-${idx}`}
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                transition={{ duration: 0.2, delay: idx * 0.1 }}
+              >
+                <GlassCard className={`p-8 h-full flex flex-col ${service.popular ? 'ring-1 ring-yellow-500/50' : ''}`}>
+                  {service.popular && (
+                    <div className="absolute top-4 right-4 bg-yellow-500 text-black text-[10px] font-black px-3 py-1 rounded-full">
+                      POPULAR
+                    </div>
+                  )}
+                  <div className="mb-8">
+                    <h3 className="text-zinc-400 font-bold text-xs tracking-widest uppercase mb-2">{service.name}</h3>
+                    <div className="text-5xl font-black">{service.price}</div>
+                  </div>
+                  
+                  <ul className="space-y-4 mb-12 flex-1">
+                    {service.features.map((feat, fIdx) => (
+                      <li key={fIdx} className="flex items-center gap-3 text-sm text-zinc-300">
+                        <Check size={16} className="text-yellow-500" /> {feat}
+                      </li>
+                    ))}
+                  </ul>
 
-              <a href="https://discord.gg/AS46Hlp2vO" target="_blank" rel="noopener noreferrer" className="btn-primary" style={{ width: '100%', justifyContent: 'center' }}>
-                Comprar / Contactar
-              </a>
-            </div>
-          ))}
+                  <a 
+                    href="https://discord.gg/AS46Hlp2vO" 
+                    target="_blank" 
+                    rel="noopener noreferrer" 
+                    className="btn-pill btn-gold w-full"
+                  >
+                    Comprar ahora
+                  </a>
+                </GlassCard>
+              </motion.div>
+            ))}
+          </AnimatePresence>
         </div>
 
-        <div style={{ textAlign: 'center', marginTop: '60px' }}>
-          <p style={{ color: 'var(--text-tertiary)', fontSize: '13px' }}>
-            LhcTools © 2024 · Discord · <Link href="/" style={{ textDecoration: 'underline' }}>Volver a herramientas</Link>
-          </p>
-        </div>
       </main>
       <Footer />
-    </>
+    </div>
   );
 }

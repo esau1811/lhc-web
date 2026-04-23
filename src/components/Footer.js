@@ -2,16 +2,22 @@
 
 import Link from 'next/link';
 
-export default function Footer({ highlight = 'tools' }) {
+export default function Footer() {
   return (
-    <footer className="footer">
-      lhc<span>{highlight}</span> © {new Date().getFullYear()}
-      <span className="separator">·</span>
-      <a href="https://discord.gg/AS46Hlp2vO" target="_blank" rel="noopener noreferrer">
-        Discord
-      </a>
-      <span className="separator">·</span>
-      <Link href="/">← Back to tools</Link>
+    <footer className="max-w-7xl mx-auto px-6 py-12 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-6">
+      <div className="flex items-center gap-2">
+        <img src="/logo.png" className="h-6 w-auto opacity-50" />
+        <p className="text-sm text-zinc-500 font-medium">
+          LHC <span className="text-yellow-500/50">PRO</span> © {new Date().getFullYear()}
+        </p>
+      </div>
+      
+      <div className="flex items-center gap-8 text-xs font-bold text-zinc-500 tracking-widest uppercase">
+        <a href="https://discord.gg/AS46Hlp2vO" className="hover:text-white transition-colors">Discord</a>
+        <Link href="/premium" className="hover:text-white transition-colors">Servicios</Link>
+        <Link href="/converter" className="hover:text-white transition-colors">Converter</Link>
+        <a href="#" className="hover:text-white transition-colors">Términos</a>
+      </div>
     </footer>
   );
 }
