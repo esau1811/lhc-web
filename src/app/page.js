@@ -94,7 +94,7 @@ export default function HomePage() {
           <div className="flex items-center gap-4 mb-12">
             <img src="/opti_v2.png" alt="Opti" className="w-20 h-20 object-contain ai-icon-blend" />
             <div>
-              <h2 className="text-3xl font-bold">⚡ SERVICIOS OPTI</h2>
+              <h2 className="text-3xl font-bold uppercase tracking-tight">SERVICIOS OPTI</h2>
               <p className="text-zinc-500">Máximo rendimiento garantizado para tu PC.</p>
             </div>
             <div className="ml-auto">
@@ -110,7 +110,7 @@ export default function HomePage() {
                     <h3 className="text-zinc-400 font-bold text-xs tracking-widest uppercase mb-1">OPTI {plan.name}</h3>
                     <div className="text-4xl font-black">{plan.price}</div>
                   </div>
-                  <img src="/opti_v2.png" alt="Opti" className="w-16 h-16 ai-icon-blend opacity-20 group-hover:opacity-100 group-hover:scale-110 transition-all duration-500" />
+                  <img src="/opti_v2.png" alt="Opti" className="w-16 h-16 ai-icon-blend opacity-20 group-hover:opacity-100 group-hover:scale-110 group-hover:rotate-3 transition-all duration-500" />
                 </div>
                 <ul className="space-y-4 mb-10 flex-1">
                   {plan.features.map((feat, fidx) => (
@@ -158,7 +158,7 @@ export default function HomePage() {
                     <h3 className="text-xl font-bold">NITRO BOOST</h3>
                     <span className="bg-purple-600 text-[10px] w-fit px-2 py-0.5 rounded-full font-black mt-1">LEGAL</span>
                   </div>
-                  <img src="/nitro_v2.png" alt="Nitro" className="w-16 h-16 ai-icon-blend nitro-glow group-hover:scale-110 transition-all duration-500" />
+                  <img src="/nitro_v2.png" alt="Nitro" className="w-16 h-16 ai-icon-blend nitro-glow group-hover:scale-110 group-hover:rotate-6 transition-all duration-500" />
                 </div>
                 <p className="text-zinc-500 text-xs mb-6">2 Boosts y streaming 4K con la máxima calidad garantizada.</p>
                 <div className="bg-white/5 px-4 py-3 rounded-xl border border-white/5 inline-block mb-6">
