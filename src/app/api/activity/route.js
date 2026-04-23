@@ -1,34 +1,33 @@
 import { NextResponse } from 'next/server';
+import { kv } from '@vercel/kv';
 
-// Better global state pattern for Next.js
-const getGlobalActivity = () => {
-  if (!global.recentActivity) {
-    global.recentActivity = [
-      { name: 'LHCConverter', action: 'Actualizado v2.1.4', time: 'Hace 2h', icon: '/icon_conv.png', isUser: false },
-      { name: 'LHCSound', action: 'Nueva biblioteca', time: 'Hace 4h', icon: '/icon_sound.png', isUser: false },
-      { name: 'LHCResolution', action: 'Perfil agregado', time: 'Hace 6h', icon: '/icon_res.png', isUser: false },
-    ];
-  }
-  return global.recentActivity;
-};
+// Fallback memory store for when KV is not configured
+const memoryActivity = [
+  { name: 'LHCConverter', action: 'Actualizado v2.1.4', time: 'Hace 2h', icon: '/icon_conv.png', isUser: false },
+  { name: 'LHCSound', action: 'Nueva biblioteca', time: 'Hace 4h', icon: '/icon_sound.png', isUser: false },
+  { name: 'LHCResolution', action: 'Perfil agregado', time: 'Hace 6h', icon: '/icon_res.png', isUser: false },
+];
+
+const ACTIVITY_KEY = 'lhc_recent_activity';
 
 export async function GET() {
-  return NextResponse.json(getGlobalActivity());
+  try {
+    // Try to get from Vercel KV
+    const kvActivity = await kv.get(ACTIVITY_KEY);
+    if (kvActivity) return NextResponse.json(kvActivity);
+  } catch (e) {
+    console.warn('KV not configured, using memory fallback');
+  }
+  
+  // Fallback to global memory if KV fails or is not set
+  if (!global.recentActivity) global.recentActivity = [...memoryActivity];
+  return NextResponse.json(global.recentActivity);
 }
 
 export async function POST(req) {
   try {
     const { user } = await req.json();
-    const activity = getGlobalActivity();
-    
-    if (!user || !user.name) {
-      return NextResponse.json({ error: 'Missing user' }, { status: 400 });
-    }
-
-    // Avoid duplicates if the same user is already at the top
-    if (activity[0]?.name === user.name && activity[0]?.isUser) {
-      return NextResponse.json(activity);
-    }
+    if (!user || !user.name) return NextResponse.json({ error: 'Missing user' }, { status: 400 });
 
     const newEntry = {
       name: user.name.split(' ')[0],
@@ -39,10 +38,32 @@ export async function POST(req) {
       timestamp: Date.now()
     };
 
-    // Add to top and keep only last 5
-    global.recentActivity = [newEntry, ...activity.filter(a => a.name !== user.name)].slice(0, 5);
+    let currentActivity = [];
+    let usingKV = false;
 
-    return NextResponse.json(global.recentActivity);
+    try {
+      const kvActivity = await kv.get(ACTIVITY_KEY);
+      currentActivity = kvActivity || [...(global.recentActivity || memoryActivity)];
+      usingKV = true;
+    } catch (e) {
+      currentActivity = global.recentActivity || [...memoryActivity];
+    }
+
+    // Avoid duplicates
+    if (currentActivity[0]?.name === user.name && currentActivity[0]?.isUser) {
+      return NextResponse.json(currentActivity);
+    }
+
+    const updatedActivity = [newEntry, ...currentActivity.filter(a => a.name !== user.name)].slice(0, 5);
+
+    if (usingKV) {
+      try {
+        await kv.set(ACTIVITY_KEY, updatedActivity);
+      } catch (e) { console.error('Failed to set KV'); }
+    }
+    
+    global.recentActivity = updatedActivity;
+    return NextResponse.json(updatedActivity);
   } catch (error) {
     return NextResponse.json({ error: 'Failed to update activity' }, { status: 500 });
   }
