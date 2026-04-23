@@ -104,27 +104,27 @@ export default function HomePage() {
         <section className="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-10">
           
           {/* MAIN HERO CARD */}
-          <div className="lg:col-span-9 relative overflow-hidden rounded-3xl bg-gradient-to-br from-zinc-900 to-black border border-white/5 p-12 min-h-[500px] flex items-center">
+          <div className="lg:col-span-9 relative overflow-hidden rounded-3xl bg-gradient-to-br from-zinc-900 to-black border border-white/5 p-6 md:p-12 min-h-[400px] md:min-h-[500px] flex items-center">
             {/* Background Glow */}
-            <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-yellow-500/10 blur-[120px] rounded-full -mr-40 -mt-40"></div>
+            <div className="absolute top-0 right-0 w-[300px] md:w-[600px] h-[300px] md:h-[600px] bg-yellow-500/10 blur-[80px] md:blur-[120px] rounded-full -mr-20 md:-mr-40 -mt-20 md:-mt-40"></div>
             
-            <div className="relative z-10 max-w-xl pb-24">
+            <div className="relative z-10 w-full md:max-w-xl pb-16 md:pb-24">
               <motion.h1 
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="text-7xl font-black mb-6 leading-[0.9] tracking-tighter"
+                className="text-4xl md:text-7xl font-black mb-6 leading-[0.9] tracking-tighter"
               >
                 ELEVA TU <br />
                 <span className="text-yellow-500">EXPERIENCIA</span>
               </motion.h1>
-              <p className="text-zinc-400 text-lg mb-10 max-w-md font-medium leading-relaxed">
+              <p className="text-zinc-400 text-sm md:text-lg mb-8 md:text-lg mb-10 max-w-md font-medium leading-relaxed">
                 Herramientas premium para jugadores que buscan más. Optimiza, personaliza y domina tu entorno de juego.
               </p>
-              <div className="flex flex-wrap gap-4">
-                <Link href="/converter" className="btn-pill btn-gold px-8 py-4 text-sm font-black flex items-center gap-2">
+              <div className="flex flex-col sm:flex-row gap-4">
+                <Link href="/converter" className="btn-pill btn-gold px-8 py-4 text-xs md:text-sm font-black flex items-center justify-center gap-2">
                   <Rocket size={18} /> Explorar Herramientas
                 </Link>
-                <Link href="/premium" className="btn-pill bg-white/5 border border-white/10 hover:bg-white/10 px-8 py-4 text-sm font-black flex items-center gap-2">
+                <Link href="/premium" className="btn-pill bg-white/5 border border-white/10 hover:bg-white/10 px-8 py-4 text-xs md:text-sm font-black flex items-center justify-center gap-2">
                   <Crown size={18} /> Ver Beneficios Premium
                 </Link>
               </div>
@@ -132,34 +132,34 @@ export default function HomePage() {
 
 
             {/* Stats Bar Integrated in Hero */}
-            <div className="absolute bottom-4 left-12 flex gap-8 items-center">
+            <div className="absolute bottom-4 left-6 md:left-12 flex flex-wrap md:flex-nowrap gap-4 md:gap-8 items-center bg-black/40 backdrop-blur-md md:bg-transparent p-4 md:p-0 rounded-2xl md:rounded-none border border-white/5 md:border-none">
               <div className="flex flex-col">
-                <span className="text-xl font-black text-white">10K+</span>
-                <span className="text-[10px] uppercase tracking-widest text-zinc-500 font-bold">Usuarios Activos</span>
+                <span className="text-sm md:text-xl font-black text-white">10K+</span>
+                <span className="text-[8px] md:text-[10px] uppercase tracking-widest text-zinc-500 font-bold">Usuarios</span>
               </div>
-              <div className="w-[1px] h-8 bg-white/10"></div>
+              <div className="hidden md:block w-[1px] h-8 bg-white/10"></div>
               <div className="flex flex-col">
-                <span className="text-xl font-black text-orange-500">4+</span>
-                <span className="text-[10px] uppercase tracking-widest text-zinc-500 font-bold">Tools</span>
+                <span className="text-sm md:text-xl font-black text-orange-500">4+</span>
+                <span className="text-[8px] md:text-[10px] uppercase tracking-widest text-zinc-500 font-bold">Tools</span>
               </div>
-              <div className="w-[1px] h-8 bg-white/10"></div>
+              <div className="hidden md:block w-[1px] h-8 bg-white/10"></div>
               <div className="flex flex-col">
-                <span className="text-xl font-black text-white">99.9%</span>
-                <span className="text-[10px] uppercase tracking-widest text-zinc-500 font-bold">Tiempo Activo</span>
+                <span className="text-sm md:text-xl font-black text-white">99.9%</span>
+                <span className="text-[8px] md:text-[10px] uppercase tracking-widest text-zinc-500 font-bold">Uptime</span>
               </div>
-              <div className="w-[1px] h-8 bg-white/10"></div>
+              <div className="hidden md:block w-[1px] h-8 bg-white/10"></div>
               <div className="flex flex-col">
-                <span className="text-xl font-black text-white">24/7</span>
-                <span className="text-[10px] uppercase tracking-widest text-zinc-500 font-bold">Soporte</span>
+                <span className="text-sm md:text-xl font-black text-white">24/7</span>
+                <span className="text-[8px] md:text-[10px] uppercase tracking-widest text-zinc-500 font-bold">Soporte</span>
               </div>
             </div>
           </div>
 
           {/* SIDE PREMIUM CARD */}
           <div className="lg:col-span-3 flex flex-col gap-6">
-            <GlassCard className="p-8 border-yellow-500/20 bg-yellow-500/5 flex-1 relative overflow-hidden flex flex-col justify-between">
+            <GlassCard className="p-6 md:p-8 border-yellow-500/20 bg-yellow-500/5 flex-1 relative overflow-hidden flex flex-col justify-between">
               <div className="absolute top-0 right-0 p-4 opacity-10">
-                <Crown size={80} />
+                <Crown size={60} md:size={80} />
               </div>
               
               <div>
@@ -167,14 +167,14 @@ export default function HomePage() {
                   <Crown size={16} className="text-yellow-500" />
                   <span className="text-[11px] font-black uppercase tracking-widest text-yellow-500">Premium</span>
                 </div>
-                <h3 className="text-2xl font-black mb-6">Desbloquea todo el potencial</h3>
-                <ul className="space-y-4 mb-8">
+                <h3 className="text-xl md:text-2xl font-black mb-4 md:mb-6">Desbloquea todo el potencial</h3>
+                <ul className="space-y-3 md:space-y-4 mb-6 md:mb-8">
                   {[
                     'Acceso a herramientas exclusivas',
                     'Actualizaciones prioritarias',
                     'Soporte VIP 24/7'
                   ].map((item, i) => (
-                    <li key={i} className="flex items-center gap-3 text-xs font-bold text-zinc-300">
+                    <li key={i} className="flex items-center gap-3 text-[10px] md:text-xs font-bold text-zinc-300">
                       <Check size={14} className="text-yellow-500" /> {item}
                     </li>
                   ))}
@@ -182,10 +182,10 @@ export default function HomePage() {
               </div>
 
               <div>
-                <Link href="/premium" className="w-full py-4 bg-yellow-500 text-black rounded-xl text-xs font-black flex items-center justify-center gap-2 hover:bg-yellow-400 transition-all shadow-[0_0_20px_rgba(234,179,8,0.3)]">
+                <Link href="/premium" className="w-full py-3 md:py-4 bg-yellow-500 text-black rounded-xl text-[10px] md:text-xs font-black flex items-center justify-center gap-2 hover:bg-yellow-400 transition-all shadow-[0_0_20px_rgba(234,179,8,0.3)]">
                   <Crown size={14} /> Mejorar a Premium
                 </Link>
-                <p className="text-center text-[10px] text-zinc-500 mt-4 font-bold uppercase tracking-tight">Desde $4.99/mes</p>
+                <p className="text-center text-[9px] md:text-[10px] text-zinc-500 mt-4 font-bold uppercase tracking-tight">Desde $4.99/mes</p>
               </div>
             </GlassCard>
           </div>
@@ -196,14 +196,14 @@ export default function HomePage() {
           
           {/* LEFT SIDEBAR: CATEGORIES */}
           <div className="lg:col-span-2 space-y-8">
-            <div>
-              <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500 mb-6 px-2">Categorías</h4>
-              <nav className="space-y-1">
+            <div className="overflow-x-auto pb-4 lg:pb-0 -mx-6 px-6 lg:mx-0 lg:px-0">
+              <h4 className="hidden lg:block text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500 mb-6 px-2">Categorías</h4>
+              <nav className="flex lg:flex-col gap-2 lg:gap-1 min-w-max lg:min-w-0">
                 {categories.map(cat => (
                   <button 
                     key={cat.name}
                     onClick={() => setActiveCategory(cat.name)}
-                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-[13px] font-bold transition-all ${
+                    className={`flex items-center gap-3 px-4 py-2 lg:py-3 rounded-xl text-[12px] md:text-[13px] font-bold transition-all whitespace-nowrap ${
                       activeCategory === cat.name ? 'bg-white/10 text-white' : 'text-zinc-500 hover:text-white hover:bg-white/5'
                     }`}
                   >
@@ -214,20 +214,22 @@ export default function HomePage() {
               </nav>
             </div>
 
-            <Link href="https://discord.gg/AS46Hlp2vO" className="flex items-center justify-between bg-[#5865F2] hover:bg-[#4752c4] p-4 rounded-2xl transition-all group relative">
-              <div className="flex items-center gap-3 relative z-10">
-                <div className="p-1">
-                  <svg width="32" height="32" viewBox="0 0 24 24" fill="white">
-                    <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515a.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0a12.64 12.64 0 0 0-.617-1.25a.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057a19.9 19.9 0 0 0 5.993 3.03a.078.078 0 0 0 .084-.028a14.09 14.09 0 0 0 1.226-1.994a.076.076 0 0 0-.041-.106a13.107 13.107 0 0 1-1.872-.892a.077.077 0 0 1-.008-.128a10.2 10.2 0 0 0 .372-.292a.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127a12.299 12.299 0 0 1-1.873.892a.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028a19.839 19.839 0 0 0 6.002-3.03a.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419c0-1.333.955-2.419 2.157-2.419c1.21 0 2.176 1.096 2.157 2.419c0 1.334-.947 2.419-2.157 2.419zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419c0-1.333.955-2.419 2.157-2.419c1.21 0 2.176 1.096 2.157 2.419c0 1.334-.946 2.419-2.157 2.419z"/>
-                  </svg>
+            <div className="hidden lg:block">
+              <Link href="https://discord.gg/AS46Hlp2vO" className="flex items-center justify-between bg-[#5865F2] hover:bg-[#4752c4] p-4 rounded-2xl transition-all group relative">
+                <div className="flex items-center gap-3 relative z-10">
+                  <div className="p-1">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="white">
+                      <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515a.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0a12.64 12.64 0 0 0-.617-1.25a.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057a19.9 19.9 0 0 0 5.993 3.03a.078.078 0 0 0 .084-.028a14.09 14.09 0 0 0 1.226-1.994a.076.076 0 0 0-.041-.106a13.107 13.107 0 0 1-1.872-.892a.077.077 0 0 1-.008-.128a10.2 10.2 0 0 0 .372-.292a.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127a12.299 12.299 0 0 1-1.873.892a.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028a19.839 19.839 0 0 0 6.002-3.03a.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419c0-1.333.955-2.419 2.157-2.419c1.21 0 2.176 1.096 2.157 2.419c0 1.334-.947 2.419-2.157 2.419zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419c0-1.333.955-2.419 2.157-2.419c1.21 0 2.176 1.096 2.157 2.419c0 1.334-.946 2.419-2.157 2.419z"/>
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="text-[11px] font-black uppercase leading-none text-white">Únete a Discord</p>
+                    <p className="text-[9px] font-bold text-white/70">Comunidad activa</p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-[11px] font-black uppercase leading-none text-white">Únete a Discord</p>
-                  <p className="text-[9px] font-bold text-white/70">Comunidad activa</p>
-                </div>
-              </div>
-              <ChevronRight size={16} className="relative z-10 text-white group-hover:translate-x-1 transition-transform" />
-            </Link>
+                <ChevronRight size={16} className="relative z-10 text-white group-hover:translate-x-1 transition-transform" />
+              </Link>
+            </div>
           </div>
 
           {/* CENTER: DYNAMIC GRID */}
@@ -327,23 +329,41 @@ export default function HomePage() {
               )}
             </div>
 
+            {/* MOBILE DISCORD BUTTON */}
+            <div className="lg:hidden mt-8">
+              <Link href="https://discord.gg/AS46Hlp2vO" className="flex items-center justify-between bg-[#5865F2] p-6 rounded-3xl transition-all relative overflow-hidden">
+                <div className="flex items-center gap-4 relative z-10">
+                  <div className="bg-white/10 p-2 rounded-xl">
+                    <svg width="40" height="40" viewBox="0 0 24 24" fill="white">
+                      <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515a.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0a12.64 12.64 0 0 0-.617-1.25a.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057a19.9 19.9 0 0 0 5.993 3.03a.078.078 0 0 0 .084-.028a14.09 14.09 0 0 0 1.226-1.994a.076.076 0 0 0-.041-.106a13.107 13.107 0 0 1-1.872-.892a.077.077 0 0 1-.008-.128a10.2 10.2 0 0 0 .372-.292a.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127a12.299 12.299 0 0 1-1.873.892a.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028a19.839 19.839 0 0 0 6.002-3.03a.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419c0-1.333.955-2.419 2.157-2.419c1.21 0 2.176 1.096 2.157 2.419c0 1.334-.947 2.419-2.157 2.419zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419c0-1.333.955-2.419 2.157-2.419c1.21 0 2.176 1.096 2.157 2.419c0 1.334-.946 2.419-2.157 2.419z"/>
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="text-sm font-black uppercase leading-none text-white">Únete a nuestra comunidad</p>
+                    <p className="text-xs font-bold text-white/70 mt-1">Discord oficial de LHC</p>
+                  </div>
+                </div>
+                <ChevronRight size={24} className="relative z-10 text-white" />
+              </Link>
+            </div>
+
             {/* BOTTOM BANNER */}
-            <div className="mt-8 relative overflow-hidden rounded-3xl bg-gradient-to-r from-yellow-500/10 to-transparent border border-yellow-500/10 p-8 flex items-center justify-between group">
-              <div className="flex items-center gap-6">
+            <div className="mt-8 relative overflow-hidden rounded-3xl bg-gradient-to-br lg:bg-gradient-to-r from-yellow-500/10 to-transparent border border-yellow-500/10 p-6 md:p-8 flex flex-col lg:flex-row items-center justify-between gap-8 group">
+              <div className="flex flex-col md:flex-row items-center gap-6 text-center md:text-left">
                 <div className="bg-yellow-500/5 p-4 rounded-2xl text-yellow-500 border border-yellow-500/20 shadow-[0_0_30px_rgba(234,179,8,0.1)]">
                   <Trophy size={32} />
                 </div>
                 <div>
-                  <h4 className="text-xl font-black uppercase tracking-tight leading-none mb-2">Únete a miles de jugadores</h4>
-                  <p className="text-sm text-zinc-500 font-bold">Forma parte de la comunidad #1 en herramientas para gamers</p>
+                  <h4 className="text-lg md:text-xl font-black uppercase tracking-tight leading-none mb-2">Únete a miles de jugadores</h4>
+                  <p className="text-xs md:text-sm text-zinc-500 font-bold">Forma parte de la comunidad #1 en herramientas para gamers</p>
                 </div>
               </div>
-              <div className="flex items-center gap-6">
-                <div className="flex flex-col items-end">
+              <div className="flex items-center gap-8 w-full lg:w-auto justify-center lg:justify-end border-t lg:border-t-0 border-white/5 pt-6 lg:pt-0">
+                <div className="flex flex-col items-center lg:items-end">
                   <span className="text-xl font-black">10K+</span>
                   <span className="text-[10px] text-zinc-500 font-bold uppercase">Miembros</span>
                 </div>
-                <Link href="https://discord.gg/AS46Hlp2vO" className="bg-yellow-500 text-black px-6 py-3 rounded-xl text-xs font-black flex items-center gap-2 hover:bg-yellow-400 transition-all">
+                <Link href="https://discord.gg/AS46Hlp2vO" className="bg-yellow-500 text-black px-8 py-3 rounded-xl text-xs font-black flex items-center gap-2 hover:bg-yellow-400 transition-all">
                   Únete ahora <ArrowRight size={14} />
                 </Link>
               </div>
@@ -363,7 +383,7 @@ export default function HomePage() {
                       </div>
                     ) : (
                       <div className="w-10 h-10 bg-white/5 rounded-xl flex items-center justify-center p-2">
-                        <img src={act.icon} className="w-full h-full object-contain ai-icon-blend" />
+                        <img src={act.icon} className="w-full h-full object-contain ai-icon-blend opacity-40" />
                       </div>
                     )}
                     <div className="flex-1 min-w-0">
