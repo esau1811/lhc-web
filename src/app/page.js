@@ -158,7 +158,7 @@ export default function HomePage() {
                     <h3 className="text-xl font-bold">NITRO BOOST</h3>
                     <span className="bg-purple-600 text-[10px] w-fit px-2 py-0.5 rounded-full font-black mt-1">LEGAL</span>
                   </div>
-                  <img src="/nitro_v2.png" alt="Nitro" className="w-16 h-16 ai-icon-blend nitro-glow group-hover:scale-110 group-hover:rotate-6 transition-all duration-500" />
+                  <img src="/nitro_v2.png" alt="Nitro" className="w-16 h-16 ai-icon-blend nitro-glow opacity-20 group-hover:opacity-100 group-hover:scale-110 group-hover:rotate-6 transition-all duration-500" />
                 </div>
                 <p className="text-zinc-500 text-xs mb-6">2 Boosts y streaming 4K con la máxima calidad garantizada.</p>
                 <div className="bg-white/5 px-4 py-3 rounded-xl border border-white/5 inline-block mb-6">
@@ -174,7 +174,7 @@ export default function HomePage() {
               <div>
                 <div className="flex justify-between items-start mb-4">
                   <h3 className="text-xl font-bold">X14 BOOSTS</h3>
-                  <img src="/boost_v2.png" alt="Boost" className="w-16 h-16 ai-icon-blend boost-glow group-hover:rotate-12 group-hover:scale-110 transition-all duration-500" />
+                  <img src="/boost_v2.png" alt="Boost" className="w-16 h-16 ai-icon-blend boost-glow opacity-20 group-hover:opacity-100 group-hover:rotate-12 group-hover:scale-110 transition-all duration-500" />
                 </div>
                 <p className="text-zinc-500 text-xs mb-6">Sube tu servidor al nivel 3 instantáneamente con 14 boosts.</p>
                 <div className="bg-white/5 px-4 py-3 rounded-xl border border-white/5 inline-block mb-6">
