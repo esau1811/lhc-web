@@ -171,8 +171,7 @@ export default function HomePage() {
                   {[
                     'Acceso a herramientas exclusivas',
                     'Actualizaciones prioritarias',
-                    'Soporte VIP 24/7',
-                    'Sin anuncios'
+                    'Soporte VIP 24/7'
                   ].map((item, i) => (
                     <li key={i} className="flex items-center gap-3 text-xs font-bold text-zinc-300">
                       <Check size={14} className="text-yellow-500" /> {item}
