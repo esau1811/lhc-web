@@ -3,129 +3,94 @@
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { useState } from 'react';
-import { Check, Shield, Zap, Server } from 'lucide-react';
+import { Check, Shield, Zap, ShoppingCart } from 'lucide-react';
+import Link from 'next/link';
 
 export default function PremiumPage() {
   const [activeTab, setActiveTab] = useState('OPTI');
 
   const tabs = [
-    { id: 'OPTI', label: 'OPTIMIZACIÓN' },
-    { id: 'SHOP', label: 'TIENDA EXTRA' },
-    { id: 'PREMIUM', label: 'PREMIUM MODDING' }
+    { id: 'OPTI', label: 'OPTIMIZACIÓN', icon: <Zap size={16} /> },
+    { id: 'SHOP', label: 'TIENDA EXTRA', icon: <ShoppingCart size={16} /> },
+    { id: 'MODDING', label: 'PREMIUM MODDING', icon: <Shield size={16} /> },
   ];
 
-  const optiPlans = [
-    {
-      title: 'OPTI ESSENTIAL',
-      price: '7€',
-      features: ['Aumento de FPS', 'Optimización Windows', 'Configuración Nvidia', 'Soporte Básico'],
-      popular: false
-    },
-    {
-      title: 'OPTI ADVANCED',
-      price: '14€',
-      features: ['Aumento de FPS', 'Optimización Windows', 'Configuración Nvidia', 'Plan de energía optimizado', 'Soporte AMD'],
-      popular: true
-    },
-    {
-      title: 'OPTI PERFORMANCE',
-      price: '22€',
-      features: ['Aumento de FPS', 'Optimización Windows', 'Configuración Nvidia', 'Plan de energía optimizado', 'Soporte AMD', 'Ajustes de registro avanzados', 'Optimización de BIOS'],
-      popular: false
-    }
-  ];
-
-  const shopPlans = [
-    {
-      title: 'Nitro Basic',
-      price: '1.50€',
-      features: ['Insignia en perfil', 'Emojis personalizados', 'Fondos básicos'],
-      popular: false
-    },
-    {
-      title: 'Nitro Boost',
-      price: '4.30€',
-      features: ['Todo lo de Basic', '2 Mejoras de servidor', 'Calidad HD en streams', 'Subida 500MB', 'Legal 100%'],
-      popular: true
-    },
-    {
-      title: 'x14 Boost Server',
-      price: '4€',
-      features: ['Nivel 3 en servidor', 'URL Personalizada', 'Más emojis', 'Calidad de audio premium'],
-      popular: false
-    }
-  ];
-
-  const moddingPlans = [
-    {
-      title: 'Suscripción 1 Mes',
-      price: 'Consultar',
-      features: ['Acceso a RPF Converter', 'Soporte prioritario', 'Sin anuncios'],
-      popular: false
-    },
-    {
-      title: 'Suscripción 3 Meses',
-      price: 'Consultar',
-      features: ['Todo lo del mes', 'Ahorro del 15%', 'Acceso a betas', 'Rol especial en Discord'],
-      popular: true
-    },
-    {
-      title: 'Licencia Lifetime',
-      price: 'Consultar',
-      features: ['Pago único', 'Acceso de por vida', 'Herramientas privadas', 'Soporte 24/7 directo', 'Rol VIP en Discord'],
-      popular: false
-    }
-  ];
-
-  const renderPlans = (plans) => (
-    <div className="cards-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '32px', marginTop: '32px' }}>
-      {plans.map(plan => (
-        <div key={plan.title} className={`pricing-card ${plan.popular ? 'popular' : ''}`}>
-          <div className="pricing-header">
-            <h3>{plan.title}</h3>
-            <div className="pricing-price">{plan.price}</div>
-          </div>
-          <ul className="pricing-features">
-            {plan.features.map(f => (
-              <li key={f}><Check /> {f}</li>
-            ))}
-          </ul>
-          <a href="https://discord.gg/AS46Hlp2vO" target="_blank" rel="noopener noreferrer" className={plan.popular ? 'btn-primary' : 'btn-secondary'} style={{ justifyContent: 'center' }}>
-            Comprar / Contactar
-          </a>
-        </div>
-      ))}
-    </div>
-  );
+  const services = {
+    OPTI: [
+      { name: 'OPTI ESSENTIAL', price: '7€', features: ['Aumento de FPS', 'Optimización Windows', 'Configuración Nvidia', 'Soporte Básico'] },
+      { name: 'OPTI ADVANCED', price: '14€', features: ['Aumento de FPS', 'Optimización Windows', 'Configuración Nvidia', 'Plan de energía optimizado', 'Soporte AMD'], popular: true },
+      { name: 'OPTI PERFORMANCE', price: '22€', features: ['Aumento de FPS', 'Optimización Windows', 'Configuración Nvidia', 'Plan de energía optimizado', 'Soporte AMD', 'Ajustes de registro avanzados', 'Optimización de BIOS'] },
+    ],
+    SHOP: [
+      { name: 'PACK ARMAS GOLD', price: '10€', features: ['10 armas exclusivas', 'Texturas 4K', 'Sonidos realistas', 'Instalación fácil'] },
+      { name: 'CLOTHING PACK', price: '15€', features: ['50 prendas nuevas', 'E-girl & E-boy styles', 'Optimizado para FiveM'] },
+    ],
+    MODDING: [
+      { name: 'CURSO CONVERSIÓN', price: '30€', features: ['Aprende desde cero', 'Acceso a herramientas pro', 'Soporte 1 a 1', 'Certificado LHC'] },
+    ]
+  };
 
   return (
     <>
       <Header />
-      <main className="new-layout-container" style={{ paddingTop: '64px', paddingBottom: '64px' }}>
-        <div style={{ textAlign: 'center', marginBottom: '48px' }}>
-          <h1 className="hero-new-title" style={{ fontSize: '42px', marginBottom: '16px' }}>SERVICIOS <span>LHC</span></h1>
-          <p className="hero-new-desc" style={{ margin: '0 auto', maxWidth: '600px' }}>
-            Mejora tu rendimiento, consigue extras para tu cuenta o desbloquea herramientas profesionales de modding. Todo con soporte garantizado en nuestro Discord.
+      <main className="new-layout-container" style={{ paddingTop: '80px', paddingBottom: '100px' }}>
+        <div style={{ textAlign: 'center', marginBottom: '60px' }}>
+          <h1 style={{ fontSize: '48px', fontWeight: '900', marginBottom: '20px' }}>SERVICIOS <span style={{ color: 'var(--accent-gold)' }}>LHC</span></h1>
+          <p style={{ color: 'var(--text-secondary)', maxWidth: '600px', margin: '0 auto', lineHeight: '1.6' }}>
+            Mejora tu rendimiento, consigue extras para tu cuenta o desbloquea herramientas profesionales de modding. 
+            Todo con soporte garantizado en nuestro Discord.
           </p>
         </div>
 
-        <div style={{ display: 'flex', justifyContent: 'center', gap: '16px', marginBottom: '48px' }}>
+        <div style={{ display: 'flex', justifyContent: 'center', gap: '15px', marginBottom: '50px' }}>
           {tabs.map(tab => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={activeTab === tab.id ? 'btn-primary' : 'btn-secondary'}
-              style={{ padding: '8px 24px', borderRadius: '100px' }}
+              className={`btn-secondary ${activeTab === tab.id ? 'active' : ''}`}
+              style={{ 
+                borderRadius: '50px', 
+                padding: '12px 25px',
+                borderColor: activeTab === tab.id ? 'var(--accent-gold)' : 'var(--border-color)',
+                background: activeTab === tab.id ? 'rgba(255, 179, 0, 0.1)' : 'rgba(255,255,255,0.03)',
+                color: activeTab === tab.id ? 'var(--accent-gold)' : 'var(--text-secondary)'
+              }}
             >
-              {tab.label}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                {tab.icon} {tab.label}
+              </div>
             </button>
           ))}
         </div>
 
-        {activeTab === 'OPTI' && renderPlans(optiPlans)}
-        {activeTab === 'SHOP' && renderPlans(shopPlans)}
-        {activeTab === 'PREMIUM' && renderPlans(moddingPlans)}
+        <div className="pricing-grid">
+          {services[activeTab].map((service, idx) => (
+            <div key={idx} className={`pricing-card ${service.popular ? 'popular' : ''}`}>
+              <div className="pricing-header">
+                <h3>{service.name}</h3>
+                <div className="pricing-price">{service.price}</div>
+              </div>
+              
+              <ul className="pricing-features">
+                {service.features.map((feat, fIdx) => (
+                  <li key={fIdx}>
+                    <Check size={16} className="check-icon" /> {feat}
+                  </li>
+                ))}
+              </ul>
 
+              <a href="https://discord.gg/AS46Hlp2vO" target="_blank" rel="noopener noreferrer" className="btn-primary" style={{ width: '100%', justifyContent: 'center' }}>
+                Comprar / Contactar
+              </a>
+            </div>
+          ))}
+        </div>
+
+        <div style={{ textAlign: 'center', marginTop: '60px' }}>
+          <p style={{ color: 'var(--text-tertiary)', fontSize: '13px' }}>
+            LhcTools © 2024 · Discord · <Link href="/" style={{ textDecoration: 'underline' }}>Volver a herramientas</Link>
+          </p>
+        </div>
       </main>
       <Footer />
     </>

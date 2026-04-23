@@ -8,21 +8,21 @@ import { Check } from 'lucide-react';
 
 export default function HomePage() {
   const [activeTab, setActiveTab] = useState('Todas');
-  const [toast, setToast] = useState(null);
-  const [discordStats, setDiscordStats] = useState({ total: '10K+', online: '99.9%' });
+  const [discordStats, setDiscordStats] = useState({ total: '12.4K+', online: '2.1K+' });
 
   useEffect(() => {
+    // Try to fetch real stats, but keep the nice defaults if it fails
     fetch('https://discord.com/api/v9/invites/AS46Hlp2vO?with_counts=true')
       .then(res => res.json())
       .then(data => {
         if (data && data.approximate_member_count) {
           setDiscordStats({
             total: (data.approximate_member_count / 1000).toFixed(1) + 'K+',
-            online: data.approximate_presence_count
+            online: (data.approximate_presence_count / 1000).toFixed(1) + 'K+'
           });
         }
       })
-      .catch(err => console.log('Error fetching discord stats', err));
+      .catch(err => console.log('Discord stats fetch prevented by CORS or error, using defaults'));
   }, []);
 
   const categories = [
@@ -58,7 +58,10 @@ export default function HomePage() {
           <div className="hero-content-wrapper">
             <div className="hero-left-col">
               <h1 className="hero-new-title">ELEVA TU<br/><span>EXPERIENCIA</span></h1>
-              <p className="hero-new-desc">Herramientas premium para jugadores que<br/>buscan más. Optimiza, personaliza y domina.</p>
+              <p className="hero-new-desc">
+                Herramientas premium para jugadores que buscan más. 
+                Optimiza, personaliza y domina con el mejor software de modding.
+              </p>
               
               <div className="hero-new-buttons">
                 <Link href="#tools" className="btn-primary">
@@ -71,19 +74,19 @@ export default function HomePage() {
 
               <div className="hero-stats">
                 <div className="stat-item">
-                  <div className="stat-item-value">👥 {discordStats.total}</div>
+                  <div className="stat-item-value">{discordStats.total}</div>
                   <div className="stat-item-label">Usuarios Activos</div>
                 </div>
                 <div className="stat-item">
-                  <div className="stat-item-value">🛠️ 25+</div>
+                  <div className="stat-item-value">25+</div>
                   <div className="stat-item-label">Herramientas</div>
                 </div>
                 <div className="stat-item">
-                  <div className="stat-item-value">⚡ 99.9%</div>
+                  <div className="stat-item-value">99.9%</div>
                   <div className="stat-item-label">Tiempo Activo</div>
                 </div>
                 <div className="stat-item">
-                  <div className="stat-item-value">🎧 24/7</div>
+                  <div className="stat-item-value">24/7</div>
                   <div className="stat-item-label">Soporte</div>
                 </div>
               </div>
@@ -116,8 +119,8 @@ export default function HomePage() {
           
           {/* LEFT SIDEBAR */}
           <aside className="left-sidebar">
+            <div className="sidebar-title">CATEGORÍAS</div>
             <div className="sidebar-menu">
-              <div className="sidebar-title">CATEGORÍAS</div>
               {categories.map(cat => (
                 <div 
                   key={cat.id} 
@@ -137,14 +140,13 @@ export default function HomePage() {
                 <div className="discord-title">ÚNETE A DISCORD</div>
                 <div className="discord-subtitle">Comunidad activa</div>
               </div>
-              <div className="discord-arrow">›</div>
             </a>
           </aside>
 
           {/* CENTER CONTENT */}
           <div className="content-area">
             <div className="content-header">
-              <div className="content-title">⚡ HERRAMIENTAS DESTACADAS</div>
+              <div className="content-title">⚡ Herramientas Destacadas</div>
               <Link href="#" className="view-all">Ver todas →</Link>
             </div>
             
@@ -152,15 +154,13 @@ export default function HomePage() {
               {filteredTools.map(tool => (
                 <Link href={tool.href} key={tool.id} className="new-tool-card">
                   <div className="new-tool-card-header">
-                    <div className="new-tool-icon" style={tool.id === 'converter' ? {color: '#2ecc71', textShadow: '0 0 15px rgba(46,204,113,0.5)'} : tool.id === 'sound' ? {color: '#9b59b6', textShadow: '0 0 15px rgba(155,89,182,0.5)'} : tool.id === 'resolution' ? {color: '#3498db', textShadow: '0 0 15px rgba(52,152,219,0.5)'} : {color: '#f1c40f', textShadow: '0 0 15px rgba(241,196,15,0.5)'}}>
+                    <div className="new-tool-icon">
                       {tool.icon}
                     </div>
                     <div className={`new-tool-badge badge-${tool.badgeColor}`}>{tool.badge}</div>
                   </div>
-                  <div className="new-tool-content">
-                    <h3 className="new-tool-title">{tool.title}</h3>
-                    <p className="new-tool-desc">{tool.desc}</p>
-                  </div>
+                  <h3 className="new-tool-title">{tool.title}</h3>
+                  <p className="new-tool-desc">{tool.desc}</p>
                   <div className="new-tool-footer">
                     <span>👥 {tool.users}</span>
                     <span style={{ color: 'var(--accent-gold)' }}>★ {tool.rating}</span>
@@ -170,26 +170,26 @@ export default function HomePage() {
             </div>
 
             <div className="community-banner">
-              <div className="community-banner-left">
-                <div className="banner-trophy">🏆</div>
-                <div className="banner-content">
-                  <h3>ÚNETE A MILES DE JUGADORES</h3>
-                  <p>Forma parte de la comunidad #1 en herramientas para gamers</p>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '25px' }}>
+                <div style={{ fontSize: '40px' }}>🏆</div>
+                <div>
+                  <h3 style={{ fontSize: '18px', fontWeight: '800', marginBottom: '5px' }}>ÚNETE A MILES DE JUGADORES</h3>
+                  <p style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>Forma parte de la comunidad #1 en herramientas para gamers</p>
                 </div>
               </div>
-              <div className="banner-right">
+              <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
                 <div className="members-avatars">
-                  <img src="https://i.pravatar.cc/100?img=1" alt="user" />
-                  <img src="https://i.pravatar.cc/100?img=2" alt="user" />
-                  <img src="https://i.pravatar.cc/100?img=3" alt="user" />
-                  <img src="https://i.pravatar.cc/100?img=4" alt="user" />
+                  <img src="https://i.pravatar.cc/100?img=11" alt="user" />
+                  <img src="https://i.pravatar.cc/100?img=12" alt="user" />
+                  <img src="https://i.pravatar.cc/100?img=13" alt="user" />
+                  <img src="https://i.pravatar.cc/100?img=14" alt="user" />
                 </div>
                 <div className="members-count">
                   {discordStats.total}
                   <span>Miembros activos</span>
                 </div>
-                <a href="https://discord.gg/AS46Hlp2vO" target="_blank" rel="noopener noreferrer" className="btn-primary" style={{ padding: '8px 20px', borderRadius: '8px' }}>
-                  Únete ahora →
+                <a href="https://discord.gg/AS46Hlp2vO" target="_blank" rel="noopener noreferrer" className="btn-primary" style={{ padding: '10px 20px' }}>
+                  Únete ahora
                 </a>
               </div>
             </div>
@@ -197,50 +197,30 @@ export default function HomePage() {
 
           {/* RIGHT SIDEBAR */}
           <aside className="right-sidebar">
-            <div className="sidebar-title" style={{ paddingLeft: 0, marginBottom: '16px' }}>ACTIVIDAD RECIENTE</div>
+            <div className="sidebar-title">ACTIVIDAD RECIENTE</div>
             
             <div className="activity-list">
-              <div className="activity-item">
-                <div className="activity-icon" style={{color: '#2ecc71'}}>🔫</div>
-                <div className="activity-content">
-                  <div className="activity-title">LHCConverter</div>
-                  <div className="activity-desc">Actualizado v2.1.4</div>
+              {[
+                { icon: '🔫', title: 'LHCConverter', desc: 'Actualizado v2.1.4', time: '2h', color: '#2ecc71' },
+                { icon: '🎵', title: 'LHCSound', desc: 'Nueva biblioteca', time: '4h', color: '#9b59b6' },
+                { icon: '🖥️', title: 'LHCResolution', desc: 'Perfil agregado', time: '6h', color: '#3498db' },
+                { icon: '👤', title: 'Nuevo usuario', desc: 'Se unió a la comunidad', time: '8h', color: '#f1c40f' }
+              ].map((item, idx) => (
+                <div key={idx} className="activity-item">
+                  <div className="activity-icon" style={{ color: item.color }}>{item.icon}</div>
+                  <div className="activity-content">
+                    <div className="activity-title">{item.title}</div>
+                    <div className="activity-desc">{item.desc}</div>
+                  </div>
+                  <div className="activity-time">{item.time}</div>
                 </div>
-                <div className="activity-time">Hace 2h</div>
-              </div>
-              
-              <div className="activity-item">
-                <div className="activity-icon" style={{color: '#9b59b6'}}>🎵</div>
-                <div className="activity-content">
-                  <div className="activity-title">LHCSound</div>
-                  <div className="activity-desc">Nueva biblioteca</div>
-                </div>
-                <div className="activity-time">Hace 4h</div>
-              </div>
-              
-              <div className="activity-item">
-                <div className="activity-icon" style={{color: '#3498db'}}>🖥️</div>
-                <div className="activity-content">
-                  <div className="activity-title">LHCResolution</div>
-                  <div className="activity-desc">Perfil agregado</div>
-                </div>
-                <div className="activity-time">Hace 6h</div>
-              </div>
-
-              <div className="activity-item">
-                <div className="activity-icon" style={{color: '#f1c40f'}}>👤</div>
-                <div className="activity-content">
-                  <div className="activity-title">Nuevo usuario</div>
-                  <div className="activity-desc">Se unió a la comunidad</div>
-                </div>
-                <div className="activity-time">Hace 8h</div>
-              </div>
+              ))}
             </div>
 
             <div className="status-indicator">
               <div className="status-dot"></div>
               <div className="status-text">
-                TODOS LOS SISTEMAS<br/>
+                TODOS LOS SISTEMAS
                 <span>Operativo</span>
               </div>
             </div>
