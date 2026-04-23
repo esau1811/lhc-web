@@ -14,7 +14,6 @@ export default function PremiumPage() {
   const tabs = [
     { id: 'OPTI', label: 'OPTIMIZACIÓN', icon: <Zap size={16} /> },
     { id: 'SHOP', label: 'TIENDA EXTRA', icon: <ShoppingCart size={16} /> },
-    { id: 'MODDING', label: 'PREMIUM MODDING', icon: <Shield size={16} /> },
   ];
 
   const services = {
@@ -26,9 +25,6 @@ export default function PremiumPage() {
     SHOP: [
       { name: 'PACK ARMAS GOLD', price: '10€', features: ['10 armas exclusivas', 'Texturas 4K', 'Sonidos realistas', 'Instalación fácil'] },
       { name: 'CLOTHING PACK', price: '15€', features: ['50 prendas nuevas', 'E-girl & E-boy styles', 'Optimizado para FiveM'] },
-    ],
-    MODDING: [
-      { name: 'CURSO CONVERSIÓN', price: '30€', features: ['Aprende desde cero', 'Acceso a herramientas pro', 'Soporte 1 a 1', 'Certificado LHC'] },
     ]
   };
 
