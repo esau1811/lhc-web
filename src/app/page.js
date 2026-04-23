@@ -25,7 +25,7 @@ export default function HomePage() {
       })
       .catch(err => {
         console.error('Discord fetch error', err);
-        setDiscordStats({ total: '1.5K', online: '450' });
+        setDiscordStats({ total: '100', online: '30' }); // Realistic fallback
       });
   }, []);
 

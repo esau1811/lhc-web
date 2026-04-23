@@ -19,6 +19,6 @@ export async function GET() {
     });
   } catch (error) {
     console.error('Discord API Error:', error);
-    return NextResponse.json({ total: 1500, online: 450 }, { status: 200 }); // Fallback to realistic numbers
+    return NextResponse.json({ total: 100, online: 30 }, { status: 200 }); // Fallback to realistic numbers
   }
 }
