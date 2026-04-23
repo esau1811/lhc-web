@@ -125,7 +125,7 @@ function PremiumContent() {
                   </ul>
 
                   <a 
-                    href="https://discord.gg/AS46Hlp2vO" 
+                    href="https://discord.gg/lhcds" 
                     target="_blank" 
                     rel="noopener noreferrer" 
                     className="btn-pill btn-gold w-full"
