@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import GlassCard from '@/components/GlassCard';
-import { Check, Rocket, Shield, Zap, ShoppingBag } from 'lucide-react';
+import { Check, Rocket, Shield, Zap, ShoppingBag, Crown } from 'lucide-react';
 
 export default function HomePage() {
   const [discordStats, setDiscordStats] = useState({ total: '...', online: '...' });
@@ -63,8 +63,8 @@ export default function HomePage() {
               <Link href="/converter" className="btn-pill btn-gold text-lg">
                 <Rocket size={20} /> Explorar Herramientas
               </Link>
-              <Link href="/premium" className="btn-pill bg-white/5 border border-white/10 hover:bg-white/10 text-lg">
-                👑 Ver Planes Premium
+              <Link href="/premium" className="btn-pill bg-white/5 border border-white/10 hover:bg-white/10 text-lg flex items-center gap-2">
+                <Crown size={20} className="text-yellow-500" /> Ver Planes Premium
               </Link>
             </div>
 
