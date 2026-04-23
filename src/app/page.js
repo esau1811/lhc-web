@@ -82,7 +82,7 @@ export default function HomePage() {
                 <span className="text-xs uppercase tracking-widest text-zinc-500 font-bold">En Línea</span>
               </div>
               <div className="flex flex-col items-center">
-                <span className="text-4xl font-black text-orange-500">25+</span>
+                <span className="text-4xl font-black text-orange-500">4</span>
                 <span className="text-xs uppercase tracking-widest text-zinc-500 font-bold">Tools</span>
               </div>
             </div>
