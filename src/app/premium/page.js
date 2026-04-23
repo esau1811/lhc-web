@@ -17,6 +17,18 @@ function PremiumContent() {
     const tab = searchParams.get('tab');
     if (tab && (tab === 'OPTI' || tab === 'SHOP')) {
       setActiveTab(tab);
+      
+      // Manual scroll after tab switch
+      setTimeout(() => {
+        const hash = window.location.hash;
+        if (hash) {
+          const id = hash.replace('#', '');
+          const element = document.getElementById(id);
+          if (element) {
+            element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }
+        }
+      }, 100);
     }
   }, [searchParams]);
 
