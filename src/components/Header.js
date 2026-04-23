@@ -15,9 +15,9 @@ export default function Header() {
   const navLinks = [
     { name: 'Inicio', path: '/' },
     { name: 'Herramientas', path: '/converter' },
-    { name: 'Comunidad', path: 'https://discord.gg/AS46Hlp2vO' },
+    { name: 'Comunidad', path: 'https://discord.gg/lhcds' },
     { name: 'Premium', path: '/premium' },
-    { name: 'Soporte', path: 'https://discord.gg/AS46Hlp2vO' },
+    { name: 'Soporte', path: 'https://discord.gg/lhcds' },
   ];
 
   return (

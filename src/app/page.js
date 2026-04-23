@@ -216,7 +216,7 @@ export default function HomePage() {
             </div>
 
             <div className="hidden lg:block">
-              <Link href="https://discord.gg/AS46Hlp2vO" className="flex items-center justify-between bg-[#5865F2] hover:bg-[#4752c4] p-4 rounded-2xl transition-all group relative">
+              <Link href="https://discord.gg/lhcds" className="flex items-center justify-between bg-[#5865F2] hover:bg-[#4752c4] p-4 rounded-2xl transition-all group relative">
                 <div className="flex items-center gap-3 relative z-10">
                   <div className="p-1">
                     <svg width="32" height="32" viewBox="0 0 24 24" fill="white">
@@ -325,14 +325,14 @@ export default function HomePage() {
                   <User size={40} className="mx-auto text-zinc-700 mb-4" />
                   <h4 className="text-lg font-black mb-2">Comunidad LHC</h4>
                   <p className="text-zinc-500 text-sm mb-6">Únete a nuestro Discord para herramientas comunitarias exclusivas.</p>
-                  <Link href="https://discord.gg/AS46Hlp2vO" className="btn-pill btn-gold inline-flex px-8">Unirse al Discord</Link>
+                  <Link href="https://discord.gg/lhcds" className="btn-pill btn-gold inline-flex px-8">Unirse al Discord</Link>
                 </div>
               )}
             </div>
 
             {/* MOBILE DISCORD BUTTON */}
             <div className="lg:hidden mt-8">
-              <Link href="https://discord.gg/AS46Hlp2vO" className="flex items-center justify-between bg-[#5865F2] p-6 rounded-3xl transition-all relative overflow-hidden">
+              <Link href="https://discord.gg/lhcds" className="flex items-center justify-between bg-[#5865F2] p-6 rounded-3xl transition-all relative overflow-hidden">
                 <div className="flex items-center gap-4 relative z-10">
                   <div className="bg-white/10 p-2 rounded-xl">
                     <svg width="40" height="40" viewBox="0 0 24 24" fill="white">
@@ -364,7 +364,7 @@ export default function HomePage() {
                   <span className="text-xl font-black">10K+</span>
                   <span className="text-[10px] text-zinc-500 font-bold uppercase">Miembros</span>
                 </div>
-                <Link href="https://discord.gg/AS46Hlp2vO" className="bg-yellow-500 text-black px-8 py-3 rounded-xl text-xs font-black flex items-center gap-2 hover:bg-yellow-400 transition-all">
+                <Link href="https://discord.gg/lhcds" className="bg-yellow-500 text-black px-8 py-3 rounded-xl text-xs font-black flex items-center gap-2 hover:bg-yellow-400 transition-all">
                   Únete ahora <ArrowRight size={14} />
                 </Link>
               </div>
