@@ -1,4 +1,5 @@
 'use client';
+// Refresh trigger for redeploy
 
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
