@@ -66,7 +66,7 @@ export default function HomePage() {
 
   const featuredTools = [
     { 
-      id: 'conv',
+      id: 'converter',
       category: 'Todas',
       name: t('converterTitle'), 
       desc: t('converterDesc'), 
@@ -75,7 +75,8 @@ export default function HomePage() {
       badgeColor: 'bg-green-500',
       glowClass: 'green-glow',
       users: '5.2K',
-      rating: '4.8'
+      rating: '4.8',
+      link: '/converter'
     },
     { 
       id: 'sound',
@@ -83,11 +84,12 @@ export default function HomePage() {
       name: t('soundTitle'), 
       desc: t('soundDesc'), 
       icon: '/icon_sound.png', 
-      badge: t('soon'), 
-      badgeColor: 'bg-purple-500',
+      badge: t('free'), 
+      badgeColor: 'bg-green-500',
       glowClass: 'nitro-glow',
       users: '3.1K',
-      rating: '4.6'
+      rating: '4.6',
+      link: '/sound'
     },
     { 
       id: 'res',
@@ -99,7 +101,8 @@ export default function HomePage() {
       badgeColor: 'bg-blue-500',
       glowClass: 'blue-glow',
       users: '2.8K',
-      rating: '4.9'
+      rating: '4.9',
+      link: '/resolution'
     },
     { 
       id: 'train',
@@ -111,7 +114,8 @@ export default function HomePage() {
       badgeColor: 'bg-yellow-500',
       glowClass: 'opti-glow',
       users: '1.5K',
-      rating: '4.7'
+      rating: '4.7',
+      link: '/premium?tab=OPTI'
     },
   ];
 
@@ -276,7 +280,7 @@ export default function HomePage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* ALL TOOLS */}
               {activeCategory === 'Todas' && featuredTools.map((tool, idx) => (
-                <Link key={idx} href={tool.id === 'conv' ? '/converter' : '/premium'}>
+                <Link key={idx} href={tool.link}>
                   <GlassCard className="p-6 group cursor-pointer hover:border-white/10 transition-all h-full">
                     <div className="flex justify-between items-start mb-6">
                       <div className="p-3 bg-white/5 rounded-2xl group-hover:scale-110 transition-transform">
