@@ -3,19 +3,21 @@
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { useState, useEffect, Suspense } from 'react';
-import { Check, Shield, Zap, ShoppingCart } from 'lucide-react';
+import { Check, Shield, Zap, ShoppingCart, Crown } from 'lucide-react';
 import Link from 'next/link';
 import GlassCard from '@/components/GlassCard';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSearchParams } from 'next/navigation';
+import { useLang } from '@/components/LangProvider';
 
 function PremiumContent() {
+  const { t } = useLang();
   const searchParams = useSearchParams();
-  const [activeTab, setActiveTab] = useState('OPTI');
+  const [activeTab, setActiveTab] = useState('WEB');
 
   useEffect(() => {
     const tab = searchParams.get('tab');
-    if (tab && (tab === 'OPTI' || tab === 'SHOP')) {
+    if (tab && (tab === 'OPTI' || tab === 'SHOP' || tab === 'WEB')) {
       setActiveTab(tab);
       
       // Manual scroll after tab switch
@@ -33,11 +35,29 @@ function PremiumContent() {
   }, [searchParams]);
 
   const tabs = [
-    { id: 'OPTI', label: 'OPTIMIZACIÓN', icon: <Zap size={16} /> },
-    { id: 'SHOP', label: 'TIENDA EXTRA', icon: <ShoppingCart size={16} /> },
+    { id: 'WEB', label: t('cat_web'), icon: <Crown size={16} /> },
+    { id: 'OPTI', label: t('cat_opti'), icon: <Zap size={16} /> },
+    { id: 'SHOP', label: t('cat_tienda'), icon: <ShoppingCart size={16} /> },
   ];
 
   const services = {
+    WEB: [
+      { 
+        name: t('web_full_title'), 
+        price: t('price_6'), 
+        features: [t('web_full_desc'), ...t('web_features')], 
+        popular: true,
+        icon: '/logo.png',
+        glow: 'opti-glow'
+      },
+      { 
+        name: t('partner_web_title'), 
+        price: t('price_15'), 
+        features: [t('partner_web_desc'), ...t('partner_features')],
+        icon: '/logo.png',
+        glow: 'nitro-glow'
+      },
+    ],
     OPTI: [
       { name: 'OPTI ESSENTIAL', price: '7€', features: ['Aumento de FPS', 'Optimización Windows', 'Configuración Nvidia', 'Soporte Básico'] },
       { name: 'OPTI ADVANCED', price: '14€', features: ['Aumento de FPS', 'Optimización Windows', 'Configuración Nvidia', 'Plan de energía optimizado', 'Soporte AMD'], popular: true },
@@ -59,12 +79,12 @@ function PremiumContent() {
           <motion.h1 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="text-5xl md:text-7xl font-black mb-6 tracking-tighter"
+            className="text-5xl md:text-7xl font-black mb-6 tracking-tighter uppercase"
           >
-            SERVICIOS <span className="bg-clip-text text-transparent bg-gradient-to-r from-yellow-400 to-orange-500">LHC</span>
+            {t('nav_premium')} <span className="bg-clip-text text-transparent bg-gradient-to-r from-yellow-400 to-orange-500">LHC</span>
           </motion.h1>
           <p className="text-zinc-400 max-w-2xl mx-auto text-lg">
-            Mejora tu rendimiento, consigue extras para tu cuenta o desbloquea herramientas profesionales de modding.
+            {t('bio')}
           </p>
         </div>
 
@@ -95,6 +115,7 @@ function PremiumContent() {
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.95 }}
                 transition={{ duration: 0.2, delay: idx * 0.1 }}
+                className={services[activeTab].length === 2 ? (idx === 0 ? 'md:col-start-1' : 'md:col-start-2') : ''}
               >
                 <GlassCard className={`p-8 h-full flex flex-col group ${service.popular ? 'ring-1 ring-yellow-500/50' : ''}`}>
                   {service.popular && (
@@ -108,10 +129,10 @@ function PremiumContent() {
                       <div className="text-5xl font-black">{service.price}</div>
                     </div>
                     <img 
-                      src={activeTab === 'OPTI' ? '/opti_v2.png' : (service.name.includes('BOOSTS') ? '/boost_v2.png' : '/nitro_v2.png')} 
+                      src={service.icon || (activeTab === 'OPTI' ? '/opti_v2.png' : (service.name.includes('BOOSTS') ? '/boost_v2.png' : '/nitro_v2.png'))} 
                       alt="Icon" 
                       className={`w-20 h-20 object-contain ai-icon-blend opacity-20 group-hover:opacity-100 group-hover:rotate-6 transition-all duration-500 ${
-                        activeTab === 'SHOP' ? (service.name.includes('BOOSTS') ? 'boost-glow' : 'nitro-glow') : 'opti-glow'
+                        service.glow || (activeTab === 'SHOP' ? (service.name.includes('BOOSTS') ? 'boost-glow' : 'nitro-glow') : 'opti-glow')
                       }`} 
                     />
                   </div>
@@ -130,7 +151,7 @@ function PremiumContent() {
                     rel="noopener noreferrer" 
                     className="btn-pill btn-gold w-full"
                   >
-                    Comprar ahora
+                    {t('unete_ahora')}
                   </a>
                 </GlassCard>
               </motion.div>

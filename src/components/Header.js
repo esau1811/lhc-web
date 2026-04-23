@@ -76,7 +76,7 @@ export default function Header() {
           </div>
 
           <div className="flex items-center gap-4">
-            <Link href="/premium" className="hidden md:flex items-center gap-2 bg-yellow-500/5 border border-yellow-500/20 px-4 py-2 rounded-lg text-[11px] font-black text-yellow-500 hover:bg-yellow-500/10 transition-all">
+            <Link href="/premium?tab=WEB" className="hidden md:flex items-center gap-2 bg-yellow-500/5 border border-yellow-500/20 px-4 py-2 rounded-lg text-[11px] font-black text-yellow-500 hover:bg-yellow-500/10 transition-all">
               <Crown size={14} /> {t('hazte_premium')}
             </Link>
             
@@ -154,7 +154,7 @@ export default function Header() {
           <div className="h-[1px] bg-white/10 my-4"></div>
           
           <Link 
-            href="/premium" 
+            href="/premium?tab=WEB" 
             onClick={() => setIsMobileMenuOpen(false)}
             className="flex items-center justify-between bg-yellow-500 text-black p-4 rounded-2xl font-black uppercase text-sm"
           >

@@ -152,7 +152,7 @@ export default function HomePage() {
                 <Link href="/converter" className="btn-pill btn-gold px-8 py-4 text-xs md:text-sm font-black flex items-center justify-center gap-2">
                   <Rocket size={18} /> {t('explorar_herramientas')}
                 </Link>
-                <Link href="/premium" className="btn-pill bg-white/5 border border-white/10 hover:bg-white/10 px-8 py-4 text-xs md:text-sm font-black flex items-center justify-center gap-2">
+                <Link href="/premium?tab=WEB" className="btn-pill bg-white/5 border border-white/10 hover:bg-white/10 px-8 py-4 text-xs md:text-sm font-black flex items-center justify-center gap-2">
                   <Crown size={18} /> {t('ver_beneficios')}
                 </Link>
               </div>
@@ -211,7 +211,7 @@ export default function HomePage() {
               </div>
 
               <div>
-                <Link href="/premium" className="w-full py-3 md:py-4 bg-yellow-500 text-black rounded-xl text-[10px] md:text-xs font-black flex items-center justify-center gap-2 hover:bg-yellow-400 transition-all shadow-[0_0_20px_rgba(234,179,8,0.3)]">
+                <Link href="/premium?tab=WEB" className="w-full py-3 md:py-4 bg-yellow-500 text-black rounded-xl text-[10px] md:text-xs font-black flex items-center justify-center gap-2 hover:bg-yellow-400 transition-all shadow-[0_0_20px_rgba(234,179,8,0.3)]">
                   <Crown size={14} /> {t('mejora_premium')}
                 </Link>
                 <p className="text-center text-[9px] md:text-[10px] text-zinc-500 mt-4 font-bold uppercase tracking-tight">{t('desde')} $4.99/mes</p>
