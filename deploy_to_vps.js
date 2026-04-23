@@ -13,7 +13,8 @@ const packageJsonContent = JSON.stringify({
   dependencies: {
     "cors": "^2.8.5",
     "express": "^4.19.2",
-    "multer": "^1.4.5-lts.1"
+    "multer": "^1.4.5-lts.1",
+    "adm-zip": "^0.5.12"
   }
 });
 
