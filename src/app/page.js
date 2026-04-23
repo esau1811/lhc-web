@@ -113,7 +113,7 @@ export default function HomePage() {
                     </li>
                   ))}
                 </ul>
-                <Link href="/premium?tab=OPTI#content" className="btn-pill btn-gold w-full text-sm text-center">
+                <Link href={`/premium?tab=OPTI#opti-${idx}`} className="btn-pill btn-gold w-full text-sm text-center">
                   Comprar ahora
                 </Link>
               </GlassCard>
@@ -139,7 +139,7 @@ export default function HomePage() {
                   <span className="text-2xl font-black">1.50€</span>
                 </div>
               </div>
-              <Link href="/premium?tab=SHOP#content" className="btn-pill bg-zinc-800 hover:bg-zinc-700 w-full text-sm text-center">
+              <Link href="/premium?tab=SHOP#shop-0" className="btn-pill bg-zinc-800 hover:bg-zinc-700 w-full text-sm text-center">
                 Comprar
               </Link>
             </GlassCard>
@@ -155,7 +155,7 @@ export default function HomePage() {
                   <span className="text-2xl font-black text-purple-400">4.30€</span>
                 </div>
               </div>
-              <Link href="/premium?tab=SHOP#content" className="btn-pill bg-purple-600 hover:bg-purple-500 w-full text-sm text-center">
+              <Link href="/premium?tab=SHOP#shop-2" className="btn-pill bg-purple-600 hover:bg-purple-500 w-full text-sm text-center">
                 Comprar ahora
               </Link>
             </GlassCard>
@@ -168,7 +168,7 @@ export default function HomePage() {
                   <span className="text-2xl font-black text-pink-400">4€</span>
                 </div>
               </div>
-              <Link href="/premium?tab=SHOP#content" className="btn-pill bg-pink-600 hover:bg-pink-500 w-full text-sm text-center">
+              <Link href="/premium?tab=SHOP#shop-1" className="btn-pill bg-pink-600 hover:bg-pink-500 w-full text-sm text-center">
                 Comprar
               </Link>
             </GlassCard>

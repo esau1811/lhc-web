@@ -77,6 +77,7 @@ function PremiumContent() {
             {services[activeTab].map((service, idx) => (
               <motion.div
                 key={`${activeTab}-${idx}`}
+                id={`${activeTab.toLowerCase()}-${idx}`}
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.95 }}
