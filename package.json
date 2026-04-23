@@ -8,6 +8,7 @@
     "start": "next start"
   },
   "dependencies": {
+    "@vercel/analytics": "^2.0.1",
     "adm-zip": "^0.5.17",
     "formidable": "^3.5.4",
     "framer-motion": "^12.38.0",
