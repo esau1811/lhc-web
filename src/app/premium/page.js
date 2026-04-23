@@ -72,7 +72,7 @@ function PremiumContent() {
           ))}
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div id="content" className="grid grid-cols-1 md:grid-cols-3 gap-8">
           <AnimatePresence mode="wait">
             {services[activeTab].map((service, idx) => (
               <motion.div
