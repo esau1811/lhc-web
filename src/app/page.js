@@ -8,6 +8,7 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import GlassCard from '@/components/GlassCard';
 import { useLang } from '@/components/LangProvider';
+import { useSession } from 'next-auth/react';
 import { 
   Check, Rocket, Shield, Zap, ShoppingBag, Crown, 
   LayoutGrid, Settings, User, MessageSquare, ExternalLink,
@@ -16,8 +17,33 @@ import {
 
 export default function HomePage() {
   const { t, lang } = useLang();
-  const [discordStats, setDiscordStats] = useState({ total: '10K+', online: '31' });
+  const { data: session } = useSession();
+  const [discordStats, setDiscordStats] = useState({ total: '600+', online: '150+' });
+  const [serverBoosts, setServerBoosts] = useState('35');
   const [activeCategory, setActiveCategory] = useState('Todas');
+
+  useEffect(() => {
+    const fetchDiscordStats = async () => {
+      try {
+        const res = await fetch('https://discord.com/api/v9/invites/lhcds?with_counts=true');
+        const data = await res.json();
+        if (data.approximate_member_count) {
+          setDiscordStats({
+            total: `${data.approximate_member_count}`,
+            online: `${data.approximate_presence_count}`
+          });
+          if (data.guild?.premium_subscription_count) {
+            setServerBoosts(data.guild.premium_subscription_count.toString());
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching discord stats:', error);
+      }
+    };
+    fetchDiscordStats();
+    const interval = setInterval(fetchDiscordStats, 60000); // Update every minute
+    return () => clearInterval(interval);
+  }, []);
 
   const categories = [
     { name: 'Todas', displayName: t('cat_todas'), icon: LayoutGrid },
@@ -35,7 +61,7 @@ export default function HomePage() {
   const shopPlans = [
     { name: 'NITRO BASIC', price: '1.50€', desc: t('nitro_basic_desc') || 'Insignia y emojis globales.', icon: '/nitro_v2.png', glow: 'nitro-glow' },
     { name: 'NITRO BOOST', price: '4.30€', desc: t('nitro_boost_desc') || '2 Boosts y streaming 4K.', icon: '/nitro_v2.png', glow: 'nitro-glow' },
-    { name: 'X14 BOOSTS', price: '4€', desc: t('boost_desc') || 'Sube tu servidor al nivel 3.', icon: '/boost_v2.png', glow: 'boost-glow' },
+    { name: `X${serverBoosts} BOOSTS`, price: '4€', desc: t('boost_desc') || 'Sube tu servidor al nivel 3.', icon: '/boost_v2.png', glow: 'boost-glow' },
   ];
 
   const featuredTools = [
@@ -90,10 +116,10 @@ export default function HomePage() {
   ];
 
   const recentActivity = [
+    ...(session ? [{ name: session.user.name.split(' ')[0], action: t('act_joined') || 'Se unió a la comunidad', time: 'Ahora', isUser: true, image: session.user.image }] : []),
     { name: 'LHCConverter', action: t('act_updated') || 'Actualizado v2.1.4', time: t('time_2h') || 'Hace 2h', icon: '/icon_conv.png' },
     { name: 'LHCSound', action: t('act_new_lib') || 'Nueva biblioteca', time: t('time_4h') || 'Hace 4h', icon: '/icon_sound.png' },
     { name: 'LHCResolution', action: t('act_profile') || 'Perfil agregado', time: t('time_6h') || 'Hace 6h', icon: '/icon_res.png' },
-    { name: t('new_user') || 'Nuevo usuario', action: t('act_joined') || 'Se unió a la comunidad', time: t('time_8h') || 'Hace 8h', isUser: true },
   ];
 
   return (
@@ -136,13 +162,13 @@ export default function HomePage() {
             {/* Stats Bar Integrated in Hero */}
             <div className="absolute bottom-4 left-6 md:left-12 flex flex-wrap md:flex-nowrap gap-4 md:gap-8 items-center bg-black/40 backdrop-blur-md md:bg-transparent p-4 md:p-0 rounded-2xl md:rounded-none border border-white/5 md:border-none">
               <div className="flex flex-col">
-                <span className="text-sm md:text-xl font-black text-white">10K+</span>
+                <span className="text-sm md:text-xl font-black text-white">{discordStats.total}</span>
                 <span className="text-[8px] md:text-[10px] uppercase tracking-widest text-zinc-500 font-bold">{t('usuarios')}</span>
               </div>
               <div className="hidden md:block w-[1px] h-8 bg-white/10"></div>
               <div className="flex flex-col">
-                <span className="text-sm md:text-xl font-black text-orange-500">4+</span>
-                <span className="text-[8px] md:text-[10px] uppercase tracking-widest text-zinc-500 font-bold">Tools</span>
+                <span className="text-sm md:text-xl font-black text-orange-500">{discordStats.online}</span>
+                <span className="text-[8px] md:text-[10px] uppercase tracking-widest text-zinc-500 font-bold">Online</span>
               </div>
               <div className="hidden md:block w-[1px] h-8 bg-white/10"></div>
               <div className="flex flex-col">
@@ -362,10 +388,10 @@ export default function HomePage() {
                 </div>
               </div>
               <div className="flex items-center gap-8 w-full lg:w-auto justify-center lg:justify-end border-t lg:border-t-0 border-white/5 pt-6 lg:pt-0">
-                <div className="flex flex-col items-center lg:items-end">
-                  <span className="text-xl font-black">10K+</span>
-                  <span className="text-[10px] text-zinc-500 font-bold uppercase">{t('miembros')}</span>
-                </div>
+              <div className="flex flex-col items-center lg:items-end">
+                <span className="text-xl font-black">{discordStats.total}</span>
+                <span className="text-[10px] text-zinc-500 font-bold uppercase">{t('miembros')}</span>
+              </div>
                 <Link href="https://discord.gg/lhcds" className="bg-yellow-500 text-black px-8 py-3 rounded-xl text-xs font-black flex items-center gap-2 hover:bg-yellow-400 transition-all">
                   {t('unete_ahora')} <ArrowRight size={14} />
                 </Link>
@@ -380,15 +406,15 @@ export default function HomePage() {
               <div className="space-y-6">
                 {recentActivity.map((act, i) => (
                   <div key={i} className="flex items-center gap-4">
-                    {act.isUser ? (
-                      <div className="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center">
-                        <User size={18} className="text-zinc-400" />
-                      </div>
-                    ) : (
-                      <div className="w-10 h-10 bg-white/5 rounded-xl flex items-center justify-center p-2">
-                        <img src={act.icon} className="w-full h-full object-contain ai-icon-blend opacity-40" />
-                      </div>
-                    )}
+                    <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center overflow-hidden">
+                      {act.isUser ? (
+                        <img src={act.image || "/logo.png"} className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="p-2">
+                          <img src={act.icon} className="w-full h-full object-contain ai-icon-blend opacity-40" />
+                        </div>
+                      )}
+                    </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-[12px] font-black truncate">{act.name}</p>
                       <p className="text-[10px] text-zinc-500 font-bold truncate">{act.action}</p>
