@@ -96,15 +96,22 @@ function PremiumContent() {
                 exit={{ opacity: 0, scale: 0.95 }}
                 transition={{ duration: 0.2, delay: idx * 0.1 }}
               >
-                <GlassCard className={`p-8 h-full flex flex-col ${service.popular ? 'ring-1 ring-yellow-500/50' : ''}`}>
+                <GlassCard className={`p-8 h-full flex flex-col group ${service.popular ? 'ring-1 ring-yellow-500/50' : ''}`}>
                   {service.popular && (
                     <div className="absolute top-4 right-4 bg-yellow-500 text-black text-[10px] font-black px-3 py-1 rounded-full">
                       POPULAR
                     </div>
                   )}
-                  <div className="mb-8">
-                    <h3 className="text-zinc-400 font-bold text-xs tracking-widest uppercase mb-2">{service.name}</h3>
-                    <div className="text-5xl font-black">{service.price}</div>
+                  <div className="mb-8 flex justify-between items-start">
+                    <div>
+                      <h3 className="text-zinc-400 font-bold text-xs tracking-widest uppercase mb-2">{service.name}</h3>
+                      <div className="text-5xl font-black">{service.price}</div>
+                    </div>
+                    <img 
+                      src={activeTab === 'OPTI' ? '/opti_icon.png' : (service.name.includes('BOOSTS') ? '/boost_icon.png' : '/nitro_icon.png')} 
+                      alt="Icon" 
+                      className="w-16 h-16 object-contain opacity-40 group-hover:opacity-100 transition-opacity" 
+                    />
                   </div>
                   
                   <ul className="space-y-4 mb-12 flex-1">
