@@ -92,7 +92,7 @@ export default function HomePage() {
         {/* OPTIMIZATION GRID */}
         <section className="mb-32">
           <div className="flex items-center gap-4 mb-12">
-            <img src="/opti_v2.png" alt="Opti" className="w-20 h-20 object-contain ai-icon-blend" />
+            <img src="/opti_v2.png" alt="Opti" className="w-20 h-20 object-contain ai-icon-blend opti-glow" />
             <div>
               <h2 className="text-3xl font-bold uppercase tracking-tight">SERVICIOS OPTI</h2>
               <p className="text-zinc-500">Máximo rendimiento garantizado para tu PC.</p>
@@ -110,7 +110,7 @@ export default function HomePage() {
                     <h3 className="text-zinc-400 font-bold text-xs tracking-widest uppercase mb-1">OPTI {plan.name}</h3>
                     <div className="text-4xl font-black">{plan.price}</div>
                   </div>
-                  <img src="/opti_v2.png" alt="Opti" className="w-16 h-16 ai-icon-blend opacity-20 group-hover:opacity-100 group-hover:scale-110 group-hover:rotate-3 transition-all duration-500" />
+                  <img src="/opti_v2.png" alt="Opti" className="w-16 h-16 ai-icon-blend opti-glow opacity-20 group-hover:opacity-100 group-hover:scale-110 group-hover:rotate-3 transition-all duration-500" />
                 </div>
                 <ul className="space-y-4 mb-10 flex-1">
                   {plan.features.map((feat, fidx) => (
