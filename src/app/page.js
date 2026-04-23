@@ -113,9 +113,9 @@ export default function HomePage() {
                     </li>
                   ))}
                 </ul>
-                <button className="btn-pill btn-gold w-full text-sm">
+                <Link href="/premium?tab=OPTI" className="btn-pill btn-gold w-full text-sm text-center">
                   Comprar ahora
-                </button>
+                </Link>
               </GlassCard>
             ))}
           </div>
@@ -139,9 +139,9 @@ export default function HomePage() {
                   <span className="text-2xl font-black">1.50€</span>
                 </div>
               </div>
-              <motion.button whileHover={{ scale: 1.02 }} className="btn-pill bg-zinc-800 hover:bg-zinc-700 w-full text-sm">
+              <Link href="/premium?tab=SHOP" className="btn-pill bg-zinc-800 hover:bg-zinc-700 w-full text-sm text-center">
                 Comprar
-              </motion.button>
+              </Link>
             </GlassCard>
 
             <GlassCard className="p-8 flex flex-col justify-between border-purple-500/30 ring-1 ring-purple-500/20">
@@ -155,9 +155,9 @@ export default function HomePage() {
                   <span className="text-2xl font-black text-purple-400">4.30€</span>
                 </div>
               </div>
-              <motion.button whileHover={{ scale: 1.02 }} className="btn-pill bg-purple-600 hover:bg-purple-500 w-full text-sm">
+              <Link href="/premium?tab=SHOP" className="btn-pill bg-purple-600 hover:bg-purple-500 w-full text-sm text-center">
                 Comprar ahora
-              </motion.button>
+              </Link>
             </GlassCard>
 
             <GlassCard className="p-8 flex flex-col justify-between border-pink-500/30 ring-1 ring-pink-500/20">
@@ -168,9 +168,9 @@ export default function HomePage() {
                   <span className="text-2xl font-black text-pink-400">4€</span>
                 </div>
               </div>
-              <motion.button whileHover={{ scale: 1.02 }} className="btn-pill bg-pink-600 hover:bg-pink-500 w-full text-sm">
+              <Link href="/premium?tab=SHOP" className="btn-pill bg-pink-600 hover:bg-pink-500 w-full text-sm text-center">
                 Comprar
-              </motion.button>
+              </Link>
             </GlassCard>
           </div>
         </section>

@@ -2,14 +2,23 @@
 
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
-import { useState } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { Check, Shield, Zap, ShoppingCart } from 'lucide-react';
 import Link from 'next/link';
 import GlassCard from '@/components/GlassCard';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useSearchParams } from 'next/navigation';
 
-export default function PremiumPage() {
+function PremiumContent() {
+  const searchParams = useSearchParams();
   const [activeTab, setActiveTab] = useState('OPTI');
+
+  useEffect(() => {
+    const tab = searchParams.get('tab');
+    if (tab && (tab === 'OPTI' || tab === 'SHOP')) {
+      setActiveTab(tab);
+    }
+  }, [searchParams]);
 
   const tabs = [
     { id: 'OPTI', label: 'OPTIMIZACIÓN', icon: <Zap size={16} /> },
@@ -109,5 +118,13 @@ export default function PremiumPage() {
       </main>
       <Footer />
     </div>
+  );
+}
+
+export default function PremiumPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-[#050505]" />}>
+      <PremiumContent />
+    </Suspense>
   );
 }
