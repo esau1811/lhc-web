@@ -113,10 +113,6 @@ export default function HomePage() {
               </div>
             </div>
 
-            {/* Hero Character Image */}
-            <div className="absolute right-0 bottom-0 w-[650px] pointer-events-none hidden lg:block">
-              <img src="/hero_char.png" alt="Character" className="w-full h-auto object-contain drop-shadow-[0_0_50px_rgba(255,191,0,0.2)]" />
-            </div>
 
             {/* Stats Bar Integrated in Hero */}
             <div className="absolute bottom-10 left-12 flex gap-8 items-center">
