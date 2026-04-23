@@ -213,17 +213,18 @@ export default function HomePage() {
               </nav>
             </div>
 
-            <Link href="https://discord.gg/AS46Hlp2vO" className="flex items-center justify-between bg-[#5865F2] hover:bg-[#4752c4] p-4 rounded-2xl transition-all group">
-              <div className="flex items-center gap-3">
-                <div className="bg-white/20 p-2 rounded-lg">
-                  <MessageSquare size={18} />
+            <Link href="https://discord.gg/AS46Hlp2vO" className="flex items-center justify-between bg-[#5865F2] hover:bg-[#4752c4] p-4 rounded-2xl transition-all group overflow-hidden relative">
+              <div className="absolute inset-0 bg-gradient-to-r from-purple-500/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+              <div className="flex items-center gap-3 relative z-10">
+                <div className="bg-white/10 p-1 rounded-lg">
+                  <img src="/discord_btn.png" className="w-8 h-8 object-contain ai-icon-blend nitro-glow" />
                 </div>
                 <div>
-                  <p className="text-[11px] font-black uppercase leading-none">Únete a Discord</p>
-                  <p className="text-[9px] font-bold opacity-70">Comunidad activa</p>
+                  <p className="text-[11px] font-black uppercase leading-none text-white">Únete a Discord</p>
+                  <p className="text-[9px] font-bold text-white/70">Comunidad activa</p>
                 </div>
               </div>
-              <ChevronRight size={16} className="group-hover:translate-x-1 transition-transform" />
+              <ChevronRight size={16} className="relative z-10 text-white group-hover:translate-x-1 transition-transform" />
             </Link>
           </div>
 
@@ -325,14 +326,15 @@ export default function HomePage() {
             </div>
 
             {/* BOTTOM BANNER */}
-            <div className="mt-8 relative overflow-hidden rounded-3xl bg-gradient-to-r from-yellow-500/20 to-transparent border border-yellow-500/10 p-8 flex items-center justify-between">
+            <div className="mt-8 relative overflow-hidden rounded-3xl bg-gradient-to-r from-yellow-500/20 to-transparent border border-yellow-500/10 p-8 flex items-center justify-between group">
               <div className="flex items-center gap-6">
-                <div className="bg-yellow-500 p-4 rounded-2xl text-black">
-                  <User size={24} />
+                <div className="relative">
+                  <div className="absolute inset-0 bg-yellow-500/20 blur-xl rounded-full group-hover:scale-125 transition-transform duration-700"></div>
+                  <img src="/community_banner.png" className="w-20 h-20 object-contain ai-icon-blend opti-glow relative z-10" />
                 </div>
                 <div>
-                  <h4 className="text-lg font-black uppercase tracking-tight leading-none mb-1">Únete a miles de jugadores</h4>
-                  <p className="text-xs text-zinc-500 font-bold">Forma parte de la comunidad #1 en herramientas para gamers</p>
+                  <h4 className="text-xl font-black uppercase tracking-tight leading-none mb-2">Únete a miles de jugadores</h4>
+                  <p className="text-sm text-zinc-500 font-bold">Forma parte de la comunidad #1 en herramientas para gamers</p>
                 </div>
               </div>
               <div className="flex items-center gap-6">
