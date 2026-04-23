@@ -10,7 +10,7 @@ import GlassCard from '@/components/GlassCard';
 import { 
   Check, Rocket, Shield, Zap, ShoppingBag, Crown, 
   LayoutGrid, Settings, User, MessageSquare, ExternalLink,
-  Clock, Activity, ChevronRight, Star, Monitor, Target, Music
+  Clock, Activity, ChevronRight, Star, Monitor, Target, Music, Trophy
 } from 'lucide-react';
 
 export default function HomePage() {
