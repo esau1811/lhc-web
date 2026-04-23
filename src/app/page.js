@@ -159,7 +159,8 @@ export default function HomePage() {
           <div className="lg:col-span-3 flex flex-col gap-6">
             <GlassCard className="p-6 md:p-8 border-yellow-500/20 bg-yellow-500/5 flex-1 relative overflow-hidden flex flex-col justify-between">
               <div className="absolute top-0 right-0 p-4 opacity-10">
-                <Crown size={60} md:size={80} />
+                <div className="md:hidden"><Crown size={60} /></div>
+                <div className="hidden md:block"><Crown size={80} /></div>
               </div>
               
               <div>
