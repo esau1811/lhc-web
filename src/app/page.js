@@ -130,45 +130,45 @@ export default function HomePage() {
             <h2 className="text-3xl font-bold">TIENDA DISCORD</h2>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <GlassCard className="p-8 flex items-center justify-between group">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <GlassCard className="p-8 flex flex-col justify-between">
               <div>
-                <h3 className="text-2xl font-bold mb-2">DISCORD NITRO</h3>
-                <p className="text-zinc-500 text-sm mb-4">Mejora tu perfil con estilos únicos.</p>
-                <div className="flex gap-4">
-                  <div className="bg-white/5 px-4 py-2 rounded-lg border border-white/5">
-                    <span className="text-xs text-zinc-500 block">Basic</span>
-                    <span className="font-bold">1.50€</span>
-                  </div>
-                  <div className="bg-white/5 px-4 py-2 rounded-lg border border-white/5">
-                    <span className="text-xs text-zinc-500 block">Boost (Legal)</span>
-                    <span className="font-bold">4.30€</span>
-                  </div>
+                <h3 className="text-xl font-bold mb-1">NITRO BASIC</h3>
+                <p className="text-zinc-500 text-xs mb-6">Insignia y emojis globales.</p>
+                <div className="bg-white/5 px-4 py-3 rounded-xl border border-white/5 inline-block mb-6">
+                  <span className="text-2xl font-black">1.50€</span>
                 </div>
               </div>
-              <motion.button 
-                whileHover={{ scale: 1.05 }}
-                className="btn-pill bg-purple-600 hover:bg-purple-500"
-              >
-                Ver Tienda
+              <motion.button whileHover={{ scale: 1.02 }} className="btn-pill bg-zinc-800 hover:bg-zinc-700 w-full text-sm">
+                Comprar
               </motion.button>
             </GlassCard>
 
-            <GlassCard className="p-8 flex items-center justify-between group">
+            <GlassCard className="p-8 flex flex-col justify-between border-purple-500/30 ring-1 ring-purple-500/20">
               <div>
-                <h3 className="text-2xl font-bold mb-2">SERVER BOOSTS</h3>
-                <p className="text-zinc-500 text-sm mb-4">Lleva tu servidor al nivel 3.</p>
-                <div className="flex gap-4">
-                  <div className="bg-white/5 px-4 py-2 rounded-lg border border-white/5">
-                    <span className="text-xs text-zinc-500 block">x14 Boosts</span>
-                    <span className="font-bold">4€</span>
-                  </div>
+                <div className="flex justify-between items-start mb-1">
+                  <h3 className="text-xl font-bold">NITRO BOOST</h3>
+                  <span className="bg-purple-600 text-[10px] px-2 py-0.5 rounded-full font-black">LEGAL</span>
+                </div>
+                <p className="text-zinc-500 text-xs mb-6">2 Boosts y streaming 4K.</p>
+                <div className="bg-white/5 px-4 py-3 rounded-xl border border-white/5 inline-block mb-6">
+                  <span className="text-2xl font-black text-purple-400">4.30€</span>
                 </div>
               </div>
-              <motion.button 
-                whileHover={{ scale: 1.05 }}
-                className="btn-pill bg-pink-600 hover:bg-pink-500"
-              >
+              <motion.button whileHover={{ scale: 1.02 }} className="btn-pill bg-purple-600 hover:bg-purple-500 w-full text-sm">
+                Comprar ahora
+              </motion.button>
+            </GlassCard>
+
+            <GlassCard className="p-8 flex flex-col justify-between border-pink-500/30 ring-1 ring-pink-500/20">
+              <div>
+                <h3 className="text-xl font-bold mb-1">X14 BOOSTS</h3>
+                <p className="text-zinc-500 text-xs mb-6">Nivel 3 para tu servidor.</p>
+                <div className="bg-white/5 px-4 py-3 rounded-xl border border-white/5 inline-block mb-6">
+                  <span className="text-2xl font-black text-pink-400">4€</span>
+                </div>
+              </div>
+              <motion.button whileHover={{ scale: 1.02 }} className="btn-pill bg-pink-600 hover:bg-pink-500 w-full text-sm">
                 Comprar
               </motion.button>
             </GlassCard>
