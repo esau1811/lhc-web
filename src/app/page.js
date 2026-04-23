@@ -137,12 +137,12 @@ export default function HomePage() {
                 <p className="text-zinc-500 text-sm mb-4">Mejora tu perfil con estilos únicos.</p>
                 <div className="flex gap-4">
                   <div className="bg-white/5 px-4 py-2 rounded-lg border border-white/5">
-                    <span className="text-xs text-zinc-500 block">Classic</span>
-                    <span className="font-bold">2.99€</span>
+                    <span className="text-xs text-zinc-500 block">Basic</span>
+                    <span className="font-bold">1.50€</span>
                   </div>
                   <div className="bg-white/5 px-4 py-2 rounded-lg border border-white/5">
-                    <span className="text-xs text-zinc-500 block">Gaming</span>
-                    <span className="font-bold">5.99€</span>
+                    <span className="text-xs text-zinc-500 block">Boost (Legal)</span>
+                    <span className="font-bold">4.30€</span>
                   </div>
                 </div>
               </div>
@@ -160,12 +160,8 @@ export default function HomePage() {
                 <p className="text-zinc-500 text-sm mb-4">Lleva tu servidor al nivel 3.</p>
                 <div className="flex gap-4">
                   <div className="bg-white/5 px-4 py-2 rounded-lg border border-white/5">
-                    <span className="text-xs text-zinc-500 block">x2 Boosts</span>
-                    <span className="font-bold">4€</span>
-                  </div>
-                  <div className="bg-white/5 px-4 py-2 rounded-lg border border-white/5">
                     <span className="text-xs text-zinc-500 block">x14 Boosts</span>
-                    <span className="font-bold">12€</span>
+                    <span className="font-bold">4€</span>
                   </div>
                 </div>
               </div>
