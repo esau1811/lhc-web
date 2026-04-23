@@ -21,6 +21,7 @@ export default function HomePage() {
   const [discordStats, setDiscordStats] = useState({ total: '600+', online: '150+' });
   const [serverBoosts, setServerBoosts] = useState('35');
   const [activeCategory, setActiveCategory] = useState('Todas');
+  const [recentActivity, setRecentActivity] = useState([]);
 
   useEffect(() => {
     const fetchDiscordStats = async () => {
@@ -44,6 +45,35 @@ export default function HomePage() {
     const interval = setInterval(fetchDiscordStats, 60000); // Update every minute
     return () => clearInterval(interval);
   }, []);
+
+  // Shared Activity Logic
+  useEffect(() => {
+    const fetchActivity = async () => {
+      try {
+        const res = await fetch('/api/activity');
+        const data = await res.json();
+        setRecentActivity(data);
+      } catch (e) { console.error(e); }
+    };
+
+    const postActivity = async () => {
+      if (session?.user) {
+        try {
+          await fetch('/api/activity', {
+            method: 'POST',
+            body: JSON.stringify({ user: session.user }),
+          });
+          fetchActivity();
+        } catch (e) { console.error(e); }
+      }
+    };
+
+    fetchActivity();
+    if (session?.user) postActivity();
+    
+    const interval = setInterval(fetchActivity, 30000); // Refresh every 30s
+    return () => clearInterval(interval);
+  }, [session]);
 
   const categories = [
     { name: 'Todas', displayName: t('cat_todas'), icon: LayoutGrid },
@@ -119,12 +149,6 @@ export default function HomePage() {
     },
   ];
 
-  const recentActivity = [
-    ...(session ? [{ name: session.user.name.split(' ')[0], action: t('act_joined') || 'Se unió a la comunidad', time: 'Ahora', isUser: true, image: session.user.image }] : []),
-    { name: 'LHCConverter', action: t('act_updated') || 'Actualizado v2.1.4', time: t('time_2h') || 'Hace 2h', icon: '/icon_conv.png' },
-    { name: 'LHCSound', action: t('act_new_lib') || 'Nueva biblioteca', time: t('time_4h') || 'Hace 4h', icon: '/icon_sound.png' },
-    { name: 'LHCResolution', action: t('act_profile') || 'Perfil agregado', time: t('time_6h') || 'Hace 6h', icon: '/icon_res.png' },
-  ];
 
   return (
     <div className="min-h-screen bg-[#050505] text-white selection:bg-yellow-500/30">
