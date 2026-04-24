@@ -71,14 +71,17 @@ export default function ConverterPage() {
       
       const filenameHints = fileArray.flatMap(f => extractFromFilename(f.name));
       const allFiles = [...allNames, ...filenameHints];
+      console.log('Converter Debug - Archivos detectados:', allFiles);
+      
       const detected = detectWeaponFromFilenames(allFiles);
+      console.log('Converter Debug - Arma identificada:', detected);
 
       if (detected) {
         setDetectedWeapon(detected);
         setSourceWeapon(detected.id);
       }
     } catch (err) {
-      console.error(err);
+      console.error('Converter Debug - Error:', err);
       setError('Error parsing the internal file');
     } finally {
       setIsUploading(false);
