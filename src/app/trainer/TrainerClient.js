@@ -60,7 +60,7 @@ export default function TrainerPage() {
   };
 
   const handleCommand = (cmd) => {
-    const parts = cmd.trim().split(' ');
+    const parts = cmd.trim().split(/\s+/);
     const action = parts[0].toLowerCase();
     
     setConsoleLogs(prev => [...prev, `> ${cmd}`]);
@@ -79,7 +79,7 @@ export default function TrainerPage() {
       setReticuleSize(retSizeRef.current);
       setConsoleLogs(prev => [...prev, `Tamaño Mira: ${retSizeRef.current.toFixed(2)}`]);
     }
-    else if (action === 'toggle' && parts[1] === 'profile_reticule') {
+    else if (action.includes('toggle') && cmd.toLowerCase().includes('profile_reticule')) {
       retTypeRef.current = retTypeRef.current === 'complex' ? 'simple' : 'complex';
       setReticuleType(retTypeRef.current);
       setConsoleLogs(prev => [...prev, `Mira: ${retTypeRef.current.toUpperCase()}`]);
@@ -96,16 +96,11 @@ export default function TrainerPage() {
   };
 
   const startGame = () => {
-    // Reset refs first
     scoreRef.current = 0;
     timeRef.current = 60;
     setScore(0);
     setTime(60);
-    
-    // Lock immediately
-    if (controlsRef.current) {
-      controlsRef.current.lock();
-    }
+    if (controlsRef.current) controlsRef.current.lock();
   };
 
   const consoleOpenRef = useRef(false);
@@ -130,14 +125,18 @@ export default function TrainerPage() {
 
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0x020202);
-    scene.fog = new THREE.FogExp2(0x020202, 0.03);
+    scene.fog = new THREE.FogExp2(0x020202, 0.05);
 
     const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
     camera.position.set(0, 1.6, 0);
 
-    const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
+    const renderer = new THREE.WebGLRenderer({ 
+      antialias: false, 
+      powerPreference: "high-performance",
+      precision: "mediump"
+    });
     renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setPixelRatio(1); // Force 1:1 for performance
     mountRef.current.appendChild(renderer.domElement);
 
     const controls = new PointerLockControls(camera, renderer.domElement);
@@ -157,19 +156,25 @@ export default function TrainerPage() {
       }
     });
 
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
     scene.add(ambientLight);
-    const mainLight = new THREE.PointLight(0xffffff, 1, 100);
+    const mainLight = new THREE.PointLight(0xffffff, 0.8, 50);
     mainLight.position.set(0, 10, 0);
     scene.add(mainLight);
-    scene.add(new THREE.GridHelper(200, 100, 0x222222, 0x111111));
 
-    const floor = new THREE.Mesh(new THREE.PlaneGeometry(200, 200), new THREE.MeshStandardMaterial({ color: 0x050505 }));
+    const floor = new THREE.Mesh(
+      new THREE.PlaneGeometry(100, 100), 
+      new THREE.MeshBasicMaterial({ color: 0x050505 })
+    );
     floor.rotation.x = -Math.PI / 2;
     scene.add(floor);
 
     const internalSpawn = () => {
-      const sphere = new THREE.Mesh(new THREE.SphereGeometry(0.5, 32, 32), new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0xffffff, emissiveIntensity: 0.2 }));
+      // Low poly spheres for FPS
+      const sphere = new THREE.Mesh(
+        new THREE.SphereGeometry(0.5, 12, 12), 
+        new THREE.MeshBasicMaterial({ color: 0xffffff })
+      );
       sphere.position.set((Math.random() - 0.5) * 30, (Math.random() * 8) + 1, -((Math.random() * 20) + 10));
       scene.add(sphere);
       targetsRef.current.push(sphere);
@@ -189,8 +194,13 @@ export default function TrainerPage() {
         return;
       }
       if (consoleOpenRef.current) return;
+      
       const key = e.key.toLowerCase();
-      if (bindsRef.current[key]) handleCommand(bindsRef.current[key]);
+      if (bindsRef.current[key]) {
+        e.preventDefault();
+        handleCommand(bindsRef.current[key]);
+      }
+
       switch (e.code) {
         case 'KeyW': moveForward = true; break;
         case 'KeyA': moveLeft = true; break;
