@@ -128,13 +128,38 @@ export default function ConverterPage() {
         window.URL.revokeObjectURL(url);
       } else {
         const zip = new JSZip();
+        
+        // Helper to get the short version of an ID (e.g. w_pi_pistol -> pistol)
+        const getShortId = (id) => {
+          return id.toLowerCase().replace(/^w_[a-z]{2}_/, '').replace(/_/g, '');
+        };
+
+        const sourceShort = getShortId(sourceWeapon);
+        const targetShort = getShortId(targetWeapon);
+
         for (const f of files) {
-          const lowerName = f.name.toLowerCase();
           let parsedName = f.name;
+          const lowerName = f.name.toLowerCase();
+
+          // Try replacing the full ID first (more specific)
           if (lowerName.includes(sourceWeapon.toLowerCase())) {
             const regex = new RegExp(sourceWeapon, 'gi');
-            parsedName = f.name.replace(regex, targetWeapon);
+            parsedName = parsedName.replace(regex, targetWeapon);
+          } 
+          // Then try replacing the short ID if the full one wasn't found or as a secondary check
+          else if (lowerName.includes(sourceShort)) {
+            const regex = new RegExp(sourceShort, 'gi');
+            parsedName = parsedName.replace(regex, targetShort);
           }
+          
+          // Special case: handle IDs without the 'w_' prefix but with category (e.g. pi_pistol)
+          const sourceMid = sourceWeapon.toLowerCase().replace(/^w_/, '');
+          const targetMid = targetWeapon.toLowerCase().replace(/^w_/, '');
+          if (parsedName.toLowerCase().includes(sourceMid)) {
+             const regex = new RegExp(sourceMid, 'gi');
+             parsedName = parsedName.replace(regex, targetMid);
+          }
+
           const arrayBuffer = await f.arrayBuffer();
           zip.file(parsedName, arrayBuffer);
         }
