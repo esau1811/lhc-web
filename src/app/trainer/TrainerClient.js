@@ -47,26 +47,36 @@ export default function TrainerPage() {
   const [isPaused, setIsPaused] = useState(false);
   const isPausedRef = useRef(false);
 
-  // Load Leaderboard
+  // Load Global Leaderboard
+  const fetchLeaderboard = async () => {
+    try {
+      const res = await fetch('/api/leaderboard');
+      const data = await res.json();
+      if (!data.error) setLeaderboard(data);
+    } catch (err) {
+      console.error('Error fetching global ranking:', err);
+    }
+  };
+
   useEffect(() => {
-    const saved = localStorage.getItem('lhc_leaderboard');
-    if (saved) setLeaderboard(JSON.parse(saved));
+    fetchLeaderboard();
   }, []);
 
-  const saveScore = () => {
+  const saveScore = async () => {
     if (!playerName.trim() || hasSaved) return;
-    const newEntry = { 
-      name: playerName.trim(), 
-      score: score, 
-      date: new Date().toLocaleDateString() 
-    };
-    const newLeaderboard = [...leaderboard, newEntry]
-      .sort((a, b) => b.score - a.score)
-      .slice(0, 10);
-    
-    setLeaderboard(newLeaderboard);
-    localStorage.setItem('lhc_leaderboard', JSON.stringify(newLeaderboard));
-    setHasSaved(true);
+    try {
+      const res = await fetch('/api/leaderboard', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: playerName.trim(), score: score })
+      });
+      if (res.ok) {
+        setHasSaved(true);
+        fetchLeaderboard(); // Refresh the list
+      }
+    } catch (err) {
+      console.error('Error saving global score:', err);
+    }
   };
 
   const startGame = () => {
