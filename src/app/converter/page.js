@@ -6,7 +6,7 @@ import { useSession, signIn } from 'next-auth/react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { useLang } from '@/components/LangProvider';
-import { WEAPON_CATEGORIES, detectWeaponFromFilenames } from '@/lib/weapons';
+import { WEAPON_CATEGORIES, detectWeaponFromFilenames, getAllWeapons } from '@/lib/weapons';
 import JSZip from 'jszip';
 import { extractFilenames, extractFromFilename } from '@/lib/rpfParser';
 import GlassCard from '@/components/GlassCard';
