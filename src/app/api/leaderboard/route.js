@@ -1,21 +1,23 @@
 import { createClient } from '@vercel/kv';
 import { NextResponse } from 'next/server';
 
-// Manually initialize KV to try multiple environment variable patterns
+// Ultra-flexible KV client
 const getKVClient = () => {
+  // Try to find ANY useful variable
   const url = process.env.KV_REST_API_URL || process.env.STORAGE_REST_API_URL || process.env.KV_URL || process.env.REDIS_URL;
   const token = process.env.KV_REST_API_TOKEN || process.env.STORAGE_REST_API_TOKEN;
-  
-  if (!url || !token) {
-    // If specific REST vars are missing, try generic ones or let @vercel/kv handle it
-    const { kv } = require('@vercel/kv');
-    return kv;
+
+  // If we have REDIS_URL but no token, it might be a full URL with credentials
+  if (process.env.REDIS_URL && !token) {
+    // Vercel KV often works with just the KV_URL if it's the REST one
+    return createClient({
+      url: process.env.REDIS_URL.includes('rest') ? process.env.REDIS_URL : process.env.REDIS_URL,
+      token: token || '', // Token might be embedded or not needed if using standard Redis
+    });
   }
-  
-  return createClient({
-    url: url,
-    token: token,
-  });
+
+  const { kv } = require('@vercel/kv');
+  return kv;
 };
 
 const kv = getKVClient();
@@ -25,28 +27,29 @@ export async function GET() {
     const leaderboard = await kv.zrange('lhc_leaderboard', 0, 9, { withScores: true, rev: true });
     
     const formatted = [];
-    for (let i = 0; i < leaderboard.length; i += 2) {
-      try {
-        const entry = typeof leaderboard[i] === 'string' ? JSON.parse(leaderboard[i]) : leaderboard[i];
-        formatted.push({
-          name: entry.name || 'Anónimo',
-          score: leaderboard[i + 1],
-          date: entry.date || '-'
-        });
-      } catch (e) {
-        // Fallback if the member is just a name string
-        formatted.push({
-          name: leaderboard[i],
-          score: leaderboard[i + 1],
-          date: '-'
-        });
+    if (leaderboard && Array.isArray(leaderboard)) {
+      for (let i = 0; i < leaderboard.length; i += 2) {
+        try {
+          const entry = typeof leaderboard[i] === 'string' ? JSON.parse(leaderboard[i]) : leaderboard[i];
+          formatted.push({
+            name: entry.name || 'Anónimo',
+            score: leaderboard[i + 1],
+            date: entry.date || '-'
+          });
+        } catch (e) {
+          formatted.push({
+            name: leaderboard[i],
+            score: leaderboard[i + 1],
+            date: '-'
+          });
+        }
       }
     }
 
-    return NextResponse.json(formatted);
+    return NextResponse.json(formatted || []);
   } catch (error) {
     console.error('Leaderboard Fetch Error:', error);
-    return NextResponse.json({ error: 'Failed to fetch leaderboard: ' + error.message }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to fetch ranking: ' + error.message }, { status: 500 });
   }
 }
 
@@ -55,7 +58,7 @@ export async function POST(request) {
     const { name, score } = await request.json();
 
     if (!name || typeof score !== 'number') {
-      return NextResponse.json({ error: 'Invalid data: name and score are required' }, { status: 400 });
+      return NextResponse.json({ error: 'Invalid data' }, { status: 400 });
     }
 
     const date = new Date().toLocaleDateString();
@@ -67,6 +70,6 @@ export async function POST(request) {
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Leaderboard Save Error:', error);
-    return NextResponse.json({ error: 'Failed to save score: ' + error.message }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to save: ' + error.message }, { status: 500 });
   }
 }
