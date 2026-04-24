@@ -229,16 +229,8 @@ export default function TrainerPage() {
     controlsRef.current = controls;
 
     controls.addEventListener('lock', () => {
-      // Cooldown check
-      if (Date.now() < menuLockoutRef.current) {
-        controls.unlock();
-        return;
-      }
-      // Only transition to playing if we were in menu or starting a new game
-      if (gameStateRef.current === 'menu' || gameStateRef.current === 'finished') {
-        gameStateRef.current = 'playing';
-        setGameState('playing');
-      }
+      // The lock listener should NO LONGER change the gameState.
+      // GameState is only changed by explicit button clicks (startGame).
       setIsPaused(false);
       isPausedRef.current = false;
       consoleOpenRef.current = false;
@@ -554,8 +546,14 @@ export default function TrainerPage() {
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.9 }}
             className="absolute inset-0 z-[150] bg-black/90 backdrop-blur-xl flex items-center justify-center p-6 pointer-events-auto"
-            onMouseDown={(e) => e.stopPropagation()}
-            onClick={(e) => e.stopPropagation()}
+            onMouseDown={(e) => {
+              e.stopPropagation();
+              e.preventDefault();
+            }}
+            onClick={(e) => {
+              e.stopPropagation();
+              e.preventDefault();
+            }}
           >
             <div className="max-w-md w-full bg-zinc-900 border border-white/10 rounded-3xl p-10 text-center shadow-2xl space-y-8">
               <div className="space-y-2">
