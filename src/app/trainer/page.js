@@ -21,17 +21,19 @@ export default function TrainerPage() {
   const cameraRef = useRef(null);
   const rendererRef = useRef(null);
   const controlsRef = useRef(null);
-  const targetsRef = useRef([]);
-  const requestRef = useRef(null);
-
-  // Trainer Settings
+  // Trainer Settings (States for UI)
   const [sensitivity, setSensitivity] = useState(1);
   const [reticuleSize, setReticuleSize] = useState(1);
   const [reticuleType, setReticuleType] = useState('complex');
   const [consoleOpen, setConsoleOpen] = useState(false);
   const [commandInput, setCommandInput] = useState('');
-  const [consoleLogs, setConsoleLogs] = useState(['LHC Trainer Console v1.0.0', 'Press F8 to toggle', 'Type commands like: profile_mouseOnFootScale -5']);
-  const [keyBinds, setKeyBinds] = useState({});
+  const [consoleLogs, setConsoleLogs] = useState(['LHC Trainer Console v1.0.0', 'Press J to toggle', 'Type commands like: profile_mouseOnFootScale -5']);
+  
+  // Trainer Settings (Refs for the loop)
+  const sensRef = useRef(1);
+  const retSizeRef = useRef(1);
+  const retTypeRef = useRef('complex');
+  const bindsRef = useRef({});
 
   const spawnTarget = (scene) => {
     const geometry = new THREE.SphereGeometry(0.5, 32, 32);
@@ -60,20 +62,21 @@ export default function TrainerPage() {
 
     if (action === 'profile_mouseonfootscale') {
       const val = parseFloat(parts[1]);
-      // Map FiveM scale (can be negative/positive) to our internal sensitivity
-      // Baseline 1.0, each unit is roughly 10% change
       const newSens = 1 + (val * 0.1);
-      setSensitivity(Math.max(0.01, newSens));
-      setConsoleLogs(prev => [...prev, `Sensitivity set to ${newSens.toFixed(2)}`]);
+      sensRef.current = Math.max(0.01, newSens);
+      setSensitivity(sensRef.current);
+      setConsoleLogs(prev => [...prev, `Sensitivity set to ${sensRef.current.toFixed(2)}`]);
     } 
     else if (action === 'profile_reticulesize') {
       const val = parseFloat(parts[1]);
       const newSize = 1 + (val * 0.2);
-      setReticuleSize(Math.max(0.1, newSize));
-      setConsoleLogs(prev => [...prev, `Reticule size set to ${newSize.toFixed(2)}`]);
+      retSizeRef.current = Math.max(0.1, newSize);
+      setReticuleSize(retSizeRef.current);
+      setConsoleLogs(prev => [...prev, `Reticule size set to ${retSizeRef.current.toFixed(2)}`]);
     }
     else if (action === 'toggle' && parts[1] === 'profile_reticule') {
-      setReticuleType(prev => prev === 'complex' ? 'simple' : 'complex');
+      retTypeRef.current = retTypeRef.current === 'complex' ? 'simple' : 'complex';
+      setReticuleType(retTypeRef.current);
       setConsoleLogs(prev => [...prev, `Reticule style toggled`]);
     }
     else if (action === 'bind') {
@@ -82,7 +85,7 @@ export default function TrainerPage() {
       if (match) {
         const key = match[1].toLowerCase();
         const subCmd = match[2];
-        setKeyBinds(prev => ({ ...prev, [key]: subCmd }));
+        bindsRef.current[key] = subCmd;
         setConsoleLogs(prev => [...prev, `Bound ${key} to "${subCmd}"`]);
       }
     }
@@ -119,7 +122,7 @@ export default function TrainerPage() {
 
     controls.addEventListener('lock', () => setGameState('playing'));
     controls.addEventListener('unlock', () => {
-      if (!consoleOpen) setGameState('menu');
+      // We don't want to go to menu if console is open
     });
 
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
@@ -148,10 +151,14 @@ export default function TrainerPage() {
     const direction = new THREE.Vector3();
 
     const onKeyDown = (e) => {
-      if (e.code === 'F8') {
+      // Toggle Console with J
+      if (e.key.toLowerCase() === 'j') {
         e.preventDefault();
-        setConsoleOpen(prev => !prev);
-        if (controls.isLocked) controls.unlock();
+        setConsoleOpen(prev => {
+          if (!prev) controls.unlock();
+          else controls.lock();
+          return !prev;
+        });
         return;
       }
 
@@ -159,8 +166,8 @@ export default function TrainerPage() {
 
       // Check binds
       const key = e.key.toLowerCase();
-      if (keyBinds[key]) {
-        handleCommand(keyBinds[key]);
+      if (bindsRef.current[key]) {
+        handleCommand(bindsRef.current[key]);
       }
 
       switch (e.code) {
@@ -212,30 +219,28 @@ export default function TrainerPage() {
 
     document.addEventListener('mousedown', onMouseDown);
 
-    // Override PointerLock sensitivity
-    const originalMouseMove = controls.onMouseMove;
-    controls.onMouseMove = (event) => {
-      // Scale mouse movement by our sensitivity setting
-      // PointerLockControls doesn't expose sensitivity easily, so we scale the event delta
-      // but the event delta is read-only. We have to manually update rotation.
-      if (!controls.isLocked) return;
+    // PointerLock Sensitivity Implementation
+    const onMouseMove = (event) => {
+      if (!controls.isLocked || consoleOpen) return;
 
       const movementX = event.movementX || event.mozMovementX || event.webkitMovementX || 0;
       const movementY = event.movementY || event.mozMovementY || event.webkitMovementY || 0;
 
-      const scaledX = movementX * (sensitivity * 0.002);
-      const scaledY = movementY * (sensitivity * 0.002);
-
+      // Use Ref for instant update
+      const currentSens = sensRef.current;
+      
       const euler = new THREE.Euler(0, 0, 0, 'YXZ');
       euler.setFromQuaternion(camera.quaternion);
 
-      euler.y -= scaledX;
-      euler.x -= scaledY;
+      euler.y -= movementX * (currentSens * 0.002);
+      euler.x -= movementY * (currentSens * 0.002);
 
       euler.x = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, euler.x));
 
       camera.quaternion.setFromEuler(euler);
     };
+
+    document.addEventListener('mousemove', onMouseMove);
 
     let prevTime = performance.now();
     const animate = () => {
@@ -277,11 +282,12 @@ export default function TrainerPage() {
       document.removeEventListener('keydown', onKeyDown);
       document.removeEventListener('keyup', onKeyUp);
       document.removeEventListener('mousedown', onMouseDown);
+      document.removeEventListener('mousemove', onMouseMove);
       if (mountRef.current && renderer.domElement) {
         mountRef.current.removeChild(renderer.domElement);
       }
     };
-  }, [consoleOpen, sensitivity, keyBinds]);
+  }, [consoleOpen]);
 
   return (
     <div className="relative w-full h-screen overflow-hidden bg-black font-sans">
@@ -316,8 +322,9 @@ export default function TrainerPage() {
                     handleCommand(commandInput);
                     setCommandInput('');
                   }
-                  if (e.key === 'F8') {
+                  if (e.key.toLowerCase() === 'j') {
                     setConsoleOpen(false);
+                    controlsRef.current.lock();
                   }
                 }}
                 className="flex-1 bg-transparent border-none outline-none text-white text-sm"
@@ -366,7 +373,7 @@ export default function TrainerPage() {
 
       {/* MENU / OVERLAY */}
       <AnimatePresence>
-        {gameState === 'menu' && (
+        {gameState === 'menu' && !consoleOpen && (
           <motion.div 
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -401,8 +408,8 @@ export default function TrainerPage() {
                     <p className="text-xs font-bold">Moverse</p>
                   </div>
                   <div className="bg-white/5 border border-white/10 rounded-2xl p-4">
-                    <p className="text-[9px] font-black text-zinc-500 uppercase tracking-widest mb-1">MOUSE</p>
-                    <p className="text-xs font-bold">Disparar</p>
+                    <p className="text-[9px] font-black text-zinc-500 uppercase tracking-widest mb-1">J</p>
+                    <p className="text-xs font-bold">Consola</p>
                   </div>
                 </div>
               </div>
