@@ -11,7 +11,32 @@ import { Target, Play, Shield, Maximize, MousePointer2 } from 'lucide-react';
 export default function TrainerPage() {
   const { t } = useLang();
   const mountRef = useRef(null);
+  const [gameState, setGameState] = useState('menu');
+  const [score, setScore] = useState(0);
+  const [time, setTime] = useState(60);
   const [fps, setFps] = useState(0);
+
+  // Three.js Refs
+  const sceneRef = useRef(null);
+  const cameraRef = useRef(null);
+  const rendererRef = useRef(null);
+  const controlsRef = useRef(null);
+  const targetsRef = useRef([]);
+  const requestRef = useRef(null);
+
+  // Trainer Settings (States for UI)
+  const [sensitivity, setSensitivity] = useState(1);
+  const [reticuleSize, setReticuleSize] = useState(1);
+  const [reticuleType, setReticuleType] = useState('complex');
+  const [consoleOpen, setConsoleOpen] = useState(false);
+  const [commandInput, setCommandInput] = useState('');
+  const [consoleLogs, setConsoleLogs] = useState(['LHC Trainer Console v1.0.0', 'Press J to toggle', 'Type commands like: profile_mouseOnFootScale -5']);
+  
+  // Trainer Settings (Refs for the loop)
+  const sensRef = useRef(1);
+  const retSizeRef = useRef(1);
+  const retTypeRef = useRef('complex');
+  const bindsRef = useRef({});
   const timeRef = useRef(60);
   const scoreRef = useRef(0);
 
