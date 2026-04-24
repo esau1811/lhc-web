@@ -54,7 +54,7 @@ export async function POST(req) {
       return NextResponse.json(currentActivity);
     }
 
-    const updatedActivity = [newEntry, ...currentActivity.filter(a => a.name !== user.name)].slice(0, 5);
+    const updatedActivity = [newEntry, ...currentActivity.filter(a => a.name !== user.name)].slice(0, 4);
 
     if (usingKV) {
       try {
