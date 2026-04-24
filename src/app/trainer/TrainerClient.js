@@ -96,12 +96,16 @@ export default function TrainerPage() {
   };
 
   const startGame = () => {
-    setGameState('playing');
-    setScore(0);
+    // Reset refs first
     scoreRef.current = 0;
-    setTime(60);
     timeRef.current = 60;
-    if (controlsRef.current) controlsRef.current.lock();
+    setScore(0);
+    setTime(60);
+    
+    // Lock immediately
+    if (controlsRef.current) {
+      controlsRef.current.lock();
+    }
   };
 
   const consoleOpenRef = useRef(false);
@@ -127,22 +131,18 @@ export default function TrainerPage() {
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0x020202);
     scene.fog = new THREE.FogExp2(0x020202, 0.03);
-    sceneRef.current = scene;
 
     const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
     camera.position.set(0, 1.6, 0);
-    cameraRef.current = camera;
 
     const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     mountRef.current.appendChild(renderer.domElement);
-    rendererRef.current = renderer;
 
     const controls = new PointerLockControls(camera, renderer.domElement);
     controlsRef.current = controls;
 
-    // PointerLock Events
     controls.addEventListener('lock', () => {
       gameStateRef.current = 'playing';
       setGameState('playing');
@@ -157,7 +157,6 @@ export default function TrainerPage() {
       }
     });
 
-    // Lights & Environment
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
     scene.add(ambientLight);
     const mainLight = new THREE.PointLight(0xffffff, 1, 100);
@@ -326,7 +325,10 @@ export default function TrainerPage() {
 
       {/* OVERLAY UI */}
       <div className="absolute inset-0 pointer-events-none z-20">
-        {gameState === 'menu' && <Header transparent />}
+        {/* Header is always there but hidden when playing to maintain DOM stability */}
+        <div className={`transition-opacity duration-500 ${gameState === 'playing' ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
+          <Header transparent />
+        </div>
         
         {/* CROSSHAIR (FIVEM STYLE) */}
         <div 
