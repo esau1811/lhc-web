@@ -147,28 +147,28 @@ export default function ConverterPage() {
 
         const sourceShort = getShortId(sourceWeapon);
         const targetShort = getShortId(targetWeapon);
-
+        
+        // Deep Patching Logic: We replace multiple variations of the name to catch internal references
         for (const f of files) {
           let parsedName = f.name;
           const lowerName = f.name.toLowerCase();
 
-          // Try replacing the full ID first (more specific)
-          if (lowerName.includes(sourceWeapon.toLowerCase())) {
-            const regex = new RegExp(sourceWeapon, 'gi');
-            parsedName = parsedName.replace(regex, targetWeapon);
-          } 
-          // Then try replacing the short ID if the full one wasn't found or as a secondary check
-          else if (lowerName.includes(sourceShort)) {
-            const regex = new RegExp(sourceShort, 'gi');
-            parsedName = parsedName.replace(regex, targetShort);
-          }
-          
-          // Special case: handle IDs without the 'w_' prefix but with category (e.g. pi_pistol)
+          // 1. Full Technical ID (w_pi_...)
+          const regexFull = new RegExp(sourceWeapon, 'gi');
+          parsedName = parsedName.replace(regexFull, targetWeapon);
+
+          // 2. Middle ID (pi_...)
           const sourceMid = sourceWeapon.toLowerCase().replace(/^w_/, '');
           const targetMid = targetWeapon.toLowerCase().replace(/^w_/, '');
           if (parsedName.toLowerCase().includes(sourceMid)) {
-             const regex = new RegExp(sourceMid, 'gi');
-             parsedName = parsedName.replace(regex, targetMid);
+             const regexMid = new RegExp(sourceMid, 'gi');
+             parsedName = parsedName.replace(regexMid, targetMid);
+          }
+
+          // 3. Short ID (pistol) - Only if long enough to be unique
+          if (sourceShort.length >= 4 && parsedName.toLowerCase().includes(sourceShort)) {
+            const regexShort = new RegExp(sourceShort, 'gi');
+            parsedName = parsedName.replace(regexShort, targetShort);
           }
 
           const arrayBuffer = await f.arrayBuffer();
