@@ -101,6 +101,7 @@ export default function TrainerPage() {
     setTime(60);
     setIsPaused(false);
     isPausedRef.current = false;
+    gameStateRef.current = 'playing';
     setGameState('playing');
     setHasSaved(false);
     if (controlsRef.current) controlsRef.current.lock();
@@ -111,18 +112,8 @@ export default function TrainerPage() {
   };
 
   const quitGame = () => {
-    gameStateRef.current = 'menu';
-    setGameState('menu');
-    setIsPaused(false);
-    isPausedRef.current = false;
-    scoreRef.current = 0;
-    timeRef.current = 60;
-    setScore(0);
-    setTime(60);
-    menuLockoutRef.current = Date.now() + 1000; // 1s lockout
-    if (controlsRef.current) {
-      controlsRef.current.unlock();
-    }
+    // Redirect to the main landing page of the site
+    window.location.href = '/';
   };
 
   const resumeGame = () => {
