@@ -197,14 +197,28 @@ export function detectWeaponFromFilenames(filenames) {
     });
 
     for (const w of sorted) {
+      const parts = w.id.toLowerCase().split('_');
+      // Important parts are usually the last ones (e.g. 'vintage', 'pistol')
+      // but we want to avoid generic ones like 'w', 'pi', 'pistol' if there are better ones
+      const uniqueParts = parts.filter(p => !['w', 'pi', 'sb', 'ar', 'sg', 'mg', 'sr', 'lr', 'me', 'ex', 'pistol', 'rifle', 'smg', 'shotgun'].includes(p));
+      
       const shortId = w.id.replace('w_', '').replace('pi_', '').replace('sb_', '')
         .replace('ar_', '').replace('sg_', '').replace('mg_', '')
         .replace('sr_', '').replace('lr_', '').replace('me_', '')
         .replace('ex_', '').replace(/_/g, '');
       
       const fnameClean = fname.replace(/_/g, '');
+      
+      // Match full short ID (e.g. vintagepistol)
       if (fnameClean.includes(shortId) && shortId.length >= 3) {
         return { id: w.id, name: w.name };
+      }
+
+      // Match unique parts (e.g. 'vintage' matches 'w_pi_vintage_pistol')
+      for (const part of uniqueParts) {
+        if (part.length >= 4 && fnameClean.includes(part)) {
+          return { id: w.id, name: w.name };
+        }
       }
     }
   }
