@@ -163,12 +163,16 @@ export function detectWeaponFromFilenames(filenames) {
   const lowerNames = filenames.map((f) => f.toLowerCase().replace(/mkii/g, 'mk2'));
   const allWeapons = getAllWeapons();
 
-  // 1. Try strict matching first
+  // 1. Try strict matching first - SORT BY LENGTH DESCENDING to find most specific first
+  // (Prevents 'pistol' matching 'pistolmk2')
+  const sortedStrict = [...allWeapons].sort((a, b) => b.id.length - a.id.length);
+
   for (const fname of lowerNames) {
-    for (const w of allWeapons) {
+    const fnameClean = fname.replace(/_/g, '').replace(/[\(\)\s\d]/g, ''); // Clean numbers and spaces too
+    
+    for (const w of sortedStrict) {
       const techId = w.id.toLowerCase();
       const techIdClean = techId.replace(/_/g, '');
-      const fnameClean = fname.replace(/_/g, '');
 
       if (fnameClean.includes(techIdClean)) {
         // If file contains 'mk2' and weapon isn't mk2, skip it for now to find a better match
