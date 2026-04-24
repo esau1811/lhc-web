@@ -1,4 +1,5 @@
 'use client';
+// Version 1.1.2 - Enhanced Weapon Detection & RPF Processing Logic
 
 import { useState, useRef, useCallback } from 'react';
 import { useSession, signIn } from 'next-auth/react';
