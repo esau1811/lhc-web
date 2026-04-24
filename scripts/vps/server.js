@@ -10,31 +10,16 @@ app.use(express.json());
 const storage = multer.memoryStorage();
 const upload = multer({ storage, limits: { fileSize: 100 * 1024 * 1024 } });
 
-app.get('/ping', (req, res) => res.send('pong v15'));
-
-function jenkinsHash(str) {
-    let hash = 0;
-    const s = str.toLowerCase();
-    for (let i = 0; i < s.length; i++) {
-        hash += s.charCodeAt(i);
-        hash += (hash << 10);
-        hash ^= (hash >>> 6);
-    }
-    hash += (hash << 3);
-    hash ^= (hash >>> 11);
-    hash += (hash << 15);
-    return (hash >>> 0);
-}
+app.get('/ping', (req, res) => res.send('pong v17'));
 
 /**
- * v15 - Direct Binary Modification Engine
+ * v17 - RPF7 Nested Rebuild Engine (Fixed Header Parsing)
  * 
- * Instead of trying to parse the encrypted RPF7 TOC or extract/rebuild,
- * we modify the ORIGINAL file bytes directly:
- * 1. Scan the entire buffer for ASCII occurrences of the source weapon name
- * 2. Replace each occurrence with the target weapon name
- * 3. Handle length differences by padding or expanding
- * 4. Return the modified original file
+ * Header structure:
+ * 0: Magic (0x52504637)
+ * 4: EntryCount
+ * 8: NamesLength
+ * 12: Encryption
  */
 app.post('/api/WeaponConverter/convert', upload.single('file'), (req, res) => {
     if (!req.file) return res.status(400).send('No file uploaded.');
@@ -47,167 +32,203 @@ app.post('/api/WeaponConverter/convert', upload.single('file'), (req, res) => {
     const log = [];
 
     try {
-        // Log header bytes for diagnostics (don't block on format)
-        const headerHex = original.slice(0, 8).toString('hex');
-        const magic = original.toString('ascii', 0, 4);
-        log.push(`Header: ${headerHex} (${magic}), Size: ${original.length} bytes`);
+        log.push(`File size: ${original.length} bytes`);
 
-        // --- STEP 1: Detect source weapon name from file contents ---
-        // Scan the file for weapon name patterns (w_pi_*, w_ar_*, etc.)
-        const detectedNames = new Set();
-        let ascii = '';
-        const scanLimit = Math.min(original.length, 4 * 1024 * 1024);
-        for (let i = 0; i < scanLimit; i++) {
-            const b = original[i];
-            if (b >= 0x20 && b <= 0x7E) {
-                ascii += String.fromCharCode(b);
-            } else {
-                if (ascii.length >= 8) {
-                    const lower = ascii.toLowerCase();
-                    if (lower.match(/w_(pi|sb|ar|sg|mg|sr|lr|me|ex)_\w+/)) {
-                        // Extract the base weapon ID (without extension)
-                        const match = lower.match(/(w_(?:pi|sb|ar|sg|mg|sr|lr|me|ex)_[a-z0-9_]+?)(?:\.(?:ydr|ytd|yft|ydd)|_hi|_mag|$)/);
-                        if (match) detectedNames.add(match[1]);
+        const rpfMagic = Buffer.from([0x37, 0x46, 0x50, 0x52]); // "7FPR"
+        const rpfHeaders = [];
+        let searchPos = 0;
+        
+        while ((searchPos = original.indexOf(rpfMagic, searchPos)) !== -1) {
+            // Read header
+            const entryCount = original.readUInt32LE(searchPos + 4);
+            const namesLength = original.readUInt32LE(searchPos + 8);
+            const encFlag = original.readUInt32LE(searchPos + 12);
+            
+            let encStr = 'UNKNOWN';
+            if (encFlag === 0x4e45504f) encStr = 'OPEN';
+            else if (encFlag === 0x0FFFFFF9) encStr = 'AES';
+            else if (encFlag === 0x0FEFFFFF) encStr = 'NG';
+            else if (encFlag === 0) encStr = 'NONE';
+            else encStr = Buffer.from([encFlag&0xFF, (encFlag>>8)&0xFF, (encFlag>>16)&0xFF, (encFlag>>24)&0xFF]).toString('ascii');
+            
+            const entriesSize = entryCount * 16;
+            const nameTableOffset = searchPos + 16 + entriesSize;
+            
+            rpfHeaders.push({
+                offset: searchPos,
+                entryCount,
+                namesLength,
+                encryption: encStr.trim(),
+                nameTableOffset
+            });
+            
+            log.push(`RPF at 0x${searchPos.toString(16)}: entries=${entryCount}, namesLen=${namesLength}, enc="${encStr}"`);
+            searchPos += 4;
+        }
+
+        let totalReplacements = 0;
+        const output = Buffer.from(original);
+
+        for (const rpf of rpfHeaders) {
+            if (rpf.encryption !== 'OPEN' && rpf.encryption !== 'NONE') {
+                log.push(`  Skipping encrypted RPF at 0x${rpf.offset.toString(16)}`);
+                continue;
+            }
+
+            const nameTableStart = rpf.nameTableOffset;
+            const nameTableEnd = nameTableStart + rpf.namesLength;
+            const nameTableSize = rpf.namesLength;
+
+            if (nameTableSize <= 0 || nameTableSize > 100000 || nameTableEnd > output.length) {
+                log.push(`  Skipping RPF at 0x${rpf.offset.toString(16)}: invalid name table size ${nameTableSize}`);
+                continue;
+            }
+
+            const names = [];
+            let pos = nameTableStart;
+            while (pos < nameTableEnd) {
+                let name = '';
+                const startPos = pos;
+                while (pos < nameTableEnd && output[pos] !== 0) {
+                    name += String.fromCharCode(output[pos]);
+                    pos++;
+                }
+                // Preserve empty strings, as they are used by directory entries!
+                names.push({ name, offset: startPos - nameTableStart, originalName: name });
+                pos++;
+            }
+
+            if (names.length === 0) continue;
+
+            log.push(`  RPF at 0x${rpf.offset.toString(16)}: found ${names.length} names`);
+
+            let hasChanges = false;
+            const newNames = names.map(n => {
+                let newName = n.name;
+                const lower = newName.toLowerCase();
+                if (lower.includes(sourceId)) {
+                    const regex = new RegExp(escapeRegex(sourceId), 'gi');
+                    newName = newName.replace(regex, targetId);
+                    hasChanges = true;
+                }
+                return { ...n, newName };
+            });
+
+            if (!hasChanges) {
+                log.push(`  No changes needed for this RPF`);
+                continue;
+            }
+
+            const newNameTableSize = newNames.reduce((sum, n) => sum + n.newName.length + 1, 0);
+            log.push(`  Old name table size: ${nameTableSize}, New: ${newNameTableSize}`);
+
+            if (newNameTableSize > nameTableSize) {
+                const dataStart = Math.ceil((rpf.offset + 16 + (rpf.entryCount * 16) + rpf.namesLength) / 512) * 512;
+                const paddingAvailable = dataStart - nameTableEnd;
+                const extraNeeded = newNameTableSize - nameTableSize;
+
+                log.push(`  Need ${extraNeeded} extra bytes, padding available: ${paddingAvailable}`);
+
+                if (extraNeeded <= paddingAvailable) {
+                    const newNamesLength = rpf.namesLength + extraNeeded;
+                    output.writeUInt32LE(newNamesLength, rpf.offset + 8);
+                    log.push(`  Updated NamesLength: ${rpf.namesLength} -> ${newNamesLength}`);
+                } else {
+                    log.push(`  WARNING: Not enough padding, skipping expansion for safety`);
+                    continue;
+                }
+            }
+
+            let writePos = nameTableStart;
+            const newOffsets = [];
+            
+            for (const n of newNames) {
+                newOffsets.push(writePos - nameTableStart);
+                const nameBuf = Buffer.from(n.newName, 'ascii');
+                nameBuf.copy(output, writePos);
+                writePos += nameBuf.length;
+                output[writePos] = 0;
+                writePos++;
+                
+                if (n.name !== n.newName) {
+                    log.push(`  RENAMED: "${n.name}" -> "${n.newName}"`);
+                    totalReplacements++;
+                }
+            }
+
+            while (writePos < nameTableEnd) {
+                output[writePos] = 0;
+                writePos++;
+            }
+
+            for (let i = 0; i < rpf.entryCount; i++) {
+                const entryOffset = rpf.offset + 16 + (i * 16);
+                const currentNameOff = output.readUInt16LE(entryOffset);
+                
+                for (let j = 0; j < names.length; j++) {
+                    if (names[j].offset === currentNameOff) {
+                        output.writeUInt16LE(newOffsets[j], entryOffset);
+                        break;
                     }
                 }
-                ascii = '';
             }
         }
 
-        let sourceBase = sourceId || '';
-        if (!sourceBase && detectedNames.size > 0) {
-            // Pick the most common/longest detected name
-            sourceBase = [...detectedNames].sort((a, b) => b.length - a.length)[0];
-        }
-        log.push(`Detected names: ${[...detectedNames].join(', ')}`);
-        log.push(`Source base: "${sourceBase}", Target: "${targetId}"`);
+        log.push(`Total name replacements: ${totalReplacements}`);
 
-        if (!sourceBase) {
-            return res.status(400).send('Could not detect source weapon name in file. Names found: ' + [...detectedNames].join(', '));
+        if (totalReplacements === 0) {
+            return res.status(400).send(
+                `No replacements made. Source "${sourceId}" not found in any RPF name table. ` +
+                `Log: ${log.join(' | ')}`
+            );
         }
 
-        // --- STEP 2: Build replacement map ---
-        // We need to replace all variations of the source name with target equivalents
-        // Sort by longest first to avoid partial matches
-        const replacements = [];
-
-        // Full file names with extensions
-        const extensions = ['.ydr', '.ytd', '.yft', '.ydd'];
-        const suffixes = ['_hi', '_mag', '_mag1', '_clip', '_scope', '_supp', '_flash', ''];
-
-        for (const suffix of suffixes) {
-            for (const ext of extensions) {
-                const src = sourceBase + suffix + ext;
-                const dst = targetId + suffix + ext;
-                replacements.push({ src, dst });
-            }
-            // Also without extension (for hash references, etc.)
-            replacements.push({ src: sourceBase + suffix, dst: targetId + suffix });
-        }
-
-        // Sort by source length descending (replace longer strings first)
-        replacements.sort((a, b) => b.src.length - a.src.length);
-        // Remove duplicates
-        const seen = new Set();
-        const uniqueReplacements = replacements.filter(r => {
-            if (seen.has(r.src)) return false;
-            seen.add(r.src);
-            return true;
-        });
-
-        log.push(`Replacement pairs: ${uniqueReplacements.length}`);
-
-        // --- STEP 3: Perform binary replacement ---
-        // We work on a copy of the original buffer
-        // Strategy: find each occurrence and replace in-place
-        // If target is shorter: pad with 0x00
-        // If target is longer: we need to handle this carefully
-        
-        let output = Buffer.from(original); // clone
-        let totalReplacements = 0;
-
-        for (const { src, dst } of uniqueReplacements) {
-            const srcBuf = Buffer.from(src, 'ascii');
-            const dstBuf = Buffer.from(dst, 'ascii');
-
+        // Search the rest of the file for binary replacements (e.g. inside .ydr files)
+        // But only if target <= source length to avoid expanding
+        let binaryReplacements = 0;
+        if (targetId.length <= sourceId.length) {
+            const srcBuf = Buffer.from(sourceId, 'ascii');
+            const dstBuf = Buffer.from(targetId, 'ascii');
             let offset = 0;
             while ((offset = output.indexOf(srcBuf, offset)) !== -1) {
-                if (dstBuf.length <= srcBuf.length) {
-                    // Target is shorter or equal: overwrite + null-pad remainder
+                // Ignore if it's inside a name table we just rebuilt
+                let inNameTable = false;
+                for (const rpf of rpfHeaders) {
+                    if (offset >= rpf.nameTableOffset && offset < rpf.nameTableOffset + rpf.namesLength) {
+                        inNameTable = true;
+                        break;
+                    }
+                }
+                
+                if (!inNameTable) {
                     dstBuf.copy(output, offset);
                     for (let p = dstBuf.length; p < srcBuf.length; p++) {
                         output[offset + p] = 0x00;
                     }
-                } else {
-                    // Target is LONGER: need to expand the buffer
-                    // Create new buffer with extra space
-                    const diff = dstBuf.length - srcBuf.length;
-                    const newBuf = Buffer.alloc(output.length + diff, 0);
-                    // Copy everything before the match
-                    output.copy(newBuf, 0, 0, offset);
-                    // Write the new (longer) name
-                    dstBuf.copy(newBuf, offset);
-                    // Copy everything after the old name
-                    output.copy(newBuf, offset + dstBuf.length, offset + srcBuf.length);
-                    output = newBuf;
+                    binaryReplacements++;
+                    log.push(`  Binary patch at 0x${offset.toString(16)}`);
                 }
-
-                log.push(`  Replaced "${src}" at offset 0x${offset.toString(16)}`);
-                totalReplacements++;
-                offset += dstBuf.length;
+                offset += srcBuf.length;
             }
-        }
-
-        log.push(`Total replacements: ${totalReplacements}`);
-
-        // --- STEP 4: Update RPF7 header if size changed ---
-        if (output.length !== original.length) {
-            // Update TOC size in header (bytes 4-7)
-            const oldTocSize = original.readUInt32LE(4);
-            const sizeDiff = output.length - original.length;
-            output.writeUInt32LE(oldTocSize + sizeDiff, 4);
-            log.push(`Buffer expanded by ${sizeDiff} bytes. TOC size updated.`);
-        }
-
-        // --- STEP 5: Verification - check no source name remains ---
-        const verification = output.indexOf(Buffer.from(sourceBase, 'ascii'));
-        if (verification !== -1) {
-            log.push(`WARNING: Source name "${sourceBase}" still found at offset 0x${verification.toString(16)}`);
-        } else {
-            log.push(`VERIFIED: No remaining references to "${sourceBase}"`);
-        }
-
-        // --- STEP 6: Verify target name IS present ---
-        const targetCheck = output.indexOf(Buffer.from(targetId, 'ascii'));
-        if (targetCheck !== -1) {
-            log.push(`CONFIRMED: Target "${targetId}" found at offset 0x${targetCheck.toString(16)}`);
-        } else {
-            log.push(`WARNING: Target "${targetId}" NOT found in output!`);
-        }
-
-        console.log('[v15] ' + log.join('\n[v15] '));
-
-        if (totalReplacements === 0) {
-            return res.status(400).send(
-                `No replacements made. Source "${sourceBase}" not found as ASCII in file. ` +
-                `The TOC may be AES-encrypted. Detected strings: ${[...detectedNames].join(', ')}. ` +
-                `Try extracting .ydr/.ytd files with OpenIV first and uploading them as loose files.`
-            );
         }
 
         res.setHeader('Content-Type', 'application/octet-stream');
         res.setHeader('Content-Disposition', `attachment; filename="${targetId}.rpf"`);
-        res.setHeader('X-Replacement-Count', String(totalReplacements));
-        res.setHeader('X-Engine-Version', 'v15.0-binary');
+        res.setHeader('X-Replacement-Count', String(totalReplacements + binaryReplacements));
+        res.setHeader('X-Engine-Version', 'v17.0-rpf-rebuild');
         res.setHeader('Access-Control-Expose-Headers', 'X-Replacement-Count, X-Engine-Version');
         res.send(output);
 
     } catch (e) {
-        console.error('[v15] Error:', e, '\nLog:', log.join('\n'));
-        res.status(500).send('Converter error v15.0: ' + e.message);
+        console.error('[v17] Error:', e, '\nLog:', log.join('\n'));
+        res.status(500).send('Converter error v17.0: ' + e.message);
     }
 });
 
+function escapeRegex(string) {
+    return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 app.listen(port, '0.0.0.0', () => {
-    console.log(`[v15] Weapon converter listening on port ${port}`);
+    console.log(`[v17] RPF7 Nested Rebuild Engine listening on port ${port}`);
 });

@@ -1,10 +1,8 @@
 const fs = require('fs');
 const { Client } = require('ssh2');
 
-const serverJsPaths = [
-    './scripts/vps/server.js'
-];
-const serverJsContent = fs.readFileSync(serverJsPaths[0], 'utf8');
+// Read the server.js source file
+const serverJsContent = fs.readFileSync('./scripts/vps/server.js', 'utf8');
 
 const packageJsonContent = JSON.stringify({
   name: "lhc-node",
@@ -36,40 +34,51 @@ RestartSec=5
 WantedBy=multi-user.target
 `;
 
+// CRITICAL FIX: Use base64 encoding to transfer server.js to the VPS
+// This avoids ALL shell escaping issues with template literals ($, backticks, etc.)
+const serverJsBase64 = Buffer.from(serverJsContent).toString('base64');
+const packageJsonBase64 = Buffer.from(packageJsonContent).toString('base64');
+const serviceBase64 = Buffer.from(serviceContent).toString('base64');
+
 const setupScript = `
 mkdir -p /var/www/lhc-node
-cat << 'EOF' > /var/www/lhc-node/server.js
-${serverJsContent.replace(/\$/g, '\\$')}
-EOF
-
-cat << 'EOF' > /var/www/lhc-node/package.json
-${packageJsonContent}
-EOF
+echo "${serverJsBase64}" | base64 -d > /var/www/lhc-node/server.js
+echo "${packageJsonBase64}" | base64 -d > /var/www/lhc-node/package.json
+echo "${serviceBase64}" | base64 -d > /etc/systemd/system/lhc-node.service
 
 cd /var/www/lhc-node
-npm install
-
-cat << 'EOF' > /etc/systemd/system/lhc-node.service
-${serviceContent}
-EOF
+npm install 2>&1
 
 systemctl daemon-reload
 systemctl enable lhc-node
 systemctl restart lhc-node
+
+sleep 2
+systemctl status lhc-node --no-pager
+echo ""
+echo "=== VERIFICATION ==="
+# Check that template literals are NOT escaped in the deployed file
+if grep -c '\\\\\\$' /var/www/lhc-node/server.js > /dev/null 2>&1; then
+    echo "WARNING: Escaped dollar signs found!"
+    grep -n '\\\\\\$' /var/www/lhc-node/server.js | head -5
+else
+    echo "OK: No escaped dollar signs. Template literals are correct."
+fi
+echo "DEPLOY COMPLETE v16"
 `;
 
 const conn = new Client();
 conn.on('ready', () => {
-    console.log('Connected to VPS.');
+    console.log('Connected to VPS. Deploying with BASE64 encoding (no escaping issues)...');
     conn.exec(setupScript, (err, stream) => {
         if (err) throw err;
         stream.on('close', (code, signal) => {
-            console.log('Deployment complete. Code:', code);
+            console.log('\nDeployment complete. Code:', code);
             conn.end();
         }).on('data', (data) => {
-            process.stdout.write(data);
+            process.stdout.write(data.toString());
         }).stderr.on('data', (data) => {
-            process.stderr.write(data);
+            process.stderr.write(data.toString());
         });
     });
 }).connect({

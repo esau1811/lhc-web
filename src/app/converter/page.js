@@ -362,11 +362,23 @@ export default function ConverterPage() {
                     onChange={(e) => setTargetWeapon(e.target.value)}
                   >
                     <option value="" disabled className="bg-black">Convertir a...</option>
-                    {Object.entries(WEAPON_CATEGORIES).map(([id, cat]) => (
-                      <optgroup key={id} label={cat.label} className="bg-black">
-                        {cat.weapons.map(w => <option key={w.id} value={w.id} className="bg-black">{w.name}</option>)}
-                      </optgroup>
-                    ))}
+                    {Object.entries(WEAPON_CATEGORIES).map(([id, cat]) => {
+                      // Solo permitir las armas probadas y validadas por el usuario para el destino
+                      const allowedIds = [
+                        'w_pi_combatpistol', 'w_pi_pistol', 'w_pi_snspistol', 'w_pi_snspistolmk2', 
+                        'w_pi_vintage_pistol', 'w_pi_pistolmk2', 'w_sb_smg', 'w_sb_minismg', 
+                        'w_sb_microsmg', 'w_pi_appistol', 'w_sb_combatpdw'
+                      ];
+                      const filteredWeapons = cat.weapons.filter(w => allowedIds.includes(w.id));
+                      
+                      if (filteredWeapons.length === 0) return null;
+                      
+                      return (
+                        <optgroup key={id} label={cat.label} className="bg-black">
+                          {filteredWeapons.map(w => <option key={w.id} value={w.id} className="bg-black">{w.name}</option>)}
+                        </optgroup>
+                      );
+                    })}
                   </select>
                 </div>
               </div>
