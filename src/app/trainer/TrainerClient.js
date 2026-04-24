@@ -33,10 +33,12 @@ export default function TrainerPage() {
   const [consoleLogs, setConsoleLogs] = useState(['LHC Trainer Console v1.0.0', 'Press J to toggle', 'Type commands like: profile_mouseOnFootScale -5']);
   
   // Trainer Settings (Refs for the loop)
-  const sensRef = useRef(1);
-  const retSizeRef = useRef(1);
-  const retTypeRef = useRef('complex');
-  const bindsRef = useRef({});
+  const sensRef = useRef(1.0); // Equivalent to 0 in FiveM/GTA
+  const retSizeRef = useRef(1.0);
+  const retTypeRef = useRef('simple');
+  const bindsRef = useRef({
+    'm': 'toggle profile_reticule'
+  });
   const timeRef = useRef(60);
   const scoreRef = useRef(0);
 
@@ -75,22 +77,21 @@ export default function TrainerPage() {
         bindsRef.current[key] = subCmd;
         setConsoleLogs(prev => [...prev, `TECLA [${key.toUpperCase()}] ASIGNADA A: ${subCmd}`]);
       }
-      return; // Stop here for bind
+      return; 
     }
 
     if (action === 'profile_mouseonfootscale') {
       const val = parseFloat(parts[1]);
-      const newSens = 1 + (val * 0.1);
-      sensRef.current = Math.max(0.01, newSens);
+      // Standard GTA mapping: 1.0 + (val * 0.1)
+      sensRef.current = 1.0 + (val * 0.1);
       setSensitivity(sensRef.current);
-      setConsoleLogs(prev => [...prev, `Sensibilidad: ${sensRef.current.toFixed(2)}`]);
+      setConsoleLogs(prev => [...prev, `SENSIBILIDAD FIVE M AJUSTADA: ${val}`]);
     } 
     else if (action === 'profile_reticulesize') {
       const val = parseFloat(parts[1]);
-      const newSize = 1 + (val * 0.2);
-      retSizeRef.current = Math.max(0.1, newSize);
+      retSizeRef.current = 1.0 + (val * 0.2);
       setReticuleSize(retSizeRef.current);
-      setConsoleLogs(prev => [...prev, `Tamaño Mira: ${retSizeRef.current.toFixed(2)}`]);
+      setConsoleLogs(prev => [...prev, `TAMAÑO MIRA: ${val}`]);
     }
     else if (action === 'toggle' && cleanCmd.toLowerCase().includes('profile_reticule')) {
       retTypeRef.current = retTypeRef.current === 'complex' ? 'simple' : 'complex';
@@ -253,7 +254,7 @@ export default function TrainerPage() {
 
       // Manual rotation logic with sensitivity
       const sensMultiplier = Math.pow(1.2, (sensRef.current - 1) * 2); 
-      const finalSens = 0.002 * sensMultiplier;
+      const finalSens = 0.0015 * sensMultiplier;
 
       const euler = new THREE.Euler(0, 0, 0, 'YXZ');
       euler.setFromQuaternion(camera.quaternion);
