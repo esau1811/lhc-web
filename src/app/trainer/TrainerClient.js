@@ -130,7 +130,7 @@ export default function TrainerPage() {
     sceneRef.current = scene;
 
     const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-    camera.position.y = 1.6;
+    camera.position.set(0, 1.6, 0);
     cameraRef.current = camera;
 
     const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
@@ -142,6 +142,7 @@ export default function TrainerPage() {
     const controls = new PointerLockControls(camera, renderer.domElement);
     controlsRef.current = controls;
 
+    // PointerLock Events
     controls.addEventListener('lock', () => {
       gameStateRef.current = 'playing';
       setGameState('playing');
@@ -156,31 +157,24 @@ export default function TrainerPage() {
       }
     });
 
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+    // Lights & Environment
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
     scene.add(ambientLight);
-
-    const mainLight = new THREE.PointLight(0xeab308, 1, 100);
+    const mainLight = new THREE.PointLight(0xffffff, 1, 100);
     mainLight.position.set(0, 10, 0);
     scene.add(mainLight);
+    scene.add(new THREE.GridHelper(200, 100, 0x222222, 0x111111));
 
-    const gridHelper = new THREE.GridHelper(200, 100, 0x222222, 0x111111);
-    scene.add(gridHelper);
-
-    const floorGeo = new THREE.PlaneGeometry(200, 200);
-    const floorMat = new THREE.MeshStandardMaterial({ color: 0x050505, roughness: 0.9 });
-    const floor = new THREE.Mesh(floorGeo, floorMat);
+    const floor = new THREE.Mesh(new THREE.PlaneGeometry(200, 200), new THREE.MeshStandardMaterial({ color: 0x050505 }));
     floor.rotation.x = -Math.PI / 2;
     scene.add(floor);
 
     const internalSpawn = () => {
-      const geometry = new THREE.SphereGeometry(0.5, 32, 32);
-      const material = new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0xffffff, emissiveIntensity: 0.2, metalness: 0.8, roughness: 0.2 });
-      const sphere = new THREE.Mesh(geometry, material);
+      const sphere = new THREE.Mesh(new THREE.SphereGeometry(0.5, 32, 32), new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0xffffff, emissiveIntensity: 0.2 }));
       sphere.position.set((Math.random() - 0.5) * 30, (Math.random() * 8) + 1, -((Math.random() * 20) + 10));
       scene.add(sphere);
       targetsRef.current.push(sphere);
     };
-
     for (let i = 0; i < 8; i++) internalSpawn();
 
     let moveForward = false, moveBackward = false, moveLeft = false, moveRight = false;
@@ -199,32 +193,27 @@ export default function TrainerPage() {
       const key = e.key.toLowerCase();
       if (bindsRef.current[key]) handleCommand(bindsRef.current[key]);
       switch (e.code) {
-        case 'ArrowUp': case 'KeyW': moveForward = true; break;
-        case 'ArrowLeft': case 'KeyA': moveLeft = true; break;
-        case 'ArrowDown': case 'KeyS': moveBackward = true; break;
-        case 'ArrowRight': case 'KeyD': moveRight = true; break;
+        case 'KeyW': moveForward = true; break;
+        case 'KeyA': moveLeft = true; break;
+        case 'KeyS': moveBackward = true; break;
+        case 'KeyD': moveRight = true; break;
       }
     };
-
     const onKeyUp = (e) => {
       switch (e.code) {
-        case 'ArrowUp': case 'KeyW': moveForward = false; break;
-        case 'ArrowLeft': case 'KeyA': moveLeft = false; break;
-        case 'ArrowDown': case 'KeyS': moveBackward = false; break;
-        case 'ArrowRight': case 'KeyD': moveRight = false; break;
+        case 'KeyW': moveForward = false; break;
+        case 'KeyA': moveLeft = false; break;
+        case 'KeyS': moveBackward = false; break;
+        case 'KeyD': moveRight = false; break;
       }
     };
-
     window.addEventListener('keydown', onKeyDown);
     window.addEventListener('keyup', onKeyUp);
 
     const raycaster = new THREE.Raycaster();
-    raycaster.far = 1000;
-    const mouse = new THREE.Vector2(0, 0);
-
     const onMouseDown = () => {
       if (!controls.isLocked || consoleOpenRef.current || gameStateRef.current !== 'playing') return;
-      raycaster.setFromCamera(mouse, camera);
+      raycaster.setFromCamera(new THREE.Vector2(0,0), camera);
       const intersects = raycaster.intersectObjects(targetsRef.current);
       if (intersects.length > 0) {
         const hit = intersects[0].object;
@@ -235,21 +224,7 @@ export default function TrainerPage() {
         internalSpawn();
       }
     };
-
     window.addEventListener('mousedown', onMouseDown);
-
-    const onMouseMove = (event) => {
-      if (!controls.isLocked || consoleOpenRef.current) return;
-      const movementX = event.movementX || 0, movementY = event.movementY || 0;
-      const euler = new THREE.Euler(0, 0, 0, 'YXZ');
-      euler.setFromQuaternion(camera.quaternion);
-      euler.y -= movementX * (sensRef.current * 0.002);
-      euler.x -= movementY * (sensRef.current * 0.002);
-      euler.x = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, euler.x));
-      camera.quaternion.setFromEuler(euler);
-    };
-
-    window.addEventListener('mousemove', onMouseMove);
 
     let prevTime = performance.now(), frames = 0, lastFpsUpdate = 0;
     const animate = () => {
@@ -261,7 +236,7 @@ export default function TrainerPage() {
         lastFpsUpdate = timeNow;
         frames = 0;
       }
-      if (controls.isLocked && !consoleOpenRef.current && gameStateRef.current === 'playing') {
+      if (controls.isLocked && !consoleOpenRef.current) {
         const delta = (timeNow - prevTime) / 1000;
         velocity.x -= velocity.x * 10.0 * delta;
         velocity.z -= velocity.z * 10.0 * delta;
@@ -272,9 +247,8 @@ export default function TrainerPage() {
         if (moveLeft || moveRight) velocity.x -= direction.x * 100.0 * delta;
         controls.moveRight(-velocity.x * delta);
         controls.moveForward(-velocity.z * delta);
-        const limit = 45;
-        camera.position.x = Math.max(-limit, Math.min(limit, camera.position.x));
-        camera.position.z = Math.max(-limit, Math.min(limit, camera.position.z));
+        camera.position.x = Math.max(-45, Math.min(45, camera.position.x));
+        camera.position.z = Math.max(-45, Math.min(45, camera.position.z));
       }
       prevTime = timeNow;
       renderer.render(scene, camera);
@@ -291,11 +265,10 @@ export default function TrainerPage() {
     return () => {
       clearInterval(timerInterval);
       cancelAnimationFrame(requestRef.current);
-      window.removeEventListener('resize', handleResize);
       window.removeEventListener('keydown', onKeyDown);
       window.removeEventListener('keyup', onKeyUp);
       window.removeEventListener('mousedown', onMouseDown);
-      window.removeEventListener('mousemove', onMouseMove);
+      window.removeEventListener('resize', handleResize);
       if (mountRef.current && renderer.domElement) mountRef.current.removeChild(renderer.domElement);
     };
   }, []);
