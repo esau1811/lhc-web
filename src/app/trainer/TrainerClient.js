@@ -79,7 +79,7 @@ export default function TrainerPage() {
     else if (action === 'toggle' && parts[1] === 'profile_reticule') {
       retTypeRef.current = retTypeRef.current === 'complex' ? 'simple' : 'complex';
       setReticuleType(retTypeRef.current);
-      setConsoleLogs(prev => [...prev, `Reticule style toggled`]);
+      setConsoleLogs(prev => [...prev, `Reticule style: ${retTypeRef.current.toUpperCase()}`]);
     }
     else if (action === 'bind') {
       // bind keyboard "m" "toggle profile_reticule 0 -2"
@@ -218,7 +218,7 @@ export default function TrainerPage() {
       if (intersects.length > 0) {
         const hit = intersects[0].object;
         scene.remove(hit);
-        targetsRef.current.current = targetsRef.current.filter(t => t !== hit);
+        targetsRef.current = targetsRef.current.filter(t => t !== hit);
         setScore(prev => prev + 100);
         spawnTarget(scene);
       }
