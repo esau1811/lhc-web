@@ -258,8 +258,10 @@ export default function TrainerPage() {
     const velocity = new THREE.Vector3(), direction = new THREE.Vector3();
 
     const onKeyDown = (e) => {
+      // Disable game keys if console is open, paused, or game is finished
+      if (gameStateRef.current === 'finished') return;
+
       if (e.key.toLowerCase() === 'j') {
-        e.preventDefault();
         const nextState = !consoleOpenRef.current;
         consoleOpenRef.current = nextState;
         setConsoleOpen(nextState);
@@ -520,9 +522,9 @@ export default function TrainerPage() {
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.9 }}
-            className="absolute inset-0 z-[150] bg-black/90 backdrop-blur-xl flex items-center justify-center p-6"
+            className="absolute inset-0 z-[150] bg-black/90 backdrop-blur-xl flex items-center justify-center p-6 pointer-events-auto"
           >
-            <div className="max-w-md w-full bg-zinc-900 border border-white/10 rounded-3xl p-10 text-center shadow-2xl space-y-8">
+            <div className="max-w-md w-full bg-zinc-900 border border-white/10 rounded-3xl p-10 text-center shadow-2xl space-y-8" onClick={(e) => e.stopPropagation()}>
               <div className="space-y-2">
                 <h2 className="text-sm font-black text-yellow-500 uppercase tracking-[0.3em]">Entrenamiento Finalizado</h2>
                 <p className="text-5xl font-black text-white tabular-nums tracking-tighter">{score.toLocaleString()}</p>
@@ -536,7 +538,8 @@ export default function TrainerPage() {
                     placeholder="Escribe tu nombre..."
                     value={playerName}
                     onChange={(e) => setPlayerName(e.target.value)}
-                    className="w-full bg-white/5 border border-white/10 rounded-xl px-5 py-4 text-white font-bold focus:border-yellow-500/50 outline-none transition-colors pointer-events-auto"
+                    onKeyDown={(e) => e.stopPropagation()} // Prevent J key from opening console
+                    className="w-full bg-white/5 border border-white/10 rounded-xl px-5 py-4 text-white font-bold focus:border-yellow-500/50 outline-none transition-colors"
                   />
                   <button 
                     onClick={saveScore}
