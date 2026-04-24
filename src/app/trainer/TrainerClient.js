@@ -21,6 +21,8 @@ export default function TrainerPage() {
   const cameraRef = useRef(null);
   const rendererRef = useRef(null);
   const controlsRef = useRef(null);
+  const targetsRef = useRef([]);
+  const requestRef = useRef(null);
   // Trainer Settings (States for UI)
   const [sensitivity, setSensitivity] = useState(1);
   const [reticuleSize, setReticuleSize] = useState(1);
