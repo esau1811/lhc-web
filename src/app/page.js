@@ -150,7 +150,7 @@ export default function HomePage() {
       glowClass: 'opti-glow',
       users: '1.5K',
       rating: '4.7',
-      link: '/premium?tab=OPTI'
+      link: '/trainer'
     },
   ];
 
