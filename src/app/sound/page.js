@@ -85,17 +85,45 @@ export default function SoundPage() {
     setRpfFile(file);
   }, []);
 
+  const VPS_URL = 'https://187.33.157.103.nip.io';
+
   const handleProcess = async () => {
     setIsProcessing(true);
     setError('');
     setSuccess('');
 
     try {
-      // Simulation of processing
-      await new Promise(r => setTimeout(r, 2000));
+      const formData = new FormData();
+      formData.append('audio', audioFile);
+      if (mode === 'weapon') formData.append('rpf', rpfFile);
+
+      const endpoint = mode === 'weapon'
+        ? `${VPS_URL}/api/Sound/inject`
+        : `${VPS_URL}/api/Sound/inject`; // kill mode uses same endpoint, RPF optional
+
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errText = await response.text();
+        throw new Error(errText || `Error del servidor (${response.status})`);
+      }
+
+      const blob = await response.blob();
+      const url  = window.URL.createObjectURL(blob);
+      const a    = document.createElement('a');
+      a.href     = url;
+      a.download = 'LHC Sound boost.zip';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+
       setSuccess(mode === 'weapon' ? t('sound_success_weapon') : t('sound_success_kill'));
     } catch (err) {
-      setError('Error al procesar el archivo.');
+      setError(err.message || 'Error al procesar el archivo.');
     } finally {
       setIsProcessing(false);
     }
