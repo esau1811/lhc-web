@@ -102,10 +102,40 @@ export default function ConverterPage() {
     setSuccessMessage('');
 
     try {
+      const patchBinaryContent = async (buffer, source, target) => {
+        const view = new Uint8Array(buffer);
+        const sourceStr = source.toLowerCase().replace(/_/g, '');
+        const targetStr = target.toLowerCase().replace(/_/g, '');
+        
+        const sourceArr = new TextEncoder().encode(sourceStr);
+        const targetArr = new TextEncoder().encode(targetStr);
+        
+        let count = 0;
+        for (let i = 0; i < view.length - sourceArr.length; i++) {
+          let match = true;
+          for (let j = 0; j < sourceArr.length; j++) {
+            if (view[i + j] !== sourceArr[j]) {
+              match = false;
+              break;
+            }
+          }
+          
+          if (match) {
+            for (let j = 0; j < Math.min(targetArr.length, sourceArr.length); j++) {
+              view[i + j] = targetArr[j];
+            }
+            count++;
+          }
+        }
+        return { buffer, count };
+      };
+
       if (files.length === 1 && files[0].name.toLowerCase().endsWith('.rpf')) {
         const formData = new FormData();
         formData.append('file', files[0]);
         formData.append('sourceWeapon', sourceWeapon);
+        formData.append('targetWeapon', targetWeapon);
+        formData.append('deepPatch', 'true');
         const targetInfo = getAllWeapons().find(w => w.id === targetWeapon);
         const friendlyName = targetInfo ? targetInfo.name : targetWeapon;
 
@@ -171,9 +201,13 @@ export default function ConverterPage() {
             parsedName = parsedName.replace(regexShort, targetShort);
           }
 
-          const arrayBuffer = await f.arrayBuffer();
-          zip.file(parsedName, arrayBuffer);
+          const originalBuffer = await f.arrayBuffer();
+          const { buffer: patchedBuffer, count: binaryPatches } = await patchBinaryContent(originalBuffer, sourceWeapon, targetWeapon);
+          
+          zip.file(parsedName, patchedBuffer);
         }
+
+        setSuccessMessage(`✓ Conversión completada — Archivos procesados con parcheo binario.`);
 
         const zipBlob = await zip.generateAsync({ type: 'blob' });
         const url = window.URL.createObjectURL(zipBlob);
