@@ -95,33 +95,14 @@ export default function TrainerPage() {
   };
 
   const startGame = () => {
-    // Sync both state and ref immediately
-    gameStateRef.current = 'playing';
-    setGameState('playing');
-    
     scoreRef.current = 0;
     timeRef.current = 60;
     setScore(0);
     setTime(60);
     setIsPaused(false);
     isPausedRef.current = false;
+    setGameState('playing');
     setHasSaved(false);
-
-    // CRITICAL: Clear existing targets from scene to avoid freezes/memory leaks
-    if (sceneRef.current && targetsRef.current.length > 0) {
-      targetsRef.current.forEach(target => {
-        sceneRef.current.remove(target);
-      });
-      targetsRef.current = [];
-    }
-
-    // Spawn initial targets
-    if (sceneRef.current) {
-      for (let i = 0; i < 8; i++) {
-        internalSpawnGlobal(sceneRef.current);
-      }
-    }
-
     if (controlsRef.current) controlsRef.current.lock();
   };
 
@@ -230,7 +211,6 @@ export default function TrainerPage() {
     }, 1000);
 
     const scene = new THREE.Scene();
-    sceneRef.current = scene; // Save scene to ref for startGame access
     scene.background = new THREE.Color(0x050505);
     scene.fog = new THREE.FogExp2(0x050505, 0.02);
 
@@ -249,11 +229,8 @@ export default function TrainerPage() {
     controlsRef.current = controls;
 
     controls.addEventListener('lock', () => {
-      // Safety check: if we locked but aren't playing, unlock!
-      if (gameStateRef.current !== 'playing') {
-        controls.unlock();
-        return;
-      }
+      // The lock listener should NO LONGER change the gameState.
+      // GameState is only changed by explicit button clicks (startGame).
       setIsPaused(false);
       isPausedRef.current = false;
       consoleOpenRef.current = false;
@@ -285,7 +262,7 @@ export default function TrainerPage() {
     floor.rotation.x = -Math.PI / 2;
     scene.add(floor);
 
-    const internalSpawnGlobal = (targetScene) => {
+    const internalSpawn = () => {
       const sphere = new THREE.Mesh(
         new THREE.SphereGeometry(0.5, 12, 12), 
         new THREE.MeshStandardMaterial({ 
@@ -295,14 +272,10 @@ export default function TrainerPage() {
         })
       );
       sphere.position.set((Math.random() - 0.5) * 30, (Math.random() * 8) + 1, -((Math.random() * 20) + 10));
-      targetScene.add(sphere);
+      scene.add(sphere);
       targetsRef.current.push(sphere);
     };
-
-    // Store in a ref so startGame can call it
-    window.internalSpawn = internalSpawnGlobal;
-
-    for (let i = 0; i < 8; i++) internalSpawnGlobal(scene);
+    for (let i = 0; i < 8; i++) internalSpawn();
 
     let moveForward = false, moveBackward = false, moveLeft = false, moveRight = false;
     const velocity = new THREE.Vector3(), direction = new THREE.Vector3();
@@ -389,8 +362,21 @@ export default function TrainerPage() {
     };
     window.addEventListener('mousemove', onMouseMove);
 
+    let lastTime = performance.now();
+    let frameCount = 0;
+
     const animate = () => {
       requestRef.current = requestAnimationFrame(animate);
+      
+      // Calculate FPS
+      frameCount++;
+      const now = performance.now();
+      if (now - lastTime >= 1000) {
+        setFps(frameCount);
+        frameCount = 0;
+        lastTime = now;
+      }
+
       if (controls.isLocked && !consoleOpenRef.current && !isPausedRef.current) {
         const delta = 0.016;
         velocity.x -= velocity.x * 10.0 * delta;
