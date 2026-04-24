@@ -15,6 +15,9 @@ export default function TrainerPage() {
   const [score, setScore] = useState(0);
   const [time, setTime] = useState(60);
   const [fps, setFps] = useState(0);
+  const [leaderboard, setLeaderboard] = useState([]);
+  const [playerName, setPlayerName] = useState('');
+  const [hasSaved, setHasSaved] = useState(false);
 
   // Three.js Refs
   const sceneRef = useRef(null);
@@ -44,6 +47,28 @@ export default function TrainerPage() {
   const [isPaused, setIsPaused] = useState(false);
   const isPausedRef = useRef(false);
 
+  // Load Leaderboard
+  useEffect(() => {
+    const saved = localStorage.getItem('lhc_leaderboard');
+    if (saved) setLeaderboard(JSON.parse(saved));
+  }, []);
+
+  const saveScore = () => {
+    if (!playerName.trim() || hasSaved) return;
+    const newEntry = { 
+      name: playerName.trim(), 
+      score: score, 
+      date: new Date().toLocaleDateString() 
+    };
+    const newLeaderboard = [...leaderboard, newEntry]
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 10);
+    
+    setLeaderboard(newLeaderboard);
+    localStorage.setItem('lhc_leaderboard', JSON.stringify(newLeaderboard));
+    setHasSaved(true);
+  };
+
   const startGame = () => {
     scoreRef.current = 0;
     timeRef.current = 60;
@@ -51,6 +76,8 @@ export default function TrainerPage() {
     setTime(60);
     setIsPaused(false);
     isPausedRef.current = false;
+    setGameState('playing');
+    setHasSaved(false);
     if (controlsRef.current) controlsRef.current.lock();
   };
 
@@ -143,8 +170,8 @@ export default function TrainerPage() {
           timeRef.current -= 1;
           setTime(timeRef.current);
         } else {
-          gameStateRef.current = 'menu';
-          setGameState('menu');
+          gameStateRef.current = 'finished';
+          setGameState('finished');
           if (controlsRef.current) controlsRef.current.unlock();
         }
       }
@@ -476,52 +503,140 @@ export default function TrainerPage() {
         </div>
       </div>
 
-      {/* MENU / OVERLAY */}
+      {/* RESULTS / GAME OVER */}
+      <AnimatePresence>
+        {gameState === 'finished' && (
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.9 }}
+            className="absolute inset-0 z-[150] bg-black/90 backdrop-blur-xl flex items-center justify-center p-6"
+          >
+            <div className="max-w-md w-full bg-zinc-900 border border-white/10 rounded-3xl p-10 text-center shadow-2xl space-y-8">
+              <div className="space-y-2">
+                <h2 className="text-sm font-black text-yellow-500 uppercase tracking-[0.3em]">Entrenamiento Finalizado</h2>
+                <p className="text-5xl font-black text-white tabular-nums tracking-tighter">{score.toLocaleString()}</p>
+                <p className="text-zinc-500 text-xs font-bold uppercase tracking-widest">Puntos Totales</p>
+              </div>
+
+              {!hasSaved ? (
+                <div className="space-y-4">
+                  <input 
+                    type="text"
+                    placeholder="Escribe tu nombre..."
+                    value={playerName}
+                    onChange={(e) => setPlayerName(e.target.value)}
+                    className="w-full bg-white/5 border border-white/10 rounded-xl px-5 py-4 text-white font-bold focus:border-yellow-500/50 outline-none transition-colors pointer-events-auto"
+                  />
+                  <button 
+                    onClick={saveScore}
+                    className="w-full py-4 bg-yellow-500 text-black font-black rounded-xl hover:bg-yellow-400 transition-all uppercase tracking-widest pointer-events-auto"
+                  >
+                    Guardar en el Ranking
+                  </button>
+                </div>
+              ) : (
+                <div className="p-4 bg-green-500/10 border border-green-500/20 rounded-xl">
+                  <p className="text-green-500 font-bold text-sm">¡Puntuación guardada correctamente!</p>
+                </div>
+              )}
+
+              <div className="flex gap-3 pt-4">
+                <button 
+                  onClick={startGame}
+                  className="flex-1 py-4 bg-white/5 text-white font-black rounded-xl hover:bg-white/10 transition-colors uppercase tracking-widest text-xs pointer-events-auto"
+                >
+                  Volver a Jugar
+                </button>
+                <button 
+                  onClick={quitGame}
+                  className="flex-1 py-4 bg-zinc-800 text-zinc-400 font-black rounded-xl hover:bg-zinc-700 transition-colors uppercase tracking-widest text-xs pointer-events-auto"
+                >
+                  Ir al Menú
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* MENU / LEADERBOARD */}
       <AnimatePresence>
         {gameState === 'menu' && !consoleOpen && (
           <motion.div 
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="absolute inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm"
+            className="absolute inset-0 z-50 flex flex-col md:flex-row items-center justify-center bg-black/80 backdrop-blur-sm p-10 gap-12"
           >
-            <div className="max-w-md w-full p-12 text-center">
-              <div className="mb-8 flex justify-center">
-                <div className="w-20 h-20 bg-yellow-500/10 rounded-3xl flex items-center justify-center border border-yellow-500/20">
+            {/* Left: Branding & Start */}
+            <div className="max-w-md w-full text-center md:text-left space-y-8">
+              <div>
+                <div className="w-20 h-20 bg-yellow-500/10 rounded-3xl flex items-center justify-center border border-yellow-500/20 mb-6 mx-auto md:mx-0">
                   <Target size={40} className="text-yellow-500" />
                 </div>
+                <h1 className="text-6xl font-black tracking-tighter uppercase leading-none">
+                  LHC<br/><span className="text-yellow-500">TRAINER</span>
+                </h1>
+                <p className="text-zinc-500 mt-4 font-medium max-w-xs">
+                  Entrena como los mejores de FiveM. Precisión, velocidad y reflejos al límite.
+                </p>
               </div>
-              
-              <h1 className="text-5xl font-black mb-4 tracking-tighter uppercase">
-                LHC<span className="text-yellow-500">TRAINER</span>
-              </h1>
-              <p className="text-zinc-500 mb-12 font-medium">
-                Mejora tu precisión y reflejos con el entrenador de puntería definitivo para FiveM.
-              </p>
 
               <div className="space-y-4">
                 <button 
                   onClick={startGame}
-                  className="w-full btn-pill btn-gold py-4 text-sm font-black flex items-center justify-center gap-2"
+                  className="w-full btn-pill btn-gold py-5 text-sm font-black flex items-center justify-center gap-3 group pointer-events-auto"
                 >
-                  <Play size={18} fill="currentColor" /> EMPEZAR ENTRENAMIENTO
+                  <Play size={20} fill="currentColor" className="group-hover:scale-125 transition-transform" /> 
+                  EMPEZAR ENTRENAMIENTO
                 </button>
                 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="bg-white/5 border border-white/10 rounded-2xl p-4">
-                    <p className="text-[9px] font-black text-zinc-500 uppercase tracking-widest mb-1">WASD</p>
-                    <p className="text-xs font-bold">Moverse</p>
+                    <p className="text-[9px] font-black text-zinc-500 uppercase tracking-widest mb-1 text-center md:text-left">MOVIMIENTO</p>
+                    <p className="text-xs font-bold text-center md:text-left">WASD</p>
                   </div>
                   <div className="bg-white/5 border border-white/10 rounded-2xl p-4">
-                    <p className="text-[9px] font-black text-zinc-500 uppercase tracking-widest mb-1">J</p>
-                    <p className="text-xs font-bold">Consola</p>
+                    <p className="text-[9px] font-black text-zinc-500 uppercase tracking-widest mb-1 text-center md:text-left">CONSOLA</p>
+                    <p className="text-xs font-bold text-center md:text-left">TECLA J</p>
                   </div>
                 </div>
               </div>
+            </div>
 
-              <div className="mt-12 p-4 bg-yellow-500/5 border border-yellow-500/10 rounded-2xl flex items-center gap-3">
-                <MousePointer2 size={16} className="text-yellow-500" />
-                <p className="text-[10px] text-zinc-500 font-bold">Haz clic en la pantalla para capturar el ratón</p>
+            {/* Right: Leaderboard */}
+            <div className="w-full max-w-sm bg-zinc-900/50 border border-white/10 rounded-3xl p-8 flex flex-col h-[500px]">
+              <div className="flex items-center gap-3 mb-6">
+                <Shield size={20} className="text-yellow-500" />
+                <h2 className="text-lg font-black text-white uppercase tracking-tighter">Ranking Top 10</h2>
+              </div>
+              
+              <div className="flex-1 overflow-y-auto space-y-3 pr-2 scrollbar-hide pointer-events-auto">
+                {leaderboard.length > 0 ? leaderboard.map((entry, i) => (
+                  <div key={i} className="flex items-center justify-between p-3 bg-white/5 rounded-xl border border-white/5 hover:border-white/10 transition-colors">
+                    <div className="flex items-center gap-3">
+                      <span className={`w-6 h-6 flex items-center justify-center rounded-lg text-[10px] font-black ${
+                        i === 0 ? 'bg-yellow-500 text-black' : 
+                        i === 1 ? 'bg-zinc-400 text-black' : 
+                        i === 2 ? 'bg-orange-700 text-white' : 
+                        'bg-zinc-800 text-zinc-500'
+                      }`}>
+                        {i + 1}
+                      </span>
+                      <span className="text-sm font-bold text-zinc-300">{entry.name}</span>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm font-black text-white tabular-nums">{entry.score.toLocaleString()}</p>
+                      <p className="text-[8px] text-zinc-600 font-bold uppercase">{entry.date}</p>
+                    </div>
+                  </div>
+                )) : (
+                  <div className="flex flex-col items-center justify-center h-full text-zinc-600 space-y-2 opacity-50">
+                    <Shield size={32} />
+                    <p className="text-[10px] font-black uppercase tracking-widest text-center">No hay puntuaciones registradas</p>
+                  </div>
+                )}
               </div>
             </div>
           </motion.div>
