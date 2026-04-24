@@ -100,10 +100,12 @@ export default function TrainerPage() {
     if (controlsRef.current) controlsRef.current.lock();
   };
 
+  const consoleOpenRef = useRef(false);
+
   useEffect(() => {
     if (!mountRef.current) return;
 
-    // Scene Setup
+    // Scene Setup (Only runs ONCE)
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0x050505);
     scene.fog = new THREE.FogExp2(0x050505, 0.05);
@@ -122,9 +124,10 @@ export default function TrainerPage() {
     const controls = new PointerLockControls(camera, renderer.domElement);
     controlsRef.current = controls;
 
-    controls.addEventListener('lock', () => setGameState('playing'));
-    controls.addEventListener('unlock', () => {
-      // We don't want to go to menu if console is open
+    controls.addEventListener('lock', () => {
+      setGameState('playing');
+      consoleOpenRef.current = false;
+      setConsoleOpen(false);
     });
 
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
@@ -156,17 +159,20 @@ export default function TrainerPage() {
       // Toggle Console with J
       if (e.key.toLowerCase() === 'j') {
         e.preventDefault();
-        setConsoleOpen(prev => {
-          if (!prev) controls.unlock();
-          else controls.lock();
-          return !prev;
-        });
+        const nextState = !consoleOpenRef.current;
+        consoleOpenRef.current = nextState;
+        setConsoleOpen(nextState);
+        
+        if (nextState) {
+          controls.unlock();
+        } else {
+          controls.lock();
+        }
         return;
       }
 
-      if (consoleOpen) return;
+      if (consoleOpenRef.current) return;
 
-      // Check binds
       const key = e.key.toLowerCase();
       if (bindsRef.current[key]) {
         handleCommand(bindsRef.current[key]);
@@ -197,15 +203,14 @@ export default function TrainerPage() {
       }
     };
 
-    document.addEventListener('keydown', onKeyDown);
-    document.addEventListener('keyup', onKeyUp);
+    window.addEventListener('keydown', onKeyDown);
+    window.addEventListener('keyup', onKeyUp);
 
-    // Shooting Logic
     const raycaster = new THREE.Raycaster();
     const mouse = new THREE.Vector2(0, 0);
 
     const onMouseDown = () => {
-      if (!controls.isLocked || consoleOpen) return;
+      if (!controls.isLocked || consoleOpenRef.current) return;
 
       raycaster.setFromCamera(mouse, camera);
       const intersects = raycaster.intersectObjects(targetsRef.current);
@@ -213,22 +218,20 @@ export default function TrainerPage() {
       if (intersects.length > 0) {
         const hit = intersects[0].object;
         scene.remove(hit);
-        targetsRef.current = targetsRef.current.filter(t => t !== hit);
+        targetsRef.current.current = targetsRef.current.filter(t => t !== hit);
         setScore(prev => prev + 100);
         spawnTarget(scene);
       }
     };
 
-    document.addEventListener('mousedown', onMouseDown);
+    window.addEventListener('mousedown', onMouseDown);
 
-    // PointerLock Sensitivity Implementation
     const onMouseMove = (event) => {
-      if (!controls.isLocked || consoleOpen) return;
+      if (!controls.isLocked || consoleOpenRef.current) return;
 
       const movementX = event.movementX || event.mozMovementX || event.webkitMovementX || 0;
       const movementY = event.movementY || event.mozMovementY || event.webkitMovementY || 0;
 
-      // Use Ref for instant update
       const currentSens = sensRef.current;
       
       const euler = new THREE.Euler(0, 0, 0, 'YXZ');
@@ -242,14 +245,14 @@ export default function TrainerPage() {
       camera.quaternion.setFromEuler(euler);
     };
 
-    document.addEventListener('mousemove', onMouseMove);
+    window.addEventListener('mousemove', onMouseMove);
 
     let prevTime = performance.now();
     const animate = () => {
       requestRef.current = requestAnimationFrame(animate);
 
       const timeNow = performance.now();
-      if (controls.isLocked && !consoleOpen) {
+      if (controls.isLocked && !consoleOpenRef.current) {
         const delta = (timeNow - prevTime) / 1000;
 
         velocity.x -= velocity.x * 10.0 * delta;
@@ -281,15 +284,15 @@ export default function TrainerPage() {
     return () => {
       cancelAnimationFrame(requestRef.current);
       window.removeEventListener('resize', handleResize);
-      document.removeEventListener('keydown', onKeyDown);
-      document.removeEventListener('keyup', onKeyUp);
-      document.removeEventListener('mousedown', onMouseDown);
-      document.removeEventListener('mousemove', onMouseMove);
+      window.removeEventListener('keydown', onKeyDown);
+      window.removeEventListener('keyup', onKeyUp);
+      window.removeEventListener('mousedown', onMouseDown);
+      window.removeEventListener('mousemove', onMouseMove);
       if (mountRef.current && renderer.domElement) {
         mountRef.current.removeChild(renderer.domElement);
       }
     };
-  }, [consoleOpen]);
+  }, []);
 
   return (
     <div className="relative w-full h-screen overflow-hidden bg-black font-sans">
