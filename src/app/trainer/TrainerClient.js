@@ -42,6 +42,7 @@ export default function TrainerPage() {
   const timeRef = useRef(60);
   const scoreRef = useRef(0);
   const [isPaused, setIsPaused] = useState(false);
+  const isPausedRef = useRef(false);
 
   const startGame = () => {
     scoreRef.current = 0;
@@ -49,6 +50,7 @@ export default function TrainerPage() {
     setScore(0);
     setTime(60);
     setIsPaused(false);
+    isPausedRef.current = false;
     if (controlsRef.current) controlsRef.current.lock();
   };
 
@@ -60,11 +62,13 @@ export default function TrainerPage() {
     gameStateRef.current = 'menu';
     setGameState('menu');
     setIsPaused(false);
+    isPausedRef.current = false;
     if (controlsRef.current) controlsRef.current.unlock();
   };
 
   const resumeGame = () => {
     setIsPaused(false);
+    isPausedRef.current = false;
     if (controlsRef.current) controlsRef.current.lock();
   };
 
@@ -122,16 +126,8 @@ export default function TrainerPage() {
     else if (action === 'toggle' && cleanCmd.toLowerCase().includes('profile_reticule')) {
       retTypeRef.current = retTypeRef.current === 'complex' ? 'simple' : 'complex';
       setReticuleType(retTypeRef.current);
-      setConsoleLogs(prev => [...prev, `MIRA ACTUALIZADA: ${retTypeRef.current.toUpperCase()}`]);
+      setConsoleLogs(prev => [...prev, `ESTILO DE MIRA: ${retTypeRef.current.toUpperCase()}`]);
     }
-  };
-
-  const startGameLegacy = () => {
-    scoreRef.current = 0;
-    timeRef.current = 60;
-    setScore(0);
-    setTime(60);
-    if (controlsRef.current) controlsRef.current.lock();
   };
 
   const consoleOpenRef = useRef(false);
@@ -142,7 +138,7 @@ export default function TrainerPage() {
 
     // Timer Interval
     const timerInterval = setInterval(() => {
-      if (gameStateRef.current === 'playing' && !consoleOpenRef.current) {
+      if (gameStateRef.current === 'playing' && !consoleOpenRef.current && !isPausedRef.current) {
         if (timeRef.current > 0) {
           timeRef.current -= 1;
           setTime(timeRef.current);
@@ -176,6 +172,7 @@ export default function TrainerPage() {
       gameStateRef.current = 'playing';
       setGameState('playing');
       setIsPaused(false);
+      isPausedRef.current = false;
       consoleOpenRef.current = false;
       setConsoleOpen(false);
     });
@@ -183,6 +180,7 @@ export default function TrainerPage() {
     controls.addEventListener('unlock', () => {
       if (!consoleOpenRef.current) {
         setIsPaused(true);
+        isPausedRef.current = true;
       }
     });
 
@@ -234,10 +232,11 @@ export default function TrainerPage() {
       if (e.key === 'Escape') {
         if (gameStateRef.current === 'playing') {
           setIsPaused(true);
+          isPausedRef.current = true;
           controls.unlock();
         }
       }
-      if (consoleOpenRef.current || isPaused) return;
+      if (consoleOpenRef.current || isPausedRef.current) return;
       
       const key = e.key.toLowerCase();
       if (bindsRef.current[key]) {
@@ -265,7 +264,7 @@ export default function TrainerPage() {
 
     const raycaster = new THREE.Raycaster();
     const onMouseDown = () => {
-      if (!controls.isLocked || consoleOpenRef.current || gameStateRef.current !== 'playing' || isPaused) return;
+      if (!controls.isLocked || consoleOpenRef.current || gameStateRef.current !== 'playing' || isPausedRef.current) return;
       raycaster.setFromCamera(new THREE.Vector2(0,0), camera);
       const intersects = raycaster.intersectObjects(targetsRef.current);
       if (intersects.length > 0) {
@@ -279,7 +278,7 @@ export default function TrainerPage() {
     };
     window.addEventListener('mousedown', onMouseDown);
     const onMouseMove = (event) => {
-      if (!controls.isLocked || consoleOpenRef.current || isPaused) return;
+      if (!controls.isLocked || consoleOpenRef.current || isPausedRef.current) return;
       
       const movementX = event.movementX || 0;
       const movementY = event.movementY || 0;
@@ -301,18 +300,10 @@ export default function TrainerPage() {
     };
     window.addEventListener('mousemove', onMouseMove);
 
-    let prevTime = performance.now(), frames = 0, lastFpsUpdate = 0;
     const animate = () => {
       requestRef.current = requestAnimationFrame(animate);
-      const timeNow = performance.now();
-      frames++;
-      if (timeNow > lastFpsUpdate + 1000) {
-        setFps(Math.round((frames * 1000) / (timeNow - lastFpsUpdate)));
-        lastFpsUpdate = timeNow;
-        frames = 0;
-      }
-      if (controls.isLocked && !consoleOpenRef.current && !isPaused) {
-        const delta = (timeNow - prevTime) / 1000;
+      if (controls.isLocked && !consoleOpenRef.current && !isPausedRef.current) {
+        const delta = 0.016;
         velocity.x -= velocity.x * 10.0 * delta;
         velocity.z -= velocity.z * 10.0 * delta;
         direction.z = Number(moveForward) - Number(moveBackward);
@@ -334,7 +325,6 @@ export default function TrainerPage() {
         camera.position.x = Math.max(-45, Math.min(45, camera.position.x));
         camera.position.z = Math.max(-45, Math.min(45, camera.position.z));
       }
-      prevTime = timeNow;
       renderer.render(scene, camera);
     };
     animate();
@@ -356,7 +346,7 @@ export default function TrainerPage() {
       window.removeEventListener('resize', handleResize);
       if (mountRef.current && renderer.domElement) mountRef.current.removeChild(renderer.domElement);
     };
-  }, [isPaused]);
+  }, []);
 
   return (
     <div className="relative w-full h-screen overflow-hidden bg-black font-sans">
