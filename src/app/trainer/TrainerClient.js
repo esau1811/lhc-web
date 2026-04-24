@@ -333,7 +333,7 @@ export default function TrainerPage() {
 
       {/* OVERLAY UI */}
       <div className="absolute inset-0 pointer-events-none z-20">
-        <Header transparent />
+        {gameState === 'menu' && <Header transparent />}
         
         {/* CROSSHAIR (FIVEM STYLE) */}
         <div 
