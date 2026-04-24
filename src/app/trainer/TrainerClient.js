@@ -552,11 +552,9 @@ export default function TrainerPage() {
             className="absolute inset-0 z-[150] bg-black/90 backdrop-blur-xl flex items-center justify-center p-6 pointer-events-auto"
             onMouseDown={(e) => {
               e.stopPropagation();
-              e.preventDefault();
             }}
             onClick={(e) => {
               e.stopPropagation();
-              e.preventDefault();
             }}
           >
             <div className="max-w-md w-full bg-zinc-900 border border-white/10 rounded-3xl p-10 text-center shadow-2xl space-y-8">
