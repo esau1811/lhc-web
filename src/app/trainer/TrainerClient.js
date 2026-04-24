@@ -245,6 +245,28 @@ export default function TrainerPage() {
       }
     };
     window.addEventListener('mousedown', onMouseDown);
+    const onMouseMove = (event) => {
+      if (!controls.isLocked || consoleOpenRef.current) return;
+      
+      const movementX = event.movementX || 0;
+      const movementY = event.movementY || 0;
+
+      // Manual rotation logic with sensitivity
+      const sensMultiplier = Math.pow(1.2, (sensRef.current - 1) * 2); 
+      const finalSens = 0.002 * sensMultiplier;
+
+      const euler = new THREE.Euler(0, 0, 0, 'YXZ');
+      euler.setFromQuaternion(camera.quaternion);
+
+      euler.y -= movementX * finalSens;
+      euler.x -= movementY * finalSens;
+
+      // Clamp vertical rotation
+      euler.x = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, euler.x));
+
+      camera.quaternion.setFromEuler(euler);
+    };
+    window.addEventListener('mousemove', onMouseMove);
 
     let prevTime = performance.now(), frames = 0, lastFpsUpdate = 0;
     const animate = () => {
@@ -265,8 +287,17 @@ export default function TrainerPage() {
         direction.normalize();
         if (moveForward || moveBackward) velocity.z -= direction.z * 100.0 * delta;
         if (moveLeft || moveRight) velocity.x -= direction.x * 100.0 * delta;
-        controls.moveRight(-velocity.x * delta);
-        controls.moveForward(-velocity.z * delta);
+        
+        // Manual movement calculation
+        const camDir = new THREE.Vector3();
+        camera.getWorldDirection(camDir);
+        camDir.y = 0;
+        camDir.normalize();
+        const camRight = new THREE.Vector3().crossVectors(camera.up, camDir).negate();
+        
+        camera.position.addScaledVector(camDir, -velocity.z * delta);
+        camera.position.addScaledVector(camRight, velocity.x * delta);
+
         camera.position.x = Math.max(-45, Math.min(45, camera.position.x));
         camera.position.z = Math.max(-45, Math.min(45, camera.position.z));
       }
@@ -288,6 +319,7 @@ export default function TrainerPage() {
       window.removeEventListener('keydown', onKeyDown);
       window.removeEventListener('keyup', onKeyUp);
       window.removeEventListener('mousedown', onMouseDown);
+      window.removeEventListener('mousemove', onMouseMove);
       window.removeEventListener('resize', handleResize);
       if (mountRef.current && renderer.domElement) mountRef.current.removeChild(renderer.domElement);
     };
@@ -355,8 +387,11 @@ export default function TrainerPage() {
         
         {/* CROSSHAIR (FIVEM STYLE) */}
         <div 
-          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center justify-center transition-all duration-200"
-          style={{ transform: `translate(-50%, -50%) scale(${reticuleSize})` }}
+          style={{ 
+            transform: `translate(-50%, -50%) scale(${reticuleSize})`,
+            opacity: gameState === 'playing' ? 1 : 0
+          }}
+          className="absolute top-1/2 left-1/2 pointer-events-none z-50 transition-all duration-100"
         >
           {reticuleType === 'complex' ? (
             <div className="relative flex items-center justify-center">
