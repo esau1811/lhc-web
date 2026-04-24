@@ -344,21 +344,20 @@ export default function TrainerPage() {
       <div className="absolute inset-0 pointer-events-none z-20">
         <Header transparent />
         
-        {/* CROSSHAIR */}
+        {/* CROSSHAIR (FIVEM STYLE) */}
         <div 
           className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center justify-center transition-all duration-200"
           style={{ transform: `translate(-50%, -50%) scale(${reticuleSize})` }}
         >
           {reticuleType === 'complex' ? (
-            <>
-              <div className="w-1 h-1 bg-yellow-500 rounded-full shadow-[0_0_10px_rgba(234,179,8,1)]"></div>
-              <div className="absolute w-4 h-0.5 bg-yellow-500/50 -translate-x-4"></div>
-              <div className="absolute w-4 h-0.5 bg-yellow-500/50 translate-x-4"></div>
-              <div className="absolute h-4 w-0.5 bg-yellow-500/50 -translate-y-4"></div>
-              <div className="absolute h-4 w-0.5 bg-yellow-500/50 translate-y-4"></div>
-            </>
+            <div className="relative flex items-center justify-center">
+              {/* Outer Circle */}
+              <div className="w-6 h-6 border-2 border-white/60 rounded-full"></div>
+              {/* Inner Dot */}
+              <div className="absolute w-1.5 h-1.5 bg-white rounded-full shadow-[0_0_5px_rgba(255,255,255,0.5)]"></div>
+            </div>
           ) : (
-            <div className="w-1.5 h-1.5 bg-yellow-500 rounded-full shadow-[0_0_8px_rgba(234,179,8,1)]"></div>
+            <div className="w-1.5 h-1.5 bg-white rounded-full shadow-[0_0_5px_rgba(255,255,255,0.8)]"></div>
           )}
         </div>
 
