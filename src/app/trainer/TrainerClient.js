@@ -18,6 +18,7 @@ export default function TrainerPage() {
   const [leaderboard, setLeaderboard] = useState([]);
   const [playerName, setPlayerName] = useState('');
   const [hasSaved, setHasSaved] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   // Three.js Refs
   const sceneRef = useRef(null);
@@ -63,19 +64,33 @@ export default function TrainerPage() {
   }, []);
 
   const saveScore = async () => {
-    if (!playerName.trim() || hasSaved) return;
+    if (!playerName.trim() || hasSaved || isSaving) return;
+    setIsSaving(true);
+    console.log('Iniciando guardado de puntuación...', { name: playerName, score });
+    
     try {
       const res = await fetch('/api/leaderboard', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name: playerName.trim(), score: score })
       });
+      
+      const result = await res.json();
+      console.log('Respuesta del servidor:', result);
+
       if (res.ok) {
         setHasSaved(true);
-        fetchLeaderboard(); // Refresh the list
+        console.log('Puntuación guardada con éxito.');
+        fetchLeaderboard(); 
+      } else {
+        console.error('Error del servidor:', result.error);
+        alert('Error al guardar: ' + (result.error || 'Desconocido'));
       }
     } catch (err) {
-      console.error('Error saving global score:', err);
+      console.error('Error de conexión con la API:', err);
+      alert('Error de conexión. Revisa la consola (F12).');
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -543,9 +558,12 @@ export default function TrainerPage() {
                   />
                   <button 
                     onClick={saveScore}
-                    className="w-full py-4 bg-yellow-500 text-black font-black rounded-xl hover:bg-yellow-400 transition-all uppercase tracking-widest pointer-events-auto"
+                    disabled={isSaving}
+                    className={`w-full py-4 font-black rounded-xl transition-all uppercase tracking-widest pointer-events-auto ${
+                      isSaving ? 'bg-zinc-700 text-zinc-400 cursor-wait' : 'bg-yellow-500 text-black hover:bg-yellow-400'
+                    }`}
                   >
-                    Guardar en el Ranking
+                    {isSaving ? 'Guardando...' : 'Guardar en el Ranking'}
                   </button>
                 </div>
               ) : (
