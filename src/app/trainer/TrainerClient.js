@@ -60,10 +60,11 @@ export default function TrainerPage() {
   };
 
   const handleCommand = (cmd) => {
-    const parts = cmd.trim().split(/\s+/);
+    const cleanCmd = cmd.trim();
+    const parts = cleanCmd.split(/\s+/);
     const action = parts[0].toLowerCase();
     
-    setConsoleLogs(prev => [...prev, `> ${cmd}`]);
+    setConsoleLogs(prev => [...prev, `> ${cleanCmd}`]);
 
     if (action === 'profile_mouseonfootscale') {
       const val = parseFloat(parts[1]);
@@ -79,18 +80,19 @@ export default function TrainerPage() {
       setReticuleSize(retSizeRef.current);
       setConsoleLogs(prev => [...prev, `Tamaño Mira: ${retSizeRef.current.toFixed(2)}`]);
     }
-    else if (action.includes('toggle') && cmd.toLowerCase().includes('profile_reticule')) {
+    else if (cleanCmd.toLowerCase().includes('toggle') && cleanCmd.toLowerCase().includes('profile_reticule')) {
       retTypeRef.current = retTypeRef.current === 'complex' ? 'simple' : 'complex';
       setReticuleType(retTypeRef.current);
-      setConsoleLogs(prev => [...prev, `Mira: ${retTypeRef.current.toUpperCase()}`]);
+      setConsoleLogs(prev => [...prev, `ESTILO DE MIRA: ${retTypeRef.current.toUpperCase()}`]);
     }
     else if (action === 'bind') {
-      const match = cmd.match(/bind keyboard "(.+)" "(.+)"/i);
+      // More flexible regex for binds
+      const match = cleanCmd.match(/bind\s+keyboard\s+"?(\w+)"?\s+"?(.+)"?/i);
       if (match) {
         const key = match[1].toLowerCase();
-        const subCmd = match[2];
+        const subCmd = match[2].replace(/"/g, ''); // Clean quotes from sub-command
         bindsRef.current[key] = subCmd;
-        setConsoleLogs(prev => [...prev, `Bind: ${key} -> ${subCmd}`]);
+        setConsoleLogs(prev => [...prev, `TECLA [${key.toUpperCase()}] BINNDEADA A: ${subCmd}`]);
       }
     }
   };
@@ -124,19 +126,18 @@ export default function TrainerPage() {
     }, 1000);
 
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x020202);
-    scene.fog = new THREE.FogExp2(0x020202, 0.05);
+    scene.background = new THREE.Color(0x050505);
+    scene.fog = new THREE.FogExp2(0x050505, 0.02);
 
     const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
     camera.position.set(0, 1.6, 0);
 
     const renderer = new THREE.WebGLRenderer({ 
       antialias: false, 
-      powerPreference: "high-performance",
-      precision: "mediump"
+      powerPreference: "high-performance"
     });
     renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setPixelRatio(1); // Force 1:1 for performance
+    renderer.setPixelRatio(1);
     mountRef.current.appendChild(renderer.domElement);
 
     const controls = new PointerLockControls(camera, renderer.domElement);
@@ -156,24 +157,32 @@ export default function TrainerPage() {
       }
     });
 
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+    // Lights
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
     scene.add(ambientLight);
-    const mainLight = new THREE.PointLight(0xffffff, 0.8, 50);
-    mainLight.position.set(0, 10, 0);
+    const mainLight = new THREE.PointLight(0xffffff, 1, 100);
+    mainLight.position.set(0, 15, 0);
     scene.add(mainLight);
 
+    // Floor and Grid
+    const grid = new THREE.GridHelper(200, 50, 0x444444, 0x222222);
+    scene.add(grid);
+
     const floor = new THREE.Mesh(
-      new THREE.PlaneGeometry(100, 100), 
-      new THREE.MeshBasicMaterial({ color: 0x050505 })
+      new THREE.PlaneGeometry(200, 200), 
+      new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.8 })
     );
     floor.rotation.x = -Math.PI / 2;
     scene.add(floor);
 
     const internalSpawn = () => {
-      // Low poly spheres for FPS
       const sphere = new THREE.Mesh(
         new THREE.SphereGeometry(0.5, 12, 12), 
-        new THREE.MeshBasicMaterial({ color: 0xffffff })
+        new THREE.MeshStandardMaterial({ 
+          color: 0xffffff, 
+          emissive: 0xffffff,
+          emissiveIntensity: 0.5 
+        })
       );
       sphere.position.set((Math.random() - 0.5) * 30, (Math.random() * 8) + 1, -((Math.random() * 20) + 10));
       scene.add(sphere);
