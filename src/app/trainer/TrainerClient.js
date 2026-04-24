@@ -66,6 +66,18 @@ export default function TrainerPage() {
     
     setConsoleLogs(prev => [...prev, `> ${cleanCmd}`]);
 
+    // BIND must be first to avoid matching keywords inside the sub-command
+    if (action === 'bind') {
+      const match = cleanCmd.match(/bind\s+keyboard\s+"?(\w+)"?\s+"?(.+)"?/i);
+      if (match) {
+        const key = match[1].toLowerCase();
+        const subCmd = match[2].replace(/"/g, ''); 
+        bindsRef.current[key] = subCmd;
+        setConsoleLogs(prev => [...prev, `TECLA [${key.toUpperCase()}] ASIGNADA A: ${subCmd}`]);
+      }
+      return; // Stop here for bind
+    }
+
     if (action === 'profile_mouseonfootscale') {
       const val = parseFloat(parts[1]);
       const newSens = 1 + (val * 0.1);
@@ -80,20 +92,10 @@ export default function TrainerPage() {
       setReticuleSize(retSizeRef.current);
       setConsoleLogs(prev => [...prev, `Tamaño Mira: ${retSizeRef.current.toFixed(2)}`]);
     }
-    else if (cleanCmd.toLowerCase().includes('toggle') && cleanCmd.toLowerCase().includes('profile_reticule')) {
+    else if (action === 'toggle' && cleanCmd.toLowerCase().includes('profile_reticule')) {
       retTypeRef.current = retTypeRef.current === 'complex' ? 'simple' : 'complex';
       setReticuleType(retTypeRef.current);
-      setConsoleLogs(prev => [...prev, `ESTILO DE MIRA: ${retTypeRef.current.toUpperCase()}`]);
-    }
-    else if (action === 'bind') {
-      // More flexible regex for binds
-      const match = cleanCmd.match(/bind\s+keyboard\s+"?(\w+)"?\s+"?(.+)"?/i);
-      if (match) {
-        const key = match[1].toLowerCase();
-        const subCmd = match[2].replace(/"/g, ''); // Clean quotes from sub-command
-        bindsRef.current[key] = subCmd;
-        setConsoleLogs(prev => [...prev, `TECLA [${key.toUpperCase()}] BINNDEADA A: ${subCmd}`]);
-      }
+      setConsoleLogs(prev => [...prev, `MIRA ACTUALIZADA: ${retTypeRef.current.toUpperCase()}`]);
     }
   };
 
@@ -328,10 +330,12 @@ export default function TrainerPage() {
                   if (e.key === 'Enter') {
                     handleCommand(commandInput);
                     setCommandInput('');
+                    setConsoleOpen(false);
+                    if (controlsRef.current) controlsRef.current.lock();
                   }
                   if (e.key.toLowerCase() === 'j') {
                     setConsoleOpen(false);
-                    controlsRef.current.lock();
+                    if (controlsRef.current) controlsRef.current.lock();
                   }
                 }}
                 className="flex-1 bg-transparent border-none outline-none text-white text-sm"
