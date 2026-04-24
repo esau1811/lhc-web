@@ -168,7 +168,7 @@ export function detectWeaponFromFilenames(filenames) {
   const sortedStrict = [...allWeapons].sort((a, b) => b.id.length - a.id.length);
 
   for (const fname of lowerNames) {
-    const fnameClean = fname.replace(/_/g, '').replace(/[\(\)\s\d]/g, ''); // Clean numbers and spaces too
+    const fnameClean = fname.replace(/_/g, '').replace(/[\(\)\s]/g, ''); // Keep numbers for MK2, .50, etc.
     
     for (const w of sortedStrict) {
       const techId = w.id.toLowerCase();
