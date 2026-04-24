@@ -1,26 +1,20 @@
 import { NextResponse } from 'next/server';
 import { kv } from '@vercel/kv';
 
-// Fallback memory store for when KV is not configured
-const memoryActivity = [
-  { name: 'LHCConverter', action: 'Actualizado v2.1.4', time: 'Hace 2h', icon: '/icon_conv.png', isUser: false },
-  { name: 'LHCSound', action: 'Nueva biblioteca', time: 'Hace 4h', icon: '/icon_sound.png', isUser: false },
-  { name: 'LHCResolution', action: 'Perfil agregado', time: 'Hace 6h', icon: '/icon_res.png', isUser: false },
-];
+// Empty by default, only shows real user activity
+const memoryActivity = [];
 
 const ACTIVITY_KEY = 'lhc_recent_activity';
 
 export async function GET() {
   try {
-    // Try to get from Vercel KV
     const kvActivity = await kv.get(ACTIVITY_KEY);
-    if (kvActivity) return NextResponse.json(kvActivity);
+    if (kvActivity && kvActivity.length > 0) return NextResponse.json(kvActivity);
   } catch (e) {
-    console.warn('KV not configured, using memory fallback');
+    console.warn('KV not configured');
   }
   
-  // Fallback to global memory if KV fails or is not set
-  if (!global.recentActivity) global.recentActivity = [...memoryActivity];
+  if (!global.recentActivity) global.recentActivity = [];
   return NextResponse.json(global.recentActivity);
 }
 
