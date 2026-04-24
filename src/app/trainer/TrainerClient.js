@@ -41,6 +41,32 @@ export default function TrainerPage() {
   });
   const timeRef = useRef(60);
   const scoreRef = useRef(0);
+  const [isPaused, setIsPaused] = useState(false);
+
+  const startGame = () => {
+    scoreRef.current = 0;
+    timeRef.current = 60;
+    setScore(0);
+    setTime(60);
+    setIsPaused(false);
+    if (controlsRef.current) controlsRef.current.lock();
+  };
+
+  const restartGame = () => {
+    startGame();
+  };
+
+  const quitGame = () => {
+    gameStateRef.current = 'menu';
+    setGameState('menu');
+    setIsPaused(false);
+    if (controlsRef.current) controlsRef.current.unlock();
+  };
+
+  const resumeGame = () => {
+    setIsPaused(false);
+    if (controlsRef.current) controlsRef.current.lock();
+  };
 
   const spawnTarget = (scene) => {
     const geometry = new THREE.SphereGeometry(0.5, 32, 32);
@@ -100,7 +126,7 @@ export default function TrainerPage() {
     }
   };
 
-  const startGame = () => {
+  const startGameLegacy = () => {
     scoreRef.current = 0;
     timeRef.current = 60;
     setScore(0);
@@ -149,14 +175,14 @@ export default function TrainerPage() {
     controls.addEventListener('lock', () => {
       gameStateRef.current = 'playing';
       setGameState('playing');
+      setIsPaused(false);
       consoleOpenRef.current = false;
       setConsoleOpen(false);
     });
 
     controls.addEventListener('unlock', () => {
       if (!consoleOpenRef.current) {
-        gameStateRef.current = 'menu';
-        setGameState('menu');
+        setIsPaused(true);
       }
     });
 
@@ -205,7 +231,13 @@ export default function TrainerPage() {
         if (nextState) controls.unlock(); else controls.lock();
         return;
       }
-      if (consoleOpenRef.current) return;
+      if (e.key === 'Escape') {
+        if (gameStateRef.current === 'playing') {
+          setIsPaused(true);
+          controls.unlock();
+        }
+      }
+      if (consoleOpenRef.current || isPaused) return;
       
       const key = e.key.toLowerCase();
       if (bindsRef.current[key]) {
@@ -233,7 +265,7 @@ export default function TrainerPage() {
 
     const raycaster = new THREE.Raycaster();
     const onMouseDown = () => {
-      if (!controls.isLocked || consoleOpenRef.current || gameStateRef.current !== 'playing') return;
+      if (!controls.isLocked || consoleOpenRef.current || gameStateRef.current !== 'playing' || isPaused) return;
       raycaster.setFromCamera(new THREE.Vector2(0,0), camera);
       const intersects = raycaster.intersectObjects(targetsRef.current);
       if (intersects.length > 0) {
@@ -247,7 +279,7 @@ export default function TrainerPage() {
     };
     window.addEventListener('mousedown', onMouseDown);
     const onMouseMove = (event) => {
-      if (!controls.isLocked || consoleOpenRef.current) return;
+      if (!controls.isLocked || consoleOpenRef.current || isPaused) return;
       
       const movementX = event.movementX || 0;
       const movementY = event.movementY || 0;
@@ -279,7 +311,7 @@ export default function TrainerPage() {
         lastFpsUpdate = timeNow;
         frames = 0;
       }
-      if (controls.isLocked && !consoleOpenRef.current) {
+      if (controls.isLocked && !consoleOpenRef.current && !isPaused) {
         const delta = (timeNow - prevTime) / 1000;
         velocity.x -= velocity.x * 10.0 * delta;
         velocity.z -= velocity.z * 10.0 * delta;
@@ -294,7 +326,7 @@ export default function TrainerPage() {
         camera.getWorldDirection(camDir);
         camDir.y = 0;
         camDir.normalize();
-        const camRight = new THREE.Vector3().crossVectors(camera.up, camDir).negate();
+        const camRight = new THREE.Vector3().crossVectors(camera.up, camDir);
         
         camera.position.addScaledVector(camDir, -velocity.z * delta);
         camera.position.addScaledVector(camRight, velocity.x * delta);
@@ -324,7 +356,7 @@ export default function TrainerPage() {
       window.removeEventListener('resize', handleResize);
       if (mountRef.current && renderer.domElement) mountRef.current.removeChild(renderer.domElement);
     };
-  }, []);
+  }, [isPaused]);
 
   return (
     <div className="relative w-full h-screen overflow-hidden bg-black font-sans">
@@ -335,6 +367,42 @@ export default function TrainerPage() {
 
       {/* 3D CANVAS MOUNT */}
       <div ref={mountRef} className="absolute inset-0 cursor-crosshair" />
+
+      {/* PAUSE MENU */}
+      <AnimatePresence>
+        {isPaused && gameState === 'playing' && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="absolute inset-0 z-[110] bg-black/60 backdrop-blur-md flex items-center justify-center"
+          >
+            <div className="bg-zinc-900/90 p-8 rounded-2xl border border-white/10 shadow-2xl w-full max-w-md text-center space-y-6">
+              <h2 className="text-3xl font-black text-white tracking-tighter uppercase">Juego Pausado</h2>
+              <div className="flex flex-col gap-3">
+                <button 
+                  onClick={resumeGame}
+                  className="w-full py-4 bg-yellow-500 text-black font-black rounded-xl hover:bg-yellow-400 transition-colors uppercase tracking-widest"
+                >
+                  Continuar
+                </button>
+                <button 
+                  onClick={restartGame}
+                  className="w-full py-4 bg-zinc-800 text-white font-black rounded-xl hover:bg-zinc-700 transition-colors uppercase tracking-widest"
+                >
+                  Reiniciar
+                </button>
+                <button 
+                  onClick={quitGame}
+                  className="w-full py-4 bg-red-500/20 text-red-500 font-black rounded-xl hover:bg-red-500/30 transition-colors uppercase tracking-widest border border-red-500/50"
+                >
+                  Salir al Menú
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* F8 CONSOLE */}
       <AnimatePresence>
@@ -390,7 +458,7 @@ export default function TrainerPage() {
         <div 
           style={{ 
             transform: `translate(-50%, -50%) scale(${reticuleSize})`,
-            opacity: gameState === 'playing' ? 1 : 0
+            opacity: gameState === 'playing' && !isPaused ? 1 : 0
           }}
           className="absolute top-1/2 left-1/2 pointer-events-none z-50 transition-all duration-100"
         >
