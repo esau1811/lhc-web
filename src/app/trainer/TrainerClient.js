@@ -115,7 +115,13 @@ export default function TrainerPage() {
     setGameState('menu');
     setIsPaused(false);
     isPausedRef.current = false;
-    if (controlsRef.current) controlsRef.current.unlock();
+    scoreRef.current = 0;
+    timeRef.current = 60;
+    setScore(0);
+    setTime(60);
+    if (controlsRef.current) {
+      controlsRef.current.unlock();
+    }
   };
 
   const resumeGame = () => {
@@ -221,8 +227,11 @@ export default function TrainerPage() {
     controlsRef.current = controls;
 
     controls.addEventListener('lock', () => {
-      gameStateRef.current = 'playing';
-      setGameState('playing');
+      // Only transition to playing if we were in menu or starting a new game
+      if (gameStateRef.current === 'menu' || gameStateRef.current === 'finished') {
+        gameStateRef.current = 'playing';
+        setGameState('playing');
+      }
       setIsPaused(false);
       isPausedRef.current = false;
       consoleOpenRef.current = false;
@@ -592,13 +601,14 @@ export default function TrainerPage() {
       </AnimatePresence>
 
       {/* MENU / LEADERBOARD */}
-      <AnimatePresence>
+      <AnimatePresence mode="wait">
         {gameState === 'menu' && !consoleOpen && (
           <motion.div 
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="absolute inset-0 z-50 flex flex-col md:flex-row items-center justify-center bg-black/80 backdrop-blur-sm p-10 gap-12"
+            className="absolute inset-0 z-[200] flex flex-col md:flex-row items-center justify-center bg-black/80 backdrop-blur-sm p-10 gap-12 pointer-events-auto"
+            onClick={(e) => e.stopPropagation()}
           >
             {/* Left: Branding & Start */}
             <div className="max-w-md w-full text-center md:text-left space-y-8">
