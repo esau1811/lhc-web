@@ -1,5 +1,5 @@
 'use client';
-// Version 1.1.2 - Enhanced Weapon Detection & RPF Processing Logic
+// Version 1.1.3 - Improved Download Filenames & API Precision
 
 import { useState, useRef, useCallback } from 'react';
 import { useSession, signIn } from 'next-auth/react';
@@ -106,7 +106,8 @@ export default function ConverterPage() {
         const formData = new FormData();
         formData.append('file', files[0]);
         formData.append('sourceWeapon', sourceWeapon);
-        formData.append('targetWeapon', targetWeapon);
+        const targetInfo = getAllWeapons().find(w => w.id === targetWeapon);
+        const friendlyName = targetInfo ? targetInfo.name : targetWeapon;
 
         const response = await fetch('https://187.33.157.103.nip.io/api/WeaponConverter/convert', {
           method: 'POST',
@@ -125,13 +126,19 @@ export default function ConverterPage() {
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `${targetWeapon}.rpf`;
+        a.download = `${friendlyName}.rpf`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
         window.URL.revokeObjectURL(url);
       } else {
         const zip = new JSZip();
+        
+        const targetInfo = getAllWeapons().find(w => w.id === targetWeapon);
+        const friendlyName = targetInfo ? targetInfo.name : targetWeapon;
+
+        // ... existing zip logic ...
+        // (I'll keep the loop but use friendlyName for the zip file)
         
         // Helper to get the short version of an ID (e.g. w_pi_pistol -> pistol)
         const getShortId = (id) => {
@@ -172,7 +179,7 @@ export default function ConverterPage() {
         const url = window.URL.createObjectURL(zipBlob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `${targetWeapon}_lhc.zip`;
+        a.download = `${friendlyName}_lhc.zip`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
