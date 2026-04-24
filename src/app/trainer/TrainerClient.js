@@ -105,17 +105,19 @@ export default function TrainerPage() {
   };
 
   const consoleOpenRef = useRef(false);
+  const gameStateRef = useRef('menu');
 
   useEffect(() => {
     if (!mountRef.current) return;
 
     // Timer Interval
     const timerInterval = setInterval(() => {
-      if (gameState === 'playing' && !consoleOpenRef.current) {
+      if (gameStateRef.current === 'playing' && !consoleOpenRef.current) {
         if (timeRef.current > 0) {
           timeRef.current -= 1;
           setTime(timeRef.current);
         } else {
+          gameStateRef.current = 'menu';
           setGameState('menu');
           if (controlsRef.current) controlsRef.current.unlock();
         }
@@ -141,9 +143,17 @@ export default function TrainerPage() {
     controlsRef.current = controls;
 
     controls.addEventListener('lock', () => {
+      gameStateRef.current = 'playing';
       setGameState('playing');
       consoleOpenRef.current = false;
       setConsoleOpen(false);
+    });
+
+    controls.addEventListener('unlock', () => {
+      if (!consoleOpenRef.current) {
+        gameStateRef.current = 'menu';
+        setGameState('menu');
+      }
     });
 
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
@@ -162,14 +172,19 @@ export default function TrainerPage() {
     floor.rotation.x = -Math.PI / 2;
     scene.add(floor);
 
-    for (let i = 0; i < 8; i++) spawnTarget(scene);
+    const internalSpawn = () => {
+      const geometry = new THREE.SphereGeometry(0.5, 32, 32);
+      const material = new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0xffffff, emissiveIntensity: 0.2, metalness: 0.8, roughness: 0.2 });
+      const sphere = new THREE.Mesh(geometry, material);
+      sphere.position.set((Math.random() - 0.5) * 30, (Math.random() * 8) + 1, -((Math.random() * 20) + 10));
+      scene.add(sphere);
+      targetsRef.current.push(sphere);
+    };
 
-    let moveForward = false;
-    let moveBackward = false;
-    let moveLeft = false;
-    let moveRight = false;
-    const velocity = new THREE.Vector3();
-    const direction = new THREE.Vector3();
+    for (let i = 0; i < 8; i++) internalSpawn();
+
+    let moveForward = false, moveBackward = false, moveLeft = false, moveRight = false;
+    const velocity = new THREE.Vector3(), direction = new THREE.Vector3();
 
     const onKeyDown = (e) => {
       if (e.key.toLowerCase() === 'j') {
@@ -180,12 +195,9 @@ export default function TrainerPage() {
         if (nextState) controls.unlock(); else controls.lock();
         return;
       }
-
       if (consoleOpenRef.current) return;
-
       const key = e.key.toLowerCase();
       if (bindsRef.current[key]) handleCommand(bindsRef.current[key]);
-
       switch (e.code) {
         case 'ArrowUp': case 'KeyW': moveForward = true; break;
         case 'ArrowLeft': case 'KeyA': moveLeft = true; break;
@@ -207,22 +219,20 @@ export default function TrainerPage() {
     window.addEventListener('keyup', onKeyUp);
 
     const raycaster = new THREE.Raycaster();
-    raycaster.far = 1000; // Unlimited range
+    raycaster.far = 1000;
     const mouse = new THREE.Vector2(0, 0);
 
     const onMouseDown = () => {
-      if (!controls.isLocked || consoleOpenRef.current) return;
-
+      if (!controls.isLocked || consoleOpenRef.current || gameStateRef.current !== 'playing') return;
       raycaster.setFromCamera(mouse, camera);
       const intersects = raycaster.intersectObjects(targetsRef.current);
-
       if (intersects.length > 0) {
         const hit = intersects[0].object;
         scene.remove(hit);
         targetsRef.current = targetsRef.current.filter(t => t !== hit);
         scoreRef.current += 100;
         setScore(scoreRef.current);
-        spawnTarget(scene);
+        internalSpawn();
       }
     };
 
@@ -230,8 +240,7 @@ export default function TrainerPage() {
 
     const onMouseMove = (event) => {
       if (!controls.isLocked || consoleOpenRef.current) return;
-      const movementX = event.movementX || event.mozMovementX || event.webkitMovementX || 0;
-      const movementY = event.movementY || event.mozMovementY || event.webkitMovementY || 0;
+      const movementX = event.movementX || 0, movementY = event.movementY || 0;
       const euler = new THREE.Euler(0, 0, 0, 'YXZ');
       euler.setFromQuaternion(camera.quaternion);
       euler.y -= movementX * (sensRef.current * 0.002);
@@ -242,38 +251,27 @@ export default function TrainerPage() {
 
     window.addEventListener('mousemove', onMouseMove);
 
-    let prevTime = performance.now();
-    let frames = 0;
-    let lastFpsUpdate = 0;
-
+    let prevTime = performance.now(), frames = 0, lastFpsUpdate = 0;
     const animate = () => {
       requestRef.current = requestAnimationFrame(animate);
       const timeNow = performance.now();
-      
-      // FPS Calculation
       frames++;
       if (timeNow > lastFpsUpdate + 1000) {
         setFps(Math.round((frames * 1000) / (timeNow - lastFpsUpdate)));
         lastFpsUpdate = timeNow;
         frames = 0;
       }
-
-      if (controls.isLocked && !consoleOpenRef.current) {
+      if (controls.isLocked && !consoleOpenRef.current && gameStateRef.current === 'playing') {
         const delta = (timeNow - prevTime) / 1000;
         velocity.x -= velocity.x * 10.0 * delta;
         velocity.z -= velocity.z * 10.0 * delta;
-
         direction.z = Number(moveForward) - Number(moveBackward);
         direction.x = Number(moveRight) - Number(moveLeft);
         direction.normalize();
-
         if (moveForward || moveBackward) velocity.z -= direction.z * 100.0 * delta;
         if (moveLeft || moveRight) velocity.x -= direction.x * 100.0 * delta;
-
         controls.moveRight(-velocity.x * delta);
         controls.moveForward(-velocity.z * delta);
-
-        // Movement Limits (Clamp)
         const limit = 45;
         camera.position.x = Math.max(-limit, Math.min(limit, camera.position.x));
         camera.position.z = Math.max(-limit, Math.min(limit, camera.position.z));
@@ -281,7 +279,6 @@ export default function TrainerPage() {
       prevTime = timeNow;
       renderer.render(scene, camera);
     };
-
     animate();
 
     const handleResize = () => {
@@ -299,11 +296,9 @@ export default function TrainerPage() {
       window.removeEventListener('keyup', onKeyUp);
       window.removeEventListener('mousedown', onMouseDown);
       window.removeEventListener('mousemove', onMouseMove);
-      if (mountRef.current && renderer.domElement) {
-        mountRef.current.removeChild(renderer.domElement);
-      }
+      if (mountRef.current && renderer.domElement) mountRef.current.removeChild(renderer.domElement);
     };
-  }, [gameState]);
+  }, []);
 
   return (
     <div className="relative w-full h-screen overflow-hidden bg-black font-sans">
