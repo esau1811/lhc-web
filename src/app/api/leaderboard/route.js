@@ -21,7 +21,7 @@ export async function GET() {
     return NextResponse.json(formatted);
   } catch (error) {
     console.error('Leaderboard Fetch Error:', error);
-    return NextResponse.json({ error: 'Failed to fetch leaderboard' }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to fetch leaderboard: ' + error.message }, { status: 500 });
   }
 }
 
@@ -30,7 +30,7 @@ export async function POST(request) {
     const { name, score } = await request.json();
 
     if (!name || typeof score !== 'number') {
-      return NextResponse.json({ error: 'Invalid data' }, { status: 400 });
+      return NextResponse.json({ error: 'Invalid data: name and score are required' }, { status: 400 });
     }
 
     const date = new Date().toLocaleDateString();
@@ -39,12 +39,12 @@ export async function POST(request) {
     // Add to sorted set
     await kv.zadd('lhc_leaderboard', { score, member: entry });
 
-    // Keep only top 100 to save space (optional, but good practice)
+    // Keep only top 100 to save space
     await kv.zremrangebyrank('lhc_leaderboard', 0, -101);
 
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Leaderboard Save Error:', error);
-    return NextResponse.json({ error: 'Failed to save score' }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to save score: ' + error.message }, { status: 500 });
   }
 }

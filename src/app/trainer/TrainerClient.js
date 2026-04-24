@@ -119,6 +119,7 @@ export default function TrainerPage() {
     timeRef.current = 60;
     setScore(0);
     setTime(60);
+    menuLockoutRef.current = Date.now() + 1000; // 1s lockout
     if (controlsRef.current) {
       controlsRef.current.unlock();
     }
@@ -190,6 +191,7 @@ export default function TrainerPage() {
 
   const consoleOpenRef = useRef(false);
   const gameStateRef = useRef('menu');
+  const menuLockoutRef = useRef(0); // Cooldown to prevent accidental re-lock
 
   useEffect(() => {
     if (!mountRef.current) return;
@@ -227,6 +229,11 @@ export default function TrainerPage() {
     controlsRef.current = controls;
 
     controls.addEventListener('lock', () => {
+      // Cooldown check
+      if (Date.now() < menuLockoutRef.current) {
+        controls.unlock();
+        return;
+      }
       // Only transition to playing if we were in menu or starting a new game
       if (gameStateRef.current === 'menu' || gameStateRef.current === 'finished') {
         gameStateRef.current = 'playing';
@@ -547,8 +554,10 @@ export default function TrainerPage() {
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.9 }}
             className="absolute inset-0 z-[150] bg-black/90 backdrop-blur-xl flex items-center justify-center p-6 pointer-events-auto"
+            onMouseDown={(e) => e.stopPropagation()}
+            onClick={(e) => e.stopPropagation()}
           >
-            <div className="max-w-md w-full bg-zinc-900 border border-white/10 rounded-3xl p-10 text-center shadow-2xl space-y-8" onClick={(e) => e.stopPropagation()}>
+            <div className="max-w-md w-full bg-zinc-900 border border-white/10 rounded-3xl p-10 text-center shadow-2xl space-y-8">
               <div className="space-y-2">
                 <h2 className="text-sm font-black text-yellow-500 uppercase tracking-[0.3em]">Entrenamiento Finalizado</h2>
                 <p className="text-5xl font-black text-white tabular-nums tracking-tighter">{score.toLocaleString()}</p>
