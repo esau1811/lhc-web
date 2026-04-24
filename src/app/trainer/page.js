@@ -24,6 +24,15 @@ export default function TrainerPage() {
   const targetsRef = useRef([]);
   const requestRef = useRef(null);
 
+  // Trainer Settings
+  const [sensitivity, setSensitivity] = useState(1);
+  const [reticuleSize, setReticuleSize] = useState(1);
+  const [reticuleType, setReticuleType] = useState('complex');
+  const [consoleOpen, setConsoleOpen] = useState(false);
+  const [commandInput, setCommandInput] = useState('');
+  const [consoleLogs, setConsoleLogs] = useState(['LHC Trainer Console v1.0.0', 'Press F8 to toggle', 'Type commands like: profile_mouseOnFootScale -5']);
+  const [keyBinds, setKeyBinds] = useState({});
+
   const spawnTarget = (scene) => {
     const geometry = new THREE.SphereGeometry(0.5, 32, 32);
     const material = new THREE.MeshStandardMaterial({ 
@@ -35,13 +44,48 @@ export default function TrainerPage() {
     });
     const sphere = new THREE.Mesh(geometry, material);
 
-    // Random position in front of the player
     sphere.position.x = (Math.random() - 0.5) * 20;
     sphere.position.y = (Math.random() * 5) + 1;
     sphere.position.z = -((Math.random() * 10) + 5);
 
     scene.add(sphere);
     targetsRef.current.push(sphere);
+  };
+
+  const handleCommand = (cmd) => {
+    const parts = cmd.trim().split(' ');
+    const action = parts[0].toLowerCase();
+    
+    setConsoleLogs(prev => [...prev, `> ${cmd}`]);
+
+    if (action === 'profile_mouseonfootscale') {
+      const val = parseFloat(parts[1]);
+      // Map FiveM scale (can be negative/positive) to our internal sensitivity
+      // Baseline 1.0, each unit is roughly 10% change
+      const newSens = 1 + (val * 0.1);
+      setSensitivity(Math.max(0.01, newSens));
+      setConsoleLogs(prev => [...prev, `Sensitivity set to ${newSens.toFixed(2)}`]);
+    } 
+    else if (action === 'profile_reticulesize') {
+      const val = parseFloat(parts[1]);
+      const newSize = 1 + (val * 0.2);
+      setReticuleSize(Math.max(0.1, newSize));
+      setConsoleLogs(prev => [...prev, `Reticule size set to ${newSize.toFixed(2)}`]);
+    }
+    else if (action === 'toggle' && parts[1] === 'profile_reticule') {
+      setReticuleType(prev => prev === 'complex' ? 'simple' : 'complex');
+      setConsoleLogs(prev => [...prev, `Reticule style toggled`]);
+    }
+    else if (action === 'bind') {
+      // bind keyboard "m" "toggle profile_reticule 0 -2"
+      const match = cmd.match(/bind keyboard "(.+)" "(.+)"/i);
+      if (match) {
+        const key = match[1].toLowerCase();
+        const subCmd = match[2];
+        setKeyBinds(prev => ({ ...prev, [key]: subCmd }));
+        setConsoleLogs(prev => [...prev, `Bound ${key} to "${subCmd}"`]);
+      }
+    }
   };
 
   const startGame = () => {
@@ -60,26 +104,24 @@ export default function TrainerPage() {
     scene.fog = new THREE.FogExp2(0x050505, 0.05);
     sceneRef.current = scene;
 
-    // Camera
     const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-    camera.position.y = 1.6; // Eyes level
+    camera.position.y = 1.6;
     cameraRef.current = camera;
 
-    // Renderer
     const renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.setPixelRatio(window.devicePixelRatio);
     mountRef.current.appendChild(renderer.domElement);
     rendererRef.current = renderer;
 
-    // Controls
     const controls = new PointerLockControls(camera, renderer.domElement);
     controlsRef.current = controls;
 
     controls.addEventListener('lock', () => setGameState('playing'));
-    controls.addEventListener('unlock', () => setGameState('menu'));
+    controls.addEventListener('unlock', () => {
+      if (!consoleOpen) setGameState('menu');
+    });
 
-    // Lights
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
     scene.add(ambientLight);
 
@@ -87,7 +129,6 @@ export default function TrainerPage() {
     mainLight.position.set(0, 10, 0);
     scene.add(mainLight);
 
-    // Floor
     const gridHelper = new THREE.GridHelper(100, 50, 0x333333, 0x111111);
     scene.add(gridHelper);
 
@@ -97,10 +138,8 @@ export default function TrainerPage() {
     floor.rotation.x = -Math.PI / 2;
     scene.add(floor);
 
-    // Initial targets
     for (let i = 0; i < 5; i++) spawnTarget(scene);
 
-    // Movement Logic
     let moveForward = false;
     let moveBackward = false;
     let moveLeft = false;
@@ -109,6 +148,21 @@ export default function TrainerPage() {
     const direction = new THREE.Vector3();
 
     const onKeyDown = (e) => {
+      if (e.code === 'F8') {
+        e.preventDefault();
+        setConsoleOpen(prev => !prev);
+        if (controls.isLocked) controls.unlock();
+        return;
+      }
+
+      if (consoleOpen) return;
+
+      // Check binds
+      const key = e.key.toLowerCase();
+      if (keyBinds[key]) {
+        handleCommand(keyBinds[key]);
+      }
+
       switch (e.code) {
         case 'ArrowUp':
         case 'KeyW': moveForward = true; break;
@@ -139,10 +193,10 @@ export default function TrainerPage() {
 
     // Shooting Logic
     const raycaster = new THREE.Raycaster();
-    const mouse = new THREE.Vector2(0, 0); // Always center
+    const mouse = new THREE.Vector2(0, 0);
 
     const onMouseDown = () => {
-      if (!controls.isLocked) return;
+      if (!controls.isLocked || consoleOpen) return;
 
       raycaster.setFromCamera(mouse, camera);
       const intersects = raycaster.intersectObjects(targetsRef.current);
@@ -158,13 +212,37 @@ export default function TrainerPage() {
 
     document.addEventListener('mousedown', onMouseDown);
 
-    // Animation Loop
+    // Override PointerLock sensitivity
+    const originalMouseMove = controls.onMouseMove;
+    controls.onMouseMove = (event) => {
+      // Scale mouse movement by our sensitivity setting
+      // PointerLockControls doesn't expose sensitivity easily, so we scale the event delta
+      // but the event delta is read-only. We have to manually update rotation.
+      if (!controls.isLocked) return;
+
+      const movementX = event.movementX || event.mozMovementX || event.webkitMovementX || 0;
+      const movementY = event.movementY || event.mozMovementY || event.webkitMovementY || 0;
+
+      const scaledX = movementX * (sensitivity * 0.002);
+      const scaledY = movementY * (sensitivity * 0.002);
+
+      const euler = new THREE.Euler(0, 0, 0, 'YXZ');
+      euler.setFromQuaternion(camera.quaternion);
+
+      euler.y -= scaledX;
+      euler.x -= scaledY;
+
+      euler.x = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, euler.x));
+
+      camera.quaternion.setFromEuler(euler);
+    };
+
     let prevTime = performance.now();
     const animate = () => {
       requestRef.current = requestAnimationFrame(animate);
 
       const timeNow = performance.now();
-      if (controls.isLocked) {
+      if (controls.isLocked && !consoleOpen) {
         const delta = (timeNow - prevTime) / 1000;
 
         velocity.x -= velocity.x * 10.0 * delta;
@@ -186,7 +264,6 @@ export default function TrainerPage() {
 
     animate();
 
-    // Resize
     const handleResize = () => {
       camera.aspect = window.innerWidth / window.innerHeight;
       camera.updateProjectionMatrix();
@@ -204,24 +281,73 @@ export default function TrainerPage() {
         mountRef.current.removeChild(renderer.domElement);
       }
     };
-  }, []);
+  }, [consoleOpen, sensitivity, keyBinds]);
 
   return (
     <div className="relative w-full h-screen overflow-hidden bg-black font-sans">
       {/* 3D CANVAS MOUNT */}
       <div ref={mountRef} className="absolute inset-0 cursor-crosshair" />
 
+      {/* F8 CONSOLE */}
+      <AnimatePresence>
+        {consoleOpen && (
+          <motion.div 
+            initial={{ y: -300, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: -300, opacity: 0 }}
+            className="absolute top-0 left-0 right-0 z-[100] bg-zinc-900/95 backdrop-blur-xl border-b border-white/10 shadow-2xl h-[300px] flex flex-col font-mono"
+          >
+            <div className="flex-1 overflow-y-auto p-4 text-[13px] space-y-1">
+              {consoleLogs.map((log, i) => (
+                <div key={i} className={log.startsWith('>') ? 'text-yellow-500' : 'text-zinc-400'}>
+                  {log}
+                </div>
+              ))}
+            </div>
+            <div className="p-4 border-t border-white/5 flex items-center gap-3">
+              <span className="text-yellow-500 font-bold">{'>'}</span>
+              <input 
+                autoFocus
+                type="text"
+                value={commandInput}
+                onChange={(e) => setCommandInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    handleCommand(commandInput);
+                    setCommandInput('');
+                  }
+                  if (e.key === 'F8') {
+                    setConsoleOpen(false);
+                  }
+                }}
+                className="flex-1 bg-transparent border-none outline-none text-white text-sm"
+                placeholder="Introducir comando..."
+              />
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* OVERLAY UI */}
       <div className="absolute inset-0 pointer-events-none z-20">
         <Header transparent />
         
         {/* CROSSHAIR */}
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center justify-center">
-          <div className="w-1 h-1 bg-yellow-500 rounded-full shadow-[0_0_10px_rgba(234,179,8,1)]"></div>
-          <div className="absolute w-4 h-0.5 bg-yellow-500/50 -translate-x-4"></div>
-          <div className="absolute w-4 h-0.5 bg-yellow-500/50 translate-x-4"></div>
-          <div className="absolute h-4 w-0.5 bg-yellow-500/50 -translate-y-4"></div>
-          <div className="absolute h-4 w-0.5 bg-yellow-500/50 translate-y-4"></div>
+        <div 
+          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center justify-center transition-all duration-200"
+          style={{ transform: `translate(-50%, -50%) scale(${reticuleSize})` }}
+        >
+          {reticuleType === 'complex' ? (
+            <>
+              <div className="w-1 h-1 bg-yellow-500 rounded-full shadow-[0_0_10px_rgba(234,179,8,1)]"></div>
+              <div className="absolute w-4 h-0.5 bg-yellow-500/50 -translate-x-4"></div>
+              <div className="absolute w-4 h-0.5 bg-yellow-500/50 translate-x-4"></div>
+              <div className="absolute h-4 w-0.5 bg-yellow-500/50 -translate-y-4"></div>
+              <div className="absolute h-4 w-0.5 bg-yellow-500/50 translate-y-4"></div>
+            </>
+          ) : (
+            <div className="w-1.5 h-1.5 bg-yellow-500 rounded-full shadow-[0_0_8px_rgba(234,179,8,1)]"></div>
+          )}
         </div>
 
         {/* HUD */}
