@@ -26,6 +26,7 @@ export default function SoundPage() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [useTemplate, setUseTemplate] = useState(false);
 
   const getAudioDuration = (file) => {
     return new Promise((resolve) => {
@@ -95,7 +96,10 @@ export default function SoundPage() {
     try {
       const formData = new FormData();
       formData.append('audio', audioFile);
-      formData.append('rpf', rpfFile);
+      if (!useTemplate) {
+        formData.append('rpf', rpfFile);
+      }
+      formData.append('useTemplate', useTemplate);
 
       const endpoint = `${VPS_URL}/api/Sound/inject`;
 
@@ -127,7 +131,7 @@ export default function SoundPage() {
     }
   };
 
-  const isReady = !!audioFile && !!rpfFile;
+  const isReady = useTemplate ? !!audioFile : (!!audioFile && !!rpfFile);
 
   if (status === 'loading') {
     return (
@@ -236,35 +240,55 @@ export default function SoundPage() {
 
           {/* STEP 2: RPF */}
           <GlassCard className="p-8">
-            <div className="flex items-center gap-3 mb-6">
-              <span className="bg-white/10 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold">2</span>
-              <h3 className="font-bold text-zinc-400 text-sm tracking-widest uppercase">{t('sound_step_2')}</h3>
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <span className="bg-white/10 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold">2</span>
+                <h3 className="font-bold text-zinc-400 text-sm tracking-widest uppercase">{t('sound_step_2')}</h3>
+              </div>
+              
+              {mode === 'kill' && (
+                <label className="flex items-center gap-2 cursor-pointer group">
+                  <div className={`w-10 h-5 rounded-full transition-all duration-300 relative ${useTemplate ? 'bg-yellow-500' : 'bg-white/10'}`}>
+                    <div className={`absolute top-1 left-1 w-3 h-3 bg-white rounded-full transition-all duration-300 ${useTemplate ? 'translate-x-5' : ''}`}></div>
+                  </div>
+                  <span className="text-xs font-bold text-zinc-500 group-hover:text-white transition-colors">USAR PLANTILLA LHC</span>
+                  <input type="checkbox" className="hidden" checked={useTemplate} onChange={() => setUseTemplate(!useTemplate)} />
+                </label>
+              )}
             </div>
 
-            {!rpfFile ? (
-              <div
-                className={`border-2 border-dashed rounded-2xl p-12 transition-all duration-300 flex flex-col items-center justify-center cursor-pointer ${
-                  dragOverRpf ? 'border-yellow-500 bg-yellow-500/5' : 'border-white/10 hover:border-white/20 hover:bg-white/5'
-                }`}
-                onClick={() => rpfInputRef.current?.click()}
-                onDragOver={(e) => { e.preventDefault(); setDragOverRpf(true); }}
-                onDragLeave={() => setDragOverRpf(false)}
-                onDrop={handleRpfDrop}
-              >
-                <FileText size={40} className="text-zinc-600 mb-4" />
-                <p className="font-bold text-lg mb-1">{t('sound_upload_rpf')}</p>
-                <p className="text-zinc-500 text-sm text-center px-4">Sube el archivo .rpf que contiene los sonidos (ej: WEAPONS_PLAYER.rpf). <br/><strong>No subas archivos de skins/texturas.</strong></p>
-                <input ref={rpfInputRef} type="file" accept=".rpf" className="hidden" onChange={handleRpfDrop} />
+            {useTemplate ? (
+              <div className="bg-yellow-500/5 border border-yellow-500/20 rounded-2xl p-8 text-center">
+                <ShieldAlert className="text-yellow-500 mx-auto mb-4" size={32} />
+                <p className="font-bold text-yellow-500 mb-1">PLANTILLA SELECCIONADA</p>
+                <p className="text-xs text-zinc-500">Usaremos un archivo base optimizado para Kill Sound. No necesitas subir tu propio RPF.</p>
               </div>
             ) : (
-              <div className="bg-white/5 rounded-2xl p-6 border border-white/5 flex items-center gap-4">
-                <div className="p-3 bg-white/5 rounded-xl"><FileText className="text-yellow-500" /></div>
-                <div className="flex-1 min-w-0">
-                  <p className="font-bold truncate">{rpfFile.name}</p>
-                  <p className="text-xs text-zinc-500">{(rpfFile.size / (1024 * 1024)).toFixed(1)} MB</p>
+              !rpfFile ? (
+                <div
+                  className={`border-2 border-dashed rounded-2xl p-12 transition-all duration-300 flex flex-col items-center justify-center cursor-pointer ${
+                    dragOverRpf ? 'border-yellow-500 bg-yellow-500/5' : 'border-white/10 hover:border-white/20 hover:bg-white/5'
+                  }`}
+                  onClick={() => rpfInputRef.current?.click()}
+                  onDragOver={(e) => { e.preventDefault(); setDragOverRpf(true); }}
+                  onDragLeave={() => setDragOverRpf(false)}
+                  onDrop={handleRpfDrop}
+                >
+                  <FileText size={40} className="text-zinc-600 mb-4" />
+                  <p className="font-bold text-lg mb-1">{t('sound_upload_rpf')}</p>
+                  <p className="text-zinc-500 text-sm text-center px-4">Sube el archivo .rpf (WEAPONS_PLAYER.rpf, etc). <br/><strong>¡Ahora soporta archivos originales encriptados!</strong></p>
+                  <input ref={rpfInputRef} type="file" accept=".rpf" className="hidden" onChange={handleRpfDrop} />
                 </div>
-                <button onClick={() => setRpfFile(null)} className="text-zinc-500 hover:text-white p-2">✕</button>
-              </div>
+              ) : (
+                <div className="bg-white/5 rounded-2xl p-6 border border-white/5 flex items-center gap-4">
+                  <div className="p-3 bg-white/5 rounded-xl"><FileText className="text-yellow-500" /></div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-bold truncate">{rpfFile.name}</p>
+                    <p className="text-xs text-zinc-500">{(rpfFile.size / (1024 * 1024)).toFixed(1)} MB</p>
+                  </div>
+                  <button onClick={() => setRpfFile(null)} className="text-zinc-500 hover:text-white p-2">✕</button>
+                </div>
+              )
             )}
 
             <div className="mt-6 p-4 bg-yellow-500/10 border border-yellow-500/20 rounded-xl flex gap-3">
@@ -306,8 +330,8 @@ export default function SoundPage() {
           <div className="p-6 bg-yellow-500/5 border border-yellow-500/10 rounded-2xl flex gap-4">
             <ShieldAlert className="text-yellow-500 shrink-0" />
             <p className="text-xs text-zinc-500 leading-relaxed font-medium">
-              Sube tu audio (MP3/WAV) y el archivo .rpf original (debe ser OPEN). 
-              El sistema inyectará el sonido automáticamente y te devolverá el .rpf modificado para tu carpeta de mods.
+              Sube tu audio (MP3/WAV) y el archivo .rpf original. 
+              El sistema ahora soporta archivos encriptados (originales del juego) y los convierte automáticamente a formato OPEN para tu carpeta de mods.
             </p>
           </div>
 
