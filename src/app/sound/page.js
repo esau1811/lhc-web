@@ -253,7 +253,7 @@ export default function SoundPage() {
               >
                 <FileText size={40} className="text-zinc-600 mb-4" />
                 <p className="font-bold text-lg mb-1">{t('sound_upload_rpf')}</p>
-                <p className="text-zinc-500 text-sm">Sube el archivo .rpf del arma o kill sound</p>
+                <p className="text-zinc-500 text-sm text-center px-4">Sube el archivo .rpf que contiene los sonidos (ej: WEAPONS_PLAYER.rpf). <br/><strong>No subas archivos de skins/texturas.</strong></p>
                 <input ref={rpfInputRef} type="file" accept=".rpf" className="hidden" onChange={handleRpfDrop} />
               </div>
             ) : (
@@ -266,6 +266,13 @@ export default function SoundPage() {
                 <button onClick={() => setRpfFile(null)} className="text-zinc-500 hover:text-white p-2">✕</button>
               </div>
             )}
+
+            <div className="mt-6 p-4 bg-yellow-500/10 border border-yellow-500/20 rounded-xl flex gap-3">
+              <ShieldAlert className="text-yellow-500 shrink-0" size={20} />
+              <p className="text-xs text-yellow-500/80 leading-relaxed font-bold">
+                IMPORTANTE: Asegúrate de subir el RPF de AUDIO. Los RPF de skins/texturas no contienen archivos .awc y darán error.
+              </p>
+            </div>
           </GlassCard>
 
           {/* STEP 3: PROCESS */}
