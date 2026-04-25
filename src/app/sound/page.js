@@ -95,11 +95,10 @@ export default function SoundPage() {
     try {
       const formData = new FormData();
       formData.append('audio', audioFile);
-      if (mode === 'weapon') formData.append('rpf', rpfFile);
 
       const endpoint = mode === 'weapon'
-        ? `${VPS_URL}/api/Sound/inject`
-        : `${VPS_URL}/api/Sound/inject`; // kill mode uses same endpoint, RPF optional
+        ? `${VPS_URL}/api/Sound/weapon`
+        : `${VPS_URL}/api/Sound/kill`;
 
       const response = await fetch(endpoint, {
         method: 'POST',
@@ -115,7 +114,7 @@ export default function SoundPage() {
       const url  = window.URL.createObjectURL(blob);
       const a    = document.createElement('a');
       a.href     = url;
-      a.download = 'LHC Sound boost.zip';
+      a.download = mode === 'weapon' ? 'LHC_WeaponSound.zip' : 'LHC_KillSound.zip';
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -129,7 +128,7 @@ export default function SoundPage() {
     }
   };
 
-  const isReady = (mode === 'kill' && audioFile) || (mode === 'weapon' && audioFile && rpfFile);
+  const isReady = !!audioFile;
 
   if (status === 'loading') {
     return (
@@ -234,57 +233,12 @@ export default function SoundPage() {
             )}
           </GlassCard>
 
-          {/* STEP 2: RPF (Only for Weapon Mode) */}
-          <AnimatePresence>
-            {mode === 'weapon' && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-                exit={{ opacity: 0, height: 0 }}
-                className="overflow-hidden"
-              >
-                <GlassCard className="p-8">
-                  <div className="flex items-center gap-3 mb-6">
-                    <span className="bg-white/10 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold">2</span>
-                    <h3 className="font-bold text-zinc-400 text-sm tracking-widest uppercase">{t('sound_step_2')}</h3>
-                  </div>
 
-                  {!rpfFile ? (
-                    <div
-                      className={`border-2 border-dashed rounded-2xl p-12 transition-all duration-300 flex flex-col items-center justify-center cursor-pointer ${
-                        dragOverRpf ? 'border-yellow-500 bg-yellow-500/5' : 'border-white/10 hover:border-white/20 hover:bg-white/5'
-                      }`}
-                      onClick={() => rpfInputRef.current?.click()}
-                      onDragOver={(e) => { e.preventDefault(); setDragOverRpf(true); }}
-                      onDragLeave={() => setDragOverRpf(false)}
-                      onDrop={handleRpfDrop}
-                    >
-                      <FileText size={40} className="text-zinc-600 mb-4" />
-                      <p className="font-bold text-lg mb-1">{t('sound_upload_rpf')}</p>
-                      <p className="text-zinc-500 text-sm">{t('sound_rpf_hint')}</p>
-                      <input ref={rpfInputRef} type="file" accept=".rpf" className="hidden" onChange={handleRpfDrop} />
-                    </div>
-                  ) : (
-                    <div className="bg-white/5 rounded-2xl p-6 border border-white/5 flex items-center gap-4">
-                      <div className="p-3 bg-white/5 rounded-xl"><FileText className="text-yellow-500" /></div>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-bold truncate">{rpfFile.name}</p>
-                        <p className="text-xs text-zinc-500">{(rpfFile.size / (1024 * 1024)).toFixed(1)} MB</p>
-                      </div>
-                      <button onClick={() => setRpfFile(null)} className="text-zinc-500 hover:text-white p-2">✕</button>
-                    </div>
-                  )}
-                </GlassCard>
-              </motion.div>
-            )}
-          </AnimatePresence>
 
-          {/* STEP 3: PROCESS */}
+          {/* STEP 2: PROCESS */}
           <GlassCard className="p-8">
             <div className="flex items-center gap-3 mb-6">
-              <span className="bg-white/10 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold">
-                {mode === 'kill' ? '2' : '3'}
-              </span>
+              <span className="bg-white/10 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold">2</span>
               <h3 className="font-bold text-zinc-400 text-sm tracking-widest uppercase">{t('sound_step_3')}</h3>
             </div>
             
@@ -312,8 +266,8 @@ export default function SoundPage() {
           <div className="p-6 bg-yellow-500/5 border border-yellow-500/10 rounded-2xl flex gap-4">
             <ShieldAlert className="text-yellow-500 shrink-0" />
             <p className="text-xs text-zinc-500 leading-relaxed font-medium">
-              Asegúrate de que el audio no supere los 3 segundos para evitar errores en el juego. 
-              El formato .rpf debe ser un modelo de arma válido de FiveM/GTA V.
+              Sube tu audio MP3 o WAV. Se generará un recurso de FiveM listo para usar. 
+              Arrastra la carpeta a tu servidor y añade <code className="text-yellow-500">ensure LHC_KillSound</code> o <code className="text-yellow-500">ensure LHC_WeaponSound</code> en tu server.cfg.
             </p>
           </div>
 
