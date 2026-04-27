@@ -1,9 +1,7 @@
 import { NextResponse } from 'next/server';
 import { kv } from '@vercel/kv';
-// Force redeploy v2
 
-// Empty by default, only shows real user activity
-const memoryActivity = [];
+export const dynamic = 'force-dynamic';
 
 const ACTIVITY_KEY = 'lhc_recent_activity';
 
@@ -13,14 +11,15 @@ function getRelativeTime(timestamp) {
   if (mins < 1) return 'Ahora';
   if (mins < 60) return `${mins}m`;
   const hours = Math.floor(mins / 60);
-  return `${hours}h`;
+  if (hours < 24) return `${hours}h`;
+  return `${Math.floor(hours/24)}d`;
 }
 
 const INITIAL_ACTIVITY = [
-  { name: 'Alex', action: 'Convirtió una skin de Glock', timestamp: Date.now() - 300000, isUser: false, icon: '/icon_conv.png' },
-  { name: 'Santi', action: 'Compró Nitro Boost', timestamp: Date.now() - 720000, isUser: false, icon: '/nitro_v2.png' },
-  { name: 'Marco', action: 'Usó el Optimizador', timestamp: Date.now() - 1200000, isUser: false, icon: '/opti_v2.png' },
-  { name: 'LHC Bot', action: 'Sistema operativo v33', timestamp: Date.now() - 3600000, isUser: false, icon: '/logo.png' }
+  { name: 'Alex', action: 'Convirtió una skin de Glock', timestamp: Date.now() - 3600000 * 24, isUser: false, icon: '/icon_conv.png' },
+  { name: 'Santi', action: 'Compró Nitro Boost', timestamp: Date.now() - 3600000 * 48, isUser: false, icon: '/nitro_v2.png' },
+  { name: 'Marco', action: 'Usó el Optimizador', timestamp: Date.now() - 3600000 * 72, isUser: false, icon: '/opti_v2.png' },
+  { name: 'LHC Bot', action: 'Sistema operativo v34', timestamp: Date.now() - 3600000 * 120, isUser: false, icon: '/logo.png' }
 ];
 
 export async function GET() {
