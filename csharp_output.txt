@@ -1,0 +1,273 @@
+﻿C# source files: ['/var/www/lhc-csharp/CodeWalkerApi/Program.cs', '/var/www/lhc-csharp/CodeWalkerApi/Controllers/SoundController.cs', '/var/www/lhc-csharp/CodeWalkerApi/Controllers/WeaponConverterController.cs']
+
+============================================================
+FILE: /var/www/lhc-csharp/CodeWalkerApi/Program.cs
+============================================================
+
+var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddControllers();
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAll",
+        builder =>
+        {
+            builder.AllowAnyOrigin()
+                   .AllowAnyMethod()
+                   .AllowAnyHeader();
+        });
+});
+
+var app = builder.Build();
+
+app.UseCors("AllowAll");
+app.MapControllers();
+
+app.Run();
+
+
+
+============================================================
+FILE: /var/www/lhc-csharp/CodeWalkerApi/Controllers/SoundController.cs
+============================================================
+using Microsoft.AspNetCore.Mvc;
+using System;
+using System.IO;
+using System.IO.Compression;
+using System.Threading.Tasks;
+
+namespace CodeWalkerApi.Controllers
+{
+    [ApiController]
+    [Route("api/[controller]")]
+    public class SoundController : ControllerBase
+    {
+        private const string ResidentRpfPath = "/opt/lhc-sound/RESIDENT.rpf";
+
+        [HttpPost("inject")]
+        public async Task<IActionResult> Inject()
+        {
+            try
+            {
+                var rpfFile   = Request.Form.Files.GetFile("rpf");
+                var audioFile = Request.Form.Files.GetFile("audio");
+
+                if (rpfFile == null)
+                    return BadRequest("Falta el archivo RPF (campo: 'rpf')");
+                if (audioFile == null)
+                    return BadRequest("Falta el archivo de audio (campo: 'audio')");
+
+                // Read RPF into memory
+                byte[] rpfBytes;
+                using (var ms = new MemoryStream())
+                {
+                    await rpfFile.OpenReadStream().CopyToAsync(ms);
+                    rpfBytes = ms.ToArray();
+                }
+
+                // Build ZIP to a temp file so we can stream it back
+                var tmpZip = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N") + ".zip");
+                try
+                {
+                    using (var fs = new FileStream(tmpZip, FileMode.Create, FileAccess.Write))
+                    using (var archive = new ZipArchive(fs, ZipArchiveMode.Create, leaveOpen: false))
+                    {
+                        // User's RPF → WEAPONS_PLAYER.rpf
+                        var wpEntry = archive.CreateEntry(
+                            "LHC Sound boost/WEAPONS_PLAYER.rpf",
+                            CompressionLevel.NoCompression);
+                        using (var s = wpEntry.Open())
+                            await s.WriteAsync(rpfBytes, 0, rpfBytes.Length);
+
+                        // Static RESIDENT.rpf from server
+                        if (System.IO.File.Exists(ResidentRpfPath))
+                        {
+                            var resEntry = archive.CreateEntry(
+                                "LHC Sound boost/RESIDENT.rpf",
+                                CompressionLevel.NoCompression);
+                            using (var s = resEntry.Open())
+                            using (var rfs = System.IO.File.OpenRead(ResidentRpfPath))
+                                await rfs.CopyToAsync(s);
+                        }
+                    }
+
+                    // Stream ZIP back to client
+                    var zipBytes = await System.IO.File.ReadAllBytesAsync(tmpZip);
+                    Response.Headers["Access-Control-Expose-Headers"] = "Content-Disposition";
+                    return File(zipBytes, "application/zip", "LHC Sound boost.zip");
+                }
+                finally
+                {
+                    if (System.IO.File.Exists(tmpZip))
+                        System.IO.File.Delete(tmpZip);
+                }
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, "Error: " + ex.Message);
+            }
+        }
+
+        [HttpGet("test")]
+        public IActionResult Test()
+        {
+            bool hasResident = System.IO.File.Exists(ResidentRpfPath);
+            return Ok($"Sound API v1.0 - Ready | RESIDENT.rpf: {(hasResident ? "OK" : "NOT FOUND at " + ResidentRpfPath)}");
+        }
+
+        [HttpOptions("inject")]
+        public IActionResult Options() => Ok();
+    }
+}
+
+
+============================================================
+FILE: /var/www/lhc-csharp/CodeWalkerApi/Controllers/WeaponConverterController.cs
+============================================================
+using Microsoft.AspNetCore.Mvc;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace CodeWalkerApi.Controllers
+{
+    [ApiController]
+    [Route("api/[controller]")]
+    public class WeaponConverterController : ControllerBase
+    {
+        [HttpPost("convert")]
+        public async Task<IActionResult> Convert()
+        {
+            try
+            {
+                if (Request.Form.Files.Count == 0)
+                    return BadRequest("No file uploaded");
+
+                var file = Request.Form.Files[0];
+                string source = Request.Form["sourceWeapon"].ToString().Trim();
+                string target = Request.Form["targetWeapon"].ToString().Trim();
+
+                if (string.IsNullOrEmpty(source) || string.IsNullOrEmpty(target))
+                    return BadRequest("sourceWeapon and targetWeapon required");
+
+                var data = new byte[file.Length];
+                using (var stream = file.OpenReadStream())
+                {
+                    await stream.ReadAsync(data, 0, (int)file.Length);
+                }
+
+                var replacements = GenerateReplacements(source, target);
+                int totalReplacements = 0;
+
+                foreach (var pair in replacements.OrderByDescending(r => r.Item1.Length))
+                {
+                    var searchBytes = Encoding.ASCII.GetBytes(pair.Item1);
+                    var replaceBytes = Encoding.ASCII.GetBytes(pair.Item2);
+                    int count = BinaryPatch(data, searchBytes, replaceBytes);
+                    totalReplacements += count;
+                }
+
+                Response.Headers["X-Replacement-Count"] = totalReplacements.ToString();
+                Response.Headers["Access-Control-Expose-Headers"] = "X-Replacement-Count";
+
+                return File(data, "application/octet-stream", target + ".rpf");
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ex.Message);
+            }
+        }
+
+        private List<Tuple<string, string>> GenerateReplacements(string source, string target)
+        {
+            var pairs = new List<Tuple<string, string>>();
+
+            pairs.Add(Tuple.Create(source.ToLower(), target.ToLower()));
+
+            string srcMid = source.ToLower().StartsWith("w_") ? source.ToLower().Substring(2) : source.ToLower();
+            string tgtMid = target.ToLower().StartsWith("w_") ? target.ToLower().Substring(2) : target.ToLower();
+            if (srcMid != source.ToLower())
+                pairs.Add(Tuple.Create(srcMid, tgtMid));
+
+            string srcShort = RemoveCategory(source.ToLower());
+            string tgtShort = RemoveCategory(target.ToLower());
+            if (srcShort != srcMid && srcShort.Length >= 4)
+                pairs.Add(Tuple.Create(srcShort, tgtShort));
+
+            string srcClean = srcShort.Replace("_", "");
+            string tgtClean = tgtShort.Replace("_", "");
+            if (srcClean != srcShort && srcClean.Length >= 4)
+                pairs.Add(Tuple.Create(srcClean, tgtClean));
+
+            var extras = new List<Tuple<string, string>>();
+            foreach (var p in pairs)
+            {
+                extras.Add(Tuple.Create(p.Item1.ToUpper(), p.Item2.ToUpper()));
+                if (p.Item1.Length > 0)
+                {
+                    string sp = char.ToUpper(p.Item1[0]) + p.Item1.Substring(1);
+                    string rp = char.ToUpper(p.Item2[0]) + p.Item2.Substring(1);
+                    extras.Add(Tuple.Create(sp, rp));
+                }
+            }
+            pairs.AddRange(extras);
+
+            return pairs.Where(p => !string.IsNullOrEmpty(p.Item1) && p.Item1.Length >= 3)
+                        .Distinct().ToList();
+        }
+
+        private int BinaryPatch(byte[] data, byte[] search, byte[] replace)
+        {
+            int count = 0;
+            for (int i = 0; i <= data.Length - search.Length; i++)
+            {
+                bool match = true;
+                for (int j = 0; j < search.Length; j++)
+                {
+                    if (data[i + j] != search[j]) { match = false; break; }
+                }
+                if (match)
+                {
+                    int copyLen = Math.Min(replace.Length, search.Length);
+                    Array.Copy(replace, 0, data, i, copyLen);
+                    for (int j = copyLen; j < search.Length; j++)
+                        data[i + j] = 0x00;
+                    count++;
+                    i += search.Length - 1;
+                }
+            }
+            return count;
+        }
+
+        private string RemoveCategory(string input)
+        {
+            string[] prefixes = { "w_pi_", "w_sb_", "w_ar_", "w_sg_", "w_mg_", "w_sr_", "w_lr_", "w_me_", "w_ex_",
+                                  "pi_", "sb_", "ar_", "sg_", "mg_", "sr_", "lr_", "me_", "ex_" };
+            foreach (var p in prefixes)
+                if (input.StartsWith(p)) return input.Substring(p.Length);
+            return input;
+        }
+
+        [HttpGet("test")]
+        public IActionResult Test() => Ok("Ready v3.0 - Deep Binary Patching");
+
+        [HttpOptions("convert")]
+        public IActionResult Options() => Ok();
+    }
+}
+
+
+=== appsettings ===
+{
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft.AspNetCore": "Warning"
+    }
+  },
+  "AllowedHosts": "*"
+}
+

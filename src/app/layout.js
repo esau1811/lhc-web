@@ -10,6 +10,8 @@ export const metadata = {
 
 import InteractiveBackground from '@/components/InteractiveBackground';
 
+import { Analytics } from '@vercel/analytics/next';
+
 export default function RootLayout({ children }) {
   return (
     <html lang="es">
@@ -28,6 +30,7 @@ export default function RootLayout({ children }) {
         <SessionProvider>
           <LangProvider>
             {children}
+            <Analytics />
           </LangProvider>
         </SessionProvider>
       </body>

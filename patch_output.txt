@@ -1,0 +1,17 @@
+﻿Patch applied in memory. Writing to VPS...
+File written. Restarting service...
+● lhc-node.service - LHC Node.js Backend
+     Loaded: loaded (/etc/systemd/system/lhc-node.service; enabled; preset: enabled)
+     Active: active (running) since Mon 2026-04-27 11:45:32 CEST; 2s ago
+   Main PID: 473407 (node)
+      Tasks: 7 (limit: 2263)
+     Memory: 16.8M (peak: 17.0M)
+        CPU: 199ms
+     CGroup: /system.slice/lhc-node.service
+             └─473407 /usr/bin/node /var/www/lhc-node/vps_server_v32.js
+
+Apr 27 11:45:32 lhcweb systemd[1]: Started lhc-node.service - LHC Node.js Backend.
+Apr 27 11:45:33 lhcweb node[473407]: [v32] Keys loaded
+Apr 27 11:45:33 lhcweb node[473407]: [v32] API Ready on port 5000
+
+Done!

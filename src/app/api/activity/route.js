@@ -1,10 +1,18 @@
 import { NextResponse } from 'next/server';
 import { kv } from '@vercel/kv';
+// Force redeploy v2
 
 // Empty by default, only shows real user activity
 const memoryActivity = [];
 
 const ACTIVITY_KEY = 'lhc_recent_activity';
+
+const INITIAL_ACTIVITY = [
+  { name: 'Alex', action: 'Convirtió una skin de Glock', time: '5m', isUser: false, icon: '/icon_conv.png' },
+  { name: 'Santi', action: 'Compró Nitro Boost', time: '12m', isUser: false, icon: '/nitro_v2.png' },
+  { name: 'Marco', action: 'Usó el Optimizador', time: '20m', isUser: false, icon: '/opti_v2.png' },
+  { name: 'LHC Bot', action: 'Sistema operativo v32', time: '1h', isUser: false, icon: '/logo.png' }
+];
 
 export async function GET() {
   try {
@@ -14,7 +22,9 @@ export async function GET() {
     console.warn('KV not configured');
   }
   
-  if (!global.recentActivity) global.recentActivity = [];
+  if (!global.recentActivity || global.recentActivity.length === 0) {
+    global.recentActivity = INITIAL_ACTIVITY;
+  }
   return NextResponse.json(global.recentActivity);
 }
 
