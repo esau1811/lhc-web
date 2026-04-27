@@ -15,38 +15,38 @@
   }
   
   .glass-card-border-top {
-    @apply absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-[#ffb300] to-[#ff8f00];
+    @apply absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-[#ff2a00] to-[#cc0000];
   }
 
   .btn-pill {
     @apply rounded-full px-6 py-3 font-bold transition-all duration-300 flex items-center justify-center gap-2;
   }
 
-  .btn-gold {
-    @apply bg-gradient-to-r from-[#ffb300] to-[#ff8f00] text-black hover:brightness-110 hover:shadow-[0_0_20px_rgba(255,179,0,0.4)] hover:-translate-y-0.5;
+  .btn-red {
+    @apply bg-gradient-to-r from-[#ff2a00] to-[#cc0000] text-black hover:brightness-110 hover:shadow-[0_0_20px_rgba(255,179,0,0.4)] hover:-translate-y-0.5;
   }
 }
 
 /* Background Blobs */
-.blob-orange {
+.blob-dark-red {
   position: fixed;
   top: -10%;
   left: -10%;
   width: 40%;
   height: 40%;
-  background: radial-gradient(circle, rgba(255, 143, 0, 0.15) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(204, 0, 0, 0.15) 0%, transparent 70%);
   filter: blur(80px);
   z-index: -1;
   pointer-events: none;
 }
 
-.blob-gold {
+.blob-red {
   position: fixed;
   bottom: -10%;
   right: -10%;
   width: 40%;
   height: 40%;
-  background: radial-gradient(circle, rgba(255, 179, 0, 0.1) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(255, 42, 0, 0.1) 0%, transparent 70%);
   filter: blur(80px);
   z-index: -1;
   pointer-events: none;
@@ -58,7 +58,7 @@
 }
 
 .opti-glow {
-  filter: drop-shadow(0 0 15px rgba(255, 179, 0, 0.5));
+  filter: drop-shadow(0 0 15px rgba(255, 42, 0, 0.5));
 }
 
 .nitro-glow {

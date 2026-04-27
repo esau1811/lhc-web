@@ -81,7 +81,7 @@ function PremiumContent() {
             animate={{ opacity: 1, y: 0 }}
             className="text-5xl md:text-7xl font-black mb-6 tracking-tighter uppercase"
           >
-            {t('nav_premium')} <span className="bg-clip-text text-transparent bg-gradient-to-r from-yellow-400 to-orange-500">LHC</span>
+            {t('nav_premium')} <span className="bg-clip-text text-transparent bg-gradient-to-r from-red-400 to-orange-500">LHC</span>
           </motion.h1>
           <p className="text-zinc-400 max-w-2xl mx-auto text-lg">
             {t('bio')}
@@ -95,7 +95,7 @@ function PremiumContent() {
               onClick={() => setActiveTab(tab.id)}
               className={`btn-pill border ${
                 activeTab === tab.id 
-                ? 'bg-yellow-500/10 border-yellow-500 text-yellow-500' 
+                ? 'bg-red-500/10 border-red-500 text-red-500' 
                 : 'bg-white/5 border-white/10 text-zinc-400 hover:text-white hover:bg-white/10'
               }`}
             >
@@ -117,9 +117,9 @@ function PremiumContent() {
                 transition={{ duration: 0.2, delay: idx * 0.1 }}
                 className={services[activeTab].length === 2 ? (idx === 0 ? 'md:col-start-1' : 'md:col-start-2') : ''}
               >
-                <GlassCard className={`p-8 h-full flex flex-col group ${service.popular ? 'ring-1 ring-yellow-500/50' : ''}`}>
+                <GlassCard className={`p-8 h-full flex flex-col group ${service.popular ? 'ring-1 ring-red-500/50' : ''}`}>
                   {service.popular && (
-                    <div className="absolute top-4 right-4 bg-yellow-500 text-black text-[10px] font-black px-3 py-1 rounded-full">
+                    <div className="absolute top-4 right-4 bg-red-500 text-black text-[10px] font-black px-3 py-1 rounded-full">
                       POPULAR
                     </div>
                   )}
@@ -140,7 +140,7 @@ function PremiumContent() {
                   <ul className="space-y-4 mb-12 flex-1">
                     {service.features.map((feat, fIdx) => (
                       <li key={fIdx} className="flex items-center gap-3 text-sm text-zinc-300">
-                        <Check size={16} className="text-yellow-500" /> {feat}
+                        <Check size={16} className="text-red-500" /> {feat}
                       </li>
                     ))}
                   </ul>
@@ -149,7 +149,7 @@ function PremiumContent() {
                     href="https://discord.gg/lhcds" 
                     target="_blank" 
                     rel="noopener noreferrer" 
-                    className="btn-pill btn-gold w-full"
+                    className="btn-pill btn-red w-full"
                   >
                     {t('unete_ahora')}
                   </a>

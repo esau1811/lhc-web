@@ -418,7 +418,7 @@ export default function TrainerPage() {
     <div className="relative w-full h-screen overflow-hidden bg-black font-sans">
       {/* FPS COUNTER */}
       <div className="absolute bottom-6 right-6 z-50 font-mono text-[10px] font-black text-white/20 select-none">
-        FPS: <span className={fps > 55 ? 'text-green-500/50' : 'text-yellow-500/50'}>{fps}</span>
+        FPS: <span className={fps > 55 ? 'text-green-500/50' : 'text-red-500/50'}>{fps}</span>
       </div>
 
       {/* 3D CANVAS MOUNT */}
@@ -438,7 +438,7 @@ export default function TrainerPage() {
               <div className="flex flex-col gap-3">
                 <button 
                   onClick={resumeGame}
-                  className="w-full py-4 bg-yellow-500 text-black font-black rounded-xl hover:bg-yellow-400 transition-colors uppercase tracking-widest"
+                  className="w-full py-4 bg-red-500 text-black font-black rounded-xl hover:bg-red-400 transition-colors uppercase tracking-widest"
                 >
                   Continuar
                 </button>
@@ -471,13 +471,13 @@ export default function TrainerPage() {
           >
             <div className="flex-1 overflow-y-auto p-4 text-[13px] space-y-1">
               {consoleLogs.map((log, i) => (
-                <div key={i} className={log.startsWith('>') ? 'text-yellow-500' : 'text-zinc-400'}>
+                <div key={i} className={log.startsWith('>') ? 'text-red-500' : 'text-zinc-400'}>
                   {log}
                 </div>
               ))}
             </div>
             <div className="p-4 border-t border-white/5 flex items-center gap-3">
-              <span className="text-yellow-500 font-bold">{'>'}</span>
+              <span className="text-red-500 font-bold">{'>'}</span>
               <input 
                 autoFocus
                 type="text"
@@ -532,7 +532,7 @@ export default function TrainerPage() {
         <div className="absolute top-24 left-6 right-6 flex justify-between items-start">
           <div className="bg-black/40 backdrop-blur-md border border-white/10 px-6 py-4 rounded-2xl">
             <p className="text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-1">SCORE</p>
-            <p className="text-3xl font-black text-yellow-500 font-mono tracking-tighter">{score.toLocaleString()}</p>
+            <p className="text-3xl font-black text-red-500 font-mono tracking-tighter">{score.toLocaleString()}</p>
           </div>
           
           <div className="bg-black/40 backdrop-blur-md border border-white/10 px-6 py-4 rounded-2xl text-right">
@@ -559,7 +559,7 @@ export default function TrainerPage() {
           >
             <div className="max-w-md w-full bg-zinc-900 border border-white/10 rounded-3xl p-10 text-center shadow-2xl space-y-8">
               <div className="space-y-2">
-                <h2 className="text-sm font-black text-yellow-500 uppercase tracking-[0.3em]">Entrenamiento Finalizado</h2>
+                <h2 className="text-sm font-black text-red-500 uppercase tracking-[0.3em]">Entrenamiento Finalizado</h2>
                 <p className="text-5xl font-black text-white tabular-nums tracking-tighter">{score.toLocaleString()}</p>
                 <p className="text-zinc-500 text-xs font-bold uppercase tracking-widest">Puntos Totales</p>
               </div>
@@ -572,13 +572,13 @@ export default function TrainerPage() {
                     value={playerName}
                     onChange={(e) => setPlayerName(e.target.value)}
                     onKeyDown={(e) => e.stopPropagation()} // Prevent J key from opening console
-                    className="w-full bg-white/5 border border-white/10 rounded-xl px-5 py-4 text-white font-bold focus:border-yellow-500/50 outline-none transition-colors"
+                    className="w-full bg-white/5 border border-white/10 rounded-xl px-5 py-4 text-white font-bold focus:border-red-500/50 outline-none transition-colors"
                   />
                   <button 
                     onClick={saveScore}
                     disabled={isSaving}
                     className={`w-full py-4 font-black rounded-xl transition-all uppercase tracking-widest pointer-events-auto ${
-                      isSaving ? 'bg-zinc-700 text-zinc-400 cursor-wait' : 'bg-yellow-500 text-black hover:bg-yellow-400'
+                      isSaving ? 'bg-zinc-700 text-zinc-400 cursor-wait' : 'bg-red-500 text-black hover:bg-red-400'
                     }`}
                   >
                     {isSaving ? 'Guardando...' : 'Guardar en el Ranking'}
@@ -622,11 +622,11 @@ export default function TrainerPage() {
             {/* Left: Branding & Start */}
             <div className="max-w-md w-full text-center md:text-left space-y-8">
               <div>
-                <div className="w-20 h-20 bg-yellow-500/10 rounded-3xl flex items-center justify-center border border-yellow-500/20 mb-6 mx-auto md:mx-0">
-                  <Target size={40} className="text-yellow-500" />
+                <div className="w-20 h-20 bg-red-500/10 rounded-3xl flex items-center justify-center border border-red-500/20 mb-6 mx-auto md:mx-0">
+                  <Target size={40} className="text-red-500" />
                 </div>
                 <h1 className="text-6xl font-black tracking-tighter uppercase leading-none">
-                  LHC<br/><span className="text-yellow-500">TRAINER</span>
+                  LHC<br/><span className="text-red-500">TRAINER</span>
                 </h1>
                 <p className="text-zinc-500 mt-4 font-medium max-w-xs">
                   Entrena como los mejores de FiveM. Precisión, velocidad y reflejos al límite.
@@ -636,7 +636,7 @@ export default function TrainerPage() {
               <div className="space-y-4">
                 <button 
                   onClick={startGame}
-                  className="w-full btn-pill btn-gold py-5 text-sm font-black flex items-center justify-center gap-3 group pointer-events-auto"
+                  className="w-full btn-pill btn-red py-5 text-sm font-black flex items-center justify-center gap-3 group pointer-events-auto"
                 >
                   <Play size={20} fill="currentColor" className="group-hover:scale-125 transition-transform" /> 
                   EMPEZAR ENTRENAMIENTO
@@ -658,7 +658,7 @@ export default function TrainerPage() {
             {/* Right: Leaderboard */}
             <div className="w-full max-w-sm bg-zinc-900/50 border border-white/10 rounded-3xl p-8 flex flex-col h-[500px]">
               <div className="flex items-center gap-3 mb-6">
-                <Shield size={20} className="text-yellow-500" />
+                <Shield size={20} className="text-red-500" />
                 <h2 className="text-lg font-black text-white uppercase tracking-tighter">Ranking Top 10</h2>
               </div>
               
@@ -667,7 +667,7 @@ export default function TrainerPage() {
                   <div key={i} className="flex items-center justify-between p-3 bg-white/5 rounded-xl border border-white/5 hover:border-white/10 transition-colors">
                     <div className="flex items-center gap-3">
                       <span className={`w-6 h-6 flex items-center justify-center rounded-lg text-[10px] font-black ${
-                        i === 0 ? 'bg-yellow-500 text-black' : 
+                        i === 0 ? 'bg-red-500 text-black' : 
                         i === 1 ? 'bg-zinc-400 text-black' : 
                         i === 2 ? 'bg-orange-700 text-white' : 
                         'bg-zinc-800 text-zinc-500'

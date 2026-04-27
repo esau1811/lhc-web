@@ -136,7 +136,7 @@ export default function SoundPage() {
   if (status === 'loading') {
     return (
       <div className="min-h-screen bg-[#050505] flex items-center justify-center">
-        <div className="w-10 h-10 border-4 border-yellow-500 border-t-transparent rounded-full animate-spin"></div>
+        <div className="w-10 h-10 border-4 border-red-500 border-t-transparent rounded-full animate-spin"></div>
       </div>
     );
   }
@@ -151,7 +151,7 @@ export default function SoundPage() {
           </div>
           <h2 className="text-4xl font-black mb-4 tracking-tight">ACCESO RESTRINGIDO</h2>
           <p className="text-zinc-500 max-w-md mb-8">Debes iniciar sesión con Discord para utilizar LHCSound.</p>
-          <button onClick={() => signIn('discord')} className="btn-pill btn-gold px-12">
+          <button onClick={() => signIn('discord')} className="btn-pill btn-red px-12">
             Login con Discord
           </button>
         </main>
@@ -168,7 +168,7 @@ export default function SoundPage() {
           <img src="/icon_sound.png" alt="Sound" className="w-24 h-24 object-contain ai-icon-blend nitro-glow" />
           <div>
             <h1 className="text-4xl font-black mb-2 tracking-tight uppercase">
-              LHC<span className="text-yellow-500">SOUND</span>
+              LHC<span className="text-red-500">SOUND</span>
             </h1>
             <p className="text-zinc-500 font-medium max-w-xl">
               {t('soundDesc')}
@@ -182,7 +182,7 @@ export default function SoundPage() {
             onClick={() => { setMode('weapon'); setError(''); setSuccess(''); }}
             className={`btn-pill border flex items-center gap-2 ${
               mode === 'weapon' 
-              ? 'bg-yellow-500/10 border-yellow-500 text-yellow-500' 
+              ? 'bg-red-500/10 border-red-500 text-red-500' 
               : 'bg-white/5 border-white/10 text-zinc-400 hover:text-white'
             }`}
           >
@@ -192,7 +192,7 @@ export default function SoundPage() {
             onClick={() => { setMode('kill'); setError(''); setSuccess(''); }}
             className={`btn-pill border flex items-center gap-2 ${
               mode === 'kill' 
-              ? 'bg-yellow-500/10 border-yellow-500 text-yellow-500' 
+              ? 'bg-red-500/10 border-red-500 text-red-500' 
               : 'bg-white/5 border-white/10 text-zinc-400 hover:text-white'
             }`}
           >
@@ -212,7 +212,7 @@ export default function SoundPage() {
             {!audioFile ? (
               <div
                 className={`border-2 border-dashed rounded-2xl p-12 transition-all duration-300 flex flex-col items-center justify-center cursor-pointer ${
-                  dragOverAudio ? 'border-yellow-500 bg-yellow-500/5' : 'border-white/10 hover:border-white/20 hover:bg-white/5'
+                  dragOverAudio ? 'border-red-500 bg-red-500/5' : 'border-white/10 hover:border-white/20 hover:bg-white/5'
                 }`}
                 onClick={() => audioInputRef.current?.click()}
                 onDragOver={(e) => { e.preventDefault(); setDragOverAudio(true); }}
@@ -226,7 +226,7 @@ export default function SoundPage() {
               </div>
             ) : (
               <div className="bg-white/5 rounded-2xl p-6 border border-white/5 flex items-center gap-4">
-                <div className="p-3 bg-white/5 rounded-xl"><Music className="text-yellow-500" /></div>
+                <div className="p-3 bg-white/5 rounded-xl"><Music className="text-red-500" /></div>
                 <div className="flex-1 min-w-0">
                   <p className="font-bold truncate">{audioFile.name}</p>
                   <p className="text-xs text-zinc-500">{(audioFile.size / 1024).toFixed(1)} KB — {audioDuration.toFixed(1)}s</p>
@@ -248,7 +248,7 @@ export default function SoundPage() {
               
               {mode === 'kill' && (
                 <label className="flex items-center gap-2 cursor-pointer group">
-                  <div className={`w-10 h-5 rounded-full transition-all duration-300 relative ${useTemplate ? 'bg-yellow-500' : 'bg-white/10'}`}>
+                  <div className={`w-10 h-5 rounded-full transition-all duration-300 relative ${useTemplate ? 'bg-red-500' : 'bg-white/10'}`}>
                     <div className={`absolute top-1 left-1 w-3 h-3 bg-white rounded-full transition-all duration-300 ${useTemplate ? 'translate-x-5' : ''}`}></div>
                   </div>
                   <span className="text-xs font-bold text-zinc-500 group-hover:text-white transition-colors">USAR PLANTILLA LHC</span>
@@ -258,16 +258,16 @@ export default function SoundPage() {
             </div>
 
             {useTemplate ? (
-              <div className="bg-yellow-500/5 border border-yellow-500/20 rounded-2xl p-8 text-center">
-                <ShieldAlert className="text-yellow-500 mx-auto mb-4" size={32} />
-                <p className="font-bold text-yellow-500 mb-1">PLANTILLA SELECCIONADA</p>
+              <div className="bg-red-500/5 border border-red-500/20 rounded-2xl p-8 text-center">
+                <ShieldAlert className="text-red-500 mx-auto mb-4" size={32} />
+                <p className="font-bold text-red-500 mb-1">PLANTILLA SELECCIONADA</p>
                 <p className="text-xs text-zinc-500">Usaremos un archivo base optimizado para Kill Sound. No necesitas subir tu propio RPF.</p>
               </div>
             ) : (
               !rpfFile ? (
                 <div
                   className={`border-2 border-dashed rounded-2xl p-12 transition-all duration-300 flex flex-col items-center justify-center cursor-pointer ${
-                    dragOverRpf ? 'border-yellow-500 bg-yellow-500/5' : 'border-white/10 hover:border-white/20 hover:bg-white/5'
+                    dragOverRpf ? 'border-red-500 bg-red-500/5' : 'border-white/10 hover:border-white/20 hover:bg-white/5'
                   }`}
                   onClick={() => rpfInputRef.current?.click()}
                   onDragOver={(e) => { e.preventDefault(); setDragOverRpf(true); }}
@@ -281,7 +281,7 @@ export default function SoundPage() {
                 </div>
               ) : (
                 <div className="bg-white/5 rounded-2xl p-6 border border-white/5 flex items-center gap-4">
-                  <div className="p-3 bg-white/5 rounded-xl"><FileText className="text-yellow-500" /></div>
+                  <div className="p-3 bg-white/5 rounded-xl"><FileText className="text-red-500" /></div>
                   <div className="flex-1 min-w-0">
                     <p className="font-bold truncate">{rpfFile.name}</p>
                     <p className="text-xs text-zinc-500">{(rpfFile.size / (1024 * 1024)).toFixed(1)} MB</p>
@@ -291,9 +291,9 @@ export default function SoundPage() {
               )
             )}
 
-            <div className="mt-6 p-4 bg-yellow-500/10 border border-yellow-500/20 rounded-xl flex gap-3">
-              <ShieldAlert className="text-yellow-500 shrink-0" size={20} />
-              <p className="text-xs text-yellow-500/80 leading-relaxed font-bold">
+            <div className="mt-6 p-4 bg-red-500/10 border border-red-500/20 rounded-xl flex gap-3">
+              <ShieldAlert className="text-red-500 shrink-0" size={20} />
+              <p className="text-xs text-red-500/80 leading-relaxed font-bold">
                 IMPORTANTE: Asegúrate de subir el RPF de AUDIO. Los RPF de skins/texturas no contienen archivos .awc y darán error.
               </p>
             </div>
@@ -310,7 +310,7 @@ export default function SoundPage() {
               onClick={handleProcess}
               disabled={!isReady || isProcessing}
               className={`w-full btn-pill py-4 text-lg flex items-center justify-center gap-2 ${
-                isReady && !isProcessing ? 'btn-gold' : 'bg-white/5 text-zinc-600 cursor-not-allowed border border-white/10'
+                isReady && !isProcessing ? 'btn-red' : 'bg-white/5 text-zinc-600 cursor-not-allowed border border-white/10'
               }`}
             >
               {isProcessing ? (
@@ -327,8 +327,8 @@ export default function SoundPage() {
             {error && <div className="mt-4 p-4 bg-red-500/10 border border-red-500/20 text-red-500 text-sm font-bold rounded-xl text-center">⚠️ {error}</div>}
           </GlassCard>
 
-          <div className="p-6 bg-yellow-500/5 border border-yellow-500/10 rounded-2xl flex gap-4">
-            <ShieldAlert className="text-yellow-500 shrink-0" />
+          <div className="p-6 bg-red-500/5 border border-red-500/10 rounded-2xl flex gap-4">
+            <ShieldAlert className="text-red-500 shrink-0" />
             <p className="text-xs text-zinc-500 leading-relaxed font-medium">
               Sube tu audio (MP3/WAV) y el archivo .rpf original. 
               El sistema ahora soporta archivos encriptados (originales del juego) y los convierte automáticamente a formato OPEN para tu carpeta de mods.

@@ -97,7 +97,7 @@ export default function InteractiveBackground() {
         let y = (Math.random() * ((innerHeight - size * 2) - (size * 2)) + size * 2);
         let directionX = (Math.random() * 2) - 1;
         let directionY = (Math.random() * 2) - 1;
-        let color = 'rgba(255, 179, 0, 0.3)'; // Subtle Gold
+        let color = 'rgba(255, 42, 0, 0.3)'; // Subtle Gold
 
         particles.push(new Particle(x, y, directionX, directionY, size, color));
       }
@@ -112,7 +112,7 @@ export default function InteractiveBackground() {
           
           if (distance < (canvas.width / 7) * (canvas.height / 7)) {
             opacityValue = 1 - (distance / 20000);
-            ctx.strokeStyle = `rgba(255, 179, 0, ${opacityValue * 0.2})`;
+            ctx.strokeStyle = `rgba(255, 42, 0, ${opacityValue * 0.2})`;
             ctx.lineWidth = 1;
             ctx.beginPath();
             ctx.moveTo(particles[a].x, particles[a].y);

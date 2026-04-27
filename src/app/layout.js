@@ -22,8 +22,8 @@ export default function RootLayout({ children }) {
       <body className="antialiased overflow-x-hidden bg-[#050505]">
         <InteractiveBackground />
         {/* Background Blobs */}
-        <div className="blob-orange"></div>
-        <div className="blob-gold"></div>
+        <div className="blob-dark-red"></div>
+        <div className="blob-red"></div>
         
         <SessionProvider>
           <LangProvider>

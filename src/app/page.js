@@ -146,7 +146,7 @@ export default function HomePage() {
       desc: t('trainerDesc') || 'Herramientas de entrenamiento. Mejora tus habilidades.', 
       icon: '/icon_train.png', 
       badge: t('premium'), 
-      badgeColor: 'bg-yellow-500',
+      badgeColor: 'bg-red-500',
       glowClass: 'opti-glow',
       users: '1.5K',
       rating: '4.7',
@@ -156,7 +156,7 @@ export default function HomePage() {
 
 
   return (
-    <div className="min-h-screen bg-[#050505] text-white selection:bg-yellow-500/30">
+    <div className="min-h-screen bg-[#050505] text-white selection:bg-red-500/30">
       <Header />
       
       <main className="max-w-[1400px] mx-auto px-6 pt-24 pb-20">
@@ -167,7 +167,7 @@ export default function HomePage() {
           {/* MAIN HERO CARD */}
           <div className="lg:col-span-9 relative overflow-hidden rounded-3xl bg-gradient-to-br from-zinc-900 to-black border border-white/5 p-6 md:p-12 min-h-[400px] md:min-h-[500px] flex items-center">
             {/* Background Glow */}
-            <div className="absolute top-0 right-0 w-[300px] md:w-[600px] h-[300px] md:h-[600px] bg-yellow-500/10 blur-[80px] md:blur-[120px] rounded-full -mr-20 md:-mr-40 -mt-20 md:-mt-40"></div>
+            <div className="absolute top-0 right-0 w-[300px] md:w-[600px] h-[300px] md:h-[600px] bg-red-500/10 blur-[80px] md:blur-[120px] rounded-full -mr-20 md:-mr-40 -mt-20 md:-mt-40"></div>
             
             <div className="relative z-10 w-full md:max-w-xl pb-16 md:pb-24">
               <motion.h1 
@@ -176,13 +176,13 @@ export default function HomePage() {
                 className="text-4xl md:text-7xl font-black mb-6 leading-[0.9] tracking-tighter"
               >
                 {t('eleva_tu')} <br />
-                <span className="text-yellow-500">{t('experiencia')}</span>
+                <span className="text-red-500">{t('experiencia')}</span>
               </motion.h1>
               <p className="text-zinc-400 text-sm md:text-lg mb-8 md:text-lg mb-10 max-w-md font-medium leading-relaxed">
                 {t('hero_desc')}
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
-                <Link href="/converter" className="btn-pill btn-gold px-8 py-4 text-xs md:text-sm font-black flex items-center justify-center gap-2">
+                <Link href="/converter" className="btn-pill btn-red px-8 py-4 text-xs md:text-sm font-black flex items-center justify-center gap-2">
                   <Rocket size={18} /> {t('explorar_herramientas')}
                 </Link>
                 <Link href="/premium?tab=WEB" className="btn-pill bg-white/5 border border-white/10 hover:bg-white/10 px-8 py-4 text-xs md:text-sm font-black flex items-center justify-center gap-2">
@@ -218,7 +218,7 @@ export default function HomePage() {
 
           {/* SIDE PREMIUM CARD */}
           <div className="lg:col-span-3 flex flex-col gap-6">
-            <GlassCard className="p-6 md:p-8 border-yellow-500/20 bg-yellow-500/5 flex-1 relative overflow-hidden flex flex-col justify-between">
+            <GlassCard className="p-6 md:p-8 border-red-500/20 bg-red-500/5 flex-1 relative overflow-hidden flex flex-col justify-between">
               <div className="absolute top-0 right-0 p-4 opacity-10">
                 <div className="md:hidden"><Crown size={60} /></div>
                 <div className="hidden md:block"><Crown size={80} /></div>
@@ -226,8 +226,8 @@ export default function HomePage() {
               
               <div>
                 <div className="flex items-center gap-2 mb-2">
-                  <Crown size={16} className="text-yellow-500" />
-                  <span className="text-[11px] font-black uppercase tracking-widest text-yellow-500">Premium</span>
+                  <Crown size={16} className="text-red-500" />
+                  <span className="text-[11px] font-black uppercase tracking-widest text-red-500">Premium</span>
                 </div>
                 <h3 className="text-xl md:text-2xl font-black mb-4 md:mb-6">{t('desbloquea_potencial')}</h3>
                 <ul className="space-y-3 md:space-y-4 mb-6 md:mb-8">
@@ -237,14 +237,14 @@ export default function HomePage() {
                     t('vip_support')
                   ].map((item, i) => (
                     <li key={i} className="flex items-center gap-3 text-[10px] md:text-xs font-bold text-zinc-300">
-                      <Check size={14} className="text-yellow-500" /> {item || 'Premium feature'}
+                      <Check size={14} className="text-red-500" /> {item || 'Premium feature'}
                     </li>
                   ))}
                 </ul>
               </div>
 
               <div>
-                <Link href="/premium?tab=WEB" className="w-full py-3 md:py-4 bg-yellow-500 text-black rounded-xl text-[10px] md:text-xs font-black flex items-center justify-center gap-2 hover:bg-yellow-400 transition-all shadow-[0_0_20px_rgba(234,179,8,0.3)]">
+                <Link href="/premium?tab=WEB" className="w-full py-3 md:py-4 bg-red-500 text-black rounded-xl text-[10px] md:text-xs font-black flex items-center justify-center gap-2 hover:bg-red-400 transition-all shadow-[0_0_20px_rgba(234,179,8,0.3)]">
                   <Crown size={14} /> {t('mejora_premium')}
                 </Link>
                 <p className="text-center text-[9px] md:text-[10px] text-zinc-500 mt-4 font-bold uppercase tracking-tight">{t('desde')} $4.99/mes</p>
@@ -269,7 +269,7 @@ export default function HomePage() {
                       activeCategory === cat.name ? 'bg-white/10 text-white' : 'text-zinc-500 hover:text-white hover:bg-white/5'
                     }`}
                   >
-                    <cat.icon size={18} className={activeCategory === cat.name ? 'text-yellow-500' : ''} />
+                    <cat.icon size={18} className={activeCategory === cat.name ? 'text-red-500' : ''} />
                     {cat.name}
                   </button>
                 ))}
@@ -298,7 +298,7 @@ export default function HomePage() {
           <div className="lg:col-span-7">
             <div className="flex items-center justify-between mb-8">
               <div className="flex items-center gap-3">
-                <Zap size={20} className="text-yellow-500" />
+                <Zap size={20} className="text-red-500" />
                 <h3 className="text-xl font-black uppercase tracking-tight">{activeCategory === 'Todas' ? t('herramientas_destacadas') : t(`cat_${activeCategory === 'Optimización' ? 'opti' : activeCategory === 'Tienda' ? 'tienda' : 'comunidad'}`)}</h3>
               </div>
               <Link href={activeCategory === 'Todas' ? '/converter' : '/premium'} className="text-xs font-bold text-zinc-500 hover:text-white flex items-center gap-1 transition-colors">
@@ -319,7 +319,7 @@ export default function HomePage() {
                         {tool.badge}
                       </span>
                     </div>
-                    <h4 className="text-lg font-black mb-2 group-hover:text-yellow-500 transition-colors">{tool.name}</h4>
+                    <h4 className="text-lg font-black mb-2 group-hover:text-red-500 transition-colors">{tool.name}</h4>
                     <p className="text-zinc-500 text-xs font-medium leading-relaxed mb-6">
                       {tool.desc}
                     </p>
@@ -330,7 +330,7 @@ export default function HomePage() {
                           <span className="text-[10px] font-bold text-zinc-400">{tool.users}</span>
                         </div>
                         <div className="flex items-center gap-1">
-                          <Star size={12} className="text-yellow-500" />
+                          <Star size={12} className="text-red-500" />
                           <span className="text-[10px] font-bold text-zinc-400">{tool.rating}</span>
                         </div>
                       </div>
@@ -354,11 +354,11 @@ export default function HomePage() {
                     <ul className="space-y-2 mb-6">
                       {plan.features.slice(0, 3).map((f, fi) => (
                         <li key={fi} className="text-[11px] text-zinc-400 flex items-center gap-2">
-                          <Check size={12} className="text-yellow-500" /> {f}
+                          <Check size={12} className="text-red-500" /> {f}
                         </li>
                       ))}
                     </ul>
-                    <div className="btn-pill btn-gold py-2 text-[10px]">{t('ver_detalles')}</div>
+                    <div className="btn-pill btn-red py-2 text-[10px]">{t('ver_detalles')}</div>
                   </GlassCard>
                 </Link>
               ))}
@@ -375,7 +375,7 @@ export default function HomePage() {
                       <img src={plan.icon} className={`w-12 h-12 ai-icon-blend opacity-20 group-hover:opacity-100 group-hover:rotate-6 transition-all ${plan.glow}`} />
                     </div>
                     <p className="text-[11px] text-zinc-400 mb-6">{plan.desc}</p>
-                    <div className="btn-pill btn-gold py-2 text-[10px]">{t('ver_detalles')}</div>
+                    <div className="btn-pill btn-red py-2 text-[10px]">{t('ver_detalles')}</div>
                   </GlassCard>
                 </Link>
               ))}
@@ -386,7 +386,7 @@ export default function HomePage() {
                   <User size={40} className="mx-auto text-zinc-700 mb-4" />
                   <h4 className="text-lg font-black mb-2">{t('cat_comunidad')} LHC</h4>
                   <p className="text-zinc-500 text-sm mb-6">{t('discordJoinDesc')}</p>
-                  <Link href="https://discord.gg/lhcds" className="btn-pill btn-gold inline-flex px-8">{t('unete_ahora')}</Link>
+                  <Link href="https://discord.gg/lhcds" className="btn-pill btn-red inline-flex px-8">{t('unete_ahora')}</Link>
                 </div>
               )}
             </div>
@@ -410,9 +410,9 @@ export default function HomePage() {
             </div>
 
             {/* BOTTOM BANNER */}
-            <div className="mt-8 relative overflow-hidden rounded-3xl bg-gradient-to-br lg:bg-gradient-to-r from-yellow-500/10 to-transparent border border-yellow-500/10 p-6 md:p-8 flex flex-col lg:flex-row items-center justify-between gap-8 group">
+            <div className="mt-8 relative overflow-hidden rounded-3xl bg-gradient-to-br lg:bg-gradient-to-r from-red-500/10 to-transparent border border-red-500/10 p-6 md:p-8 flex flex-col lg:flex-row items-center justify-between gap-8 group">
               <div className="flex flex-col md:flex-row items-center gap-6 text-center md:text-left">
-                <div className="bg-yellow-500/5 p-4 rounded-2xl text-yellow-500 border border-yellow-500/20 shadow-[0_0_30px_rgba(234,179,8,0.1)]">
+                <div className="bg-red-500/5 p-4 rounded-2xl text-red-500 border border-red-500/20 shadow-[0_0_30px_rgba(234,179,8,0.1)]">
                   <Trophy size={32} />
                 </div>
                 <div>
@@ -425,7 +425,7 @@ export default function HomePage() {
                 <span className="text-xl font-black">{discordStats.total}</span>
                 <span className="text-[10px] text-zinc-500 font-bold uppercase">{t('miembros')}</span>
               </div>
-                <Link href="https://discord.gg/lhcds" className="bg-yellow-500 text-black px-8 py-3 rounded-xl text-xs font-black flex items-center gap-2 hover:bg-yellow-400 transition-all">
+                <Link href="https://discord.gg/lhcds" className="bg-red-500 text-black px-8 py-3 rounded-xl text-xs font-black flex items-center gap-2 hover:bg-red-400 transition-all">
                   {t('unete_ahora')} <ArrowRight size={14} />
                 </Link>
               </div>
