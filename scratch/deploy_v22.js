@@ -4,11 +4,11 @@ const conn = new Client();
 conn.on('ready', () => {
     conn.sftp((err, sftp) => {
         if (err) throw err;
-        const code = fs.readFileSync('scratch/vps_server_v31.js');
-        const ws = sftp.createWriteStream('/var/www/lhc-node/vps_server_v31.js');
+        const code = fs.readFileSync('scratch/vps_server_v32.js');
+        const ws = sftp.createWriteStream('/var/www/lhc-node/vps_server_v32.js');
         ws.on('close', () => {
             console.log('Uploaded. Restarting service...');
-            conn.exec("sed -i 's/ExecStart=.*/ExecStart=\\/usr\\/bin\\/node \\/var\\/www\\/lhc-node\\/vps_server_v31.js/' /etc/systemd/system/lhc-node.service && systemctl daemon-reload && systemctl restart lhc-node.service", (err, stream) => {
+            conn.exec("sed -i 's/ExecStart=.*/ExecStart=\\/usr\\/bin\\/node \\/var\\/www\\/lhc-node\\/vps_server_v32.js/' /etc/systemd/system/lhc-node.service && systemctl daemon-reload && systemctl restart lhc-node.service", (err, stream) => {
                 stream.on('close', () => conn.end());
             });
         });
