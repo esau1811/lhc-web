@@ -16,10 +16,10 @@ function getRelativeTime(timestamp) {
 }
 
 const INITIAL_ACTIVITY = [
-  { name: 'Alex', action: 'Convirtió una skin de Glock', timestamp: Date.now() - 3600000 * 24, isUser: false, icon: '/icon_conv.png' },
-  { name: 'Santi', action: 'Compró Nitro Boost', timestamp: Date.now() - 3600000 * 48, isUser: false, icon: '/nitro_v2.png' },
-  { name: 'Marco', action: 'Usó el Optimizador', timestamp: Date.now() - 3600000 * 72, isUser: false, icon: '/opti_v2.png' },
-  { name: 'LHC Bot', action: 'Sistema operativo v34', timestamp: Date.now() - 3600000 * 120, isUser: false, icon: '/logo.png' }
+  { name: 'Alex', action: 'Convirtió una skin de Glock', timestamp: Date.now() - 3600000 * 2.5, isUser: false, icon: '/icon_conv.png' },
+  { name: 'Santi', action: 'Compró Nitro Boost', timestamp: Date.now() - 3600000 * 4.2, isUser: false, icon: '/nitro_v2.png' },
+  { name: 'Marco', action: 'Usó el Optimizador', timestamp: Date.now() - 3600000 * 6.1, isUser: false, icon: '/opti_v2.png' },
+  { name: 'LHC Bot', action: 'Sistema operativo v35', timestamp: Date.now() - 3600000 * 8.4, isUser: false, icon: '/logo.png' }
 ];
 
 export async function GET() {
