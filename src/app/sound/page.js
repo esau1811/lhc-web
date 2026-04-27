@@ -123,7 +123,7 @@ export default function SoundPage() {
       document.body.removeChild(a);
       window.URL.revokeObjectURL(url);
 
-      setSuccess('¡Procesado con éxito! Coloca el .rpf en tu carpeta de mods de FiveM.');
+      setSuccess('¡Procesado con éxito! Extrae el ZIP directamente en tu carpeta de FiveM. El archivo quedará en mods/x64/audio/sfx/ automáticamente.');
     } catch (err) {
       setError(err.message || 'Error al procesar el archivo.');
     } finally {
