@@ -7,25 +7,42 @@ const memoryActivity = [];
 
 const ACTIVITY_KEY = 'lhc_recent_activity';
 
+function getRelativeTime(timestamp) {
+  const diff = Date.now() - timestamp;
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return 'Ahora';
+  if (mins < 60) return `${mins}m`;
+  const hours = Math.floor(mins / 60);
+  return `${hours}h`;
+}
+
 const INITIAL_ACTIVITY = [
-  { name: 'Alex', action: 'Convirtió una skin de Glock', time: '5m', isUser: false, icon: '/icon_conv.png' },
-  { name: 'Santi', action: 'Compró Nitro Boost', time: '12m', isUser: false, icon: '/nitro_v2.png' },
-  { name: 'Marco', action: 'Usó el Optimizador', time: '20m', isUser: false, icon: '/opti_v2.png' },
-  { name: 'LHC Bot', action: 'Sistema operativo v32', time: '1h', isUser: false, icon: '/logo.png' }
+  { name: 'Alex', action: 'Convirtió una skin de Glock', timestamp: Date.now() - 300000, isUser: false, icon: '/icon_conv.png' },
+  { name: 'Santi', action: 'Compró Nitro Boost', timestamp: Date.now() - 720000, isUser: false, icon: '/nitro_v2.png' },
+  { name: 'Marco', action: 'Usó el Optimizador', timestamp: Date.now() - 1200000, isUser: false, icon: '/opti_v2.png' },
+  { name: 'LHC Bot', action: 'Sistema operativo v33', timestamp: Date.now() - 3600000, isUser: false, icon: '/logo.png' }
 ];
 
 export async function GET() {
   try {
     const kvActivity = await kv.get(ACTIVITY_KEY);
-    if (kvActivity && kvActivity.length > 0) return NextResponse.json(kvActivity);
+    const data = (kvActivity && kvActivity.length > 0) ? kvActivity : (global.recentActivity || INITIAL_ACTIVITY);
+    
+    // Update relative times
+    const updatedData = data.map(act => ({
+      ...act,
+      time: getRelativeTime(act.timestamp || (Date.now() - 3600000))
+    }));
+
+    return NextResponse.json(updatedData);
   } catch (e) {
-    console.warn('KV not configured');
+    console.warn('KV failed');
+    const data = global.recentActivity || INITIAL_ACTIVITY;
+    return NextResponse.json(data.map(act => ({
+      ...act,
+      time: getRelativeTime(act.timestamp || (Date.now() - 3600000))
+    })));
   }
-  
-  if (!global.recentActivity || global.recentActivity.length === 0) {
-    global.recentActivity = INITIAL_ACTIVITY;
-  }
-  return NextResponse.json(global.recentActivity);
 }
 
 export async function POST(req) {
@@ -36,39 +53,29 @@ export async function POST(req) {
     const newEntry = {
       name: user.name.split(' ')[0],
       action: 'Se unió a la comunidad',
-      time: 'Ahora',
       isUser: true,
       image: user.image,
       timestamp: Date.now()
     };
 
     let currentActivity = [];
-    let usingKV = false;
-
     try {
       const kvActivity = await kv.get(ACTIVITY_KEY);
-      currentActivity = kvActivity || [...(global.recentActivity || memoryActivity)];
-      usingKV = true;
+      currentActivity = (kvActivity && kvActivity.length > 0) ? kvActivity : (global.recentActivity || INITIAL_ACTIVITY);
     } catch (e) {
-      currentActivity = global.recentActivity || [...memoryActivity];
+      currentActivity = global.recentActivity || INITIAL_ACTIVITY;
     }
 
-    // Avoid duplicates
-    if (currentActivity[0]?.name === user.name && currentActivity[0]?.isUser) {
-      return NextResponse.json(currentActivity);
-    }
+    // Filter out old entries for the same user to move them to top
+    const updatedActivity = [newEntry, ...currentActivity.filter(a => a.name !== newEntry.name)].slice(0, 4);
 
-    const updatedActivity = [newEntry, ...currentActivity.filter(a => a.name !== user.name)].slice(0, 4);
-
-    if (usingKV) {
-      try {
-        await kv.set(ACTIVITY_KEY, updatedActivity);
-      } catch (e) { console.error('Failed to set KV'); }
-    }
+    try {
+      await kv.set(ACTIVITY_KEY, updatedActivity);
+    } catch (e) { console.error('Failed to set KV'); }
     
     global.recentActivity = updatedActivity;
     return NextResponse.json(updatedActivity);
   } catch (error) {
-    return NextResponse.json({ error: 'Failed to update activity' }, { status: 500 });
+    return NextResponse.json({ error: 'Failed' }, { status: 500 });
   }
 }
