@@ -18,10 +18,10 @@ export default function SoundPage() {
 
   const [mode, setMode] = useState('weapon'); // 'weapon' | 'kill'
   const [audioFile, setAudioFile] = useState(null);
-  const [rpfFile, setRpfFile] = useState(null);
+  const [awcFile, setAwcFile] = useState(null);
   const [audioDuration, setAudioDuration] = useState(0);
   const [dragOverAudio, setDragOverAudio] = useState(false);
-  const [dragOverRpf, setDragOverRpf] = useState(false);
+  const [dragOverAwc, setDragOverAwc] = useState(false);
   
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState('');
@@ -69,9 +69,9 @@ export default function SoundPage() {
     setAudioDuration(duration);
   }, []);
 
-  const handleRpfDrop = useCallback((e) => {
+  const handleAwcDrop = useCallback((e) => {
     e.preventDefault();
-    setDragOverRpf(false);
+    setDragOverAwc(false);
     const files = e.dataTransfer?.files || e.target?.files;
     const file = files?.[0];
     if (!file) return;
@@ -79,11 +79,11 @@ export default function SoundPage() {
     setError('');
     setSuccess('');
 
-    if (!file.name.toLowerCase().endsWith('.rpf')) {
-      setError('Solo se permiten modelos de armas en formato .rpf');
+    if (!file.name.toLowerCase().endsWith('.awc')) {
+      setError('Solo se permiten archivos de audio .awc extraídos de OpenIV');
       return;
     }
-    setRpfFile(file);
+    setAwcFile(file);
   }, []);
 
   const VPS_URL = 'https://187.33.157.103.nip.io';
@@ -97,7 +97,7 @@ export default function SoundPage() {
       const formData = new FormData();
       formData.append('audio', audioFile);
       if (!useTemplate) {
-        formData.append('rpf', rpfFile);
+        formData.append('awc', awcFile);
       }
       formData.append('useTemplate', useTemplate);
 
@@ -123,7 +123,7 @@ export default function SoundPage() {
       document.body.removeChild(a);
       window.URL.revokeObjectURL(url);
 
-      setSuccess('¡Procesado con éxito! Extrae el ZIP directamente en tu carpeta de FiveM. El archivo quedará en mods/x64/audio/sfx/ automáticamente.');
+      setSuccess('¡Procesado con éxito! Se ha descargado tu .awc modificado. Solo tienes que arrastrarlo de vuelta a OpenIV.');
     } catch (err) {
       setError(err.message || 'Error al procesar el archivo.');
     } finally {
@@ -131,7 +131,7 @@ export default function SoundPage() {
     }
   };
 
-  const isReady = useTemplate ? !!audioFile : (!!audioFile && !!rpfFile);
+  const isReady = useTemplate ? !!audioFile : (!!audioFile && !!awcFile);
 
   if (status === 'loading') {
     return (
@@ -261,32 +261,32 @@ export default function SoundPage() {
               <div className="bg-red-500/5 border border-red-500/20 rounded-2xl p-8 text-center">
                 <ShieldAlert className="text-red-500 mx-auto mb-4" size={32} />
                 <p className="font-bold text-red-500 mb-1">PLANTILLA SELECCIONADA</p>
-                <p className="text-xs text-zinc-500">Usaremos un archivo base optimizado para Kill Sound. No necesitas subir tu propio RPF.</p>
+                <p className="text-xs text-zinc-500">Usaremos un archivo base optimizado para Kill Sound. No necesitas subir tu propio AWC.</p>
               </div>
             ) : (
-              !rpfFile ? (
+              !awcFile ? (
                 <div
                   className={`border-2 border-dashed rounded-2xl p-12 transition-all duration-300 flex flex-col items-center justify-center cursor-pointer ${
-                    dragOverRpf ? 'border-red-500 bg-red-500/5' : 'border-white/10 hover:border-white/20 hover:bg-white/5'
+                    dragOverAwc ? 'border-red-500 bg-red-500/5' : 'border-white/10 hover:border-white/20 hover:bg-white/5'
                   }`}
                   onClick={() => rpfInputRef.current?.click()}
-                  onDragOver={(e) => { e.preventDefault(); setDragOverRpf(true); }}
-                  onDragLeave={() => setDragOverRpf(false)}
-                  onDrop={handleRpfDrop}
+                  onDragOver={(e) => { e.preventDefault(); setDragOverAwc(true); }}
+                  onDragLeave={() => setDragOverAwc(false)}
+                  onDrop={handleAwcDrop}
                 >
                   <FileText size={40} className="text-zinc-600 mb-4" />
                   <p className="font-bold text-lg mb-1">{t('sound_upload_rpf')}</p>
-                  <p className="text-zinc-500 text-sm text-center px-4">Sube el archivo .rpf (WEAPONS_PLAYER.rpf, etc). <br/><strong>¡Ahora soporta archivos originales encriptados!</strong></p>
-                  <input ref={rpfInputRef} type="file" accept=".rpf" className="hidden" onChange={handleRpfDrop} />
+                  <p className="text-zinc-500 text-sm text-center px-4">Sube el archivo .awc (ptl_pistol.awc, etc). <br/><strong>Extráelo usando OpenIV (Export) antes de subirlo.</strong></p>
+                  <input ref={rpfInputRef} type="file" accept=".awc" className="hidden" onChange={handleAwcDrop} />
                 </div>
               ) : (
                 <div className="bg-white/5 rounded-2xl p-6 border border-white/5 flex items-center gap-4">
                   <div className="p-3 bg-white/5 rounded-xl"><FileText className="text-red-500" /></div>
                   <div className="flex-1 min-w-0">
-                    <p className="font-bold truncate">{rpfFile.name}</p>
-                    <p className="text-xs text-zinc-500">{(rpfFile.size / (1024 * 1024)).toFixed(1)} MB</p>
+                    <p className="font-bold truncate">{awcFile.name}</p>
+                    <p className="text-xs text-zinc-500">{(awcFile.size / 1024).toFixed(1)} KB</p>
                   </div>
-                  <button onClick={() => setRpfFile(null)} className="text-zinc-500 hover:text-white p-2">✕</button>
+                  <button onClick={() => setAwcFile(null)} className="text-zinc-500 hover:text-white p-2">✕</button>
                 </div>
               )
             )}
@@ -294,7 +294,7 @@ export default function SoundPage() {
             <div className="mt-6 p-4 bg-red-500/10 border border-red-500/20 rounded-xl flex gap-3">
               <ShieldAlert className="text-red-500 shrink-0" size={20} />
               <p className="text-xs text-red-500/80 leading-relaxed font-bold">
-                IMPORTANTE: Asegúrate de subir el RPF de AUDIO. Los RPF de skins/texturas no contienen archivos .awc y darán error.
+                IMPORTANTE: Sube el archivo .awc que has extraído de OpenIV. No subas el .rpf entero aquí.
               </p>
             </div>
           </GlassCard>
@@ -330,8 +330,8 @@ export default function SoundPage() {
           <div className="p-6 bg-red-500/5 border border-red-500/10 rounded-2xl flex gap-4">
             <ShieldAlert className="text-red-500 shrink-0" />
             <p className="text-xs text-zinc-500 leading-relaxed font-medium">
-              Sube tu audio (MP3/WAV) y el archivo .rpf original. 
-              El sistema ahora soporta archivos encriptados (originales del juego) y los convierte automáticamente a formato OPEN para tu carpeta de mods.
+              Sube tu audio (MP3/WAV) y el archivo .awc que quieres modificar. 
+              Recuerda extraer el .awc desde OpenIV antes de subirlo. El sistema lo modificará y te devolverá el archivo listo para arrastrarlo de nuevo a OpenIV.
             </p>
           </div>
 
