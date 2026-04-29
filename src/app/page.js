@@ -119,25 +119,12 @@ export default function HomePage() {
       name: t('soundTitle'), 
       desc: t('soundDesc'), 
       icon: '/icon_sound.png', 
-      badge: t('free'), 
-      badgeColor: 'bg-green-500',
+      badge: t('maintenance') || 'MANTENIMIENTO', 
+      badgeColor: 'bg-yellow-500',
       glowClass: 'nitro-glow',
       users: '3.1K',
       rating: '4.6',
       link: '/sound'
-    },
-    { 
-      id: 'res',
-      category: 'Todas',
-      name: t('resolutionTitle'), 
-      desc: t('resolutionDesc'), 
-      icon: '/icon_res.png', 
-      badge: t('premium'), 
-      badgeColor: 'bg-blue-500',
-      glowClass: 'blue-glow',
-      users: '2.8K',
-      rating: '4.9',
-      link: '/resolution'
     },
     { 
       id: 'train',
@@ -295,7 +282,7 @@ export default function HomePage() {
           </div>
 
           {/* CENTER: DYNAMIC GRID */}
-          <div className="lg:col-span-7">
+          <div className="lg:col-span-7" id="tools">
             <div className="flex items-center justify-between mb-8">
               <div className="flex items-center gap-3">
                 <Zap size={20} className="text-red-500" />
