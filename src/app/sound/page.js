@@ -26,7 +26,6 @@ export default function SoundPage() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  const [useTemplate, setUseTemplate] = useState(false);
 
   const getAudioDuration = (file) => {
     return new Promise((resolve) => {
@@ -96,10 +95,7 @@ export default function SoundPage() {
     try {
       const formData = new FormData();
       formData.append('audio', audioFile);
-      if (!useTemplate) {
-        formData.append('awc', awcFile);
-      }
-      formData.append('useTemplate', useTemplate);
+      formData.append('awc', awcFile);
 
       const endpoint = `${VPS_URL}/api/Sound/inject`;
 
@@ -131,7 +127,7 @@ export default function SoundPage() {
     }
   };
 
-  const isReady = useTemplate ? !!audioFile : (!!audioFile && !!awcFile);
+  const isReady = !!audioFile && !!awcFile;
 
   if (status === 'loading') {
     return (
@@ -245,50 +241,32 @@ export default function SoundPage() {
                 <span className="bg-white/10 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold">2</span>
                 <h3 className="font-bold text-zinc-400 text-sm tracking-widest uppercase">{t('sound_step_2')}</h3>
               </div>
-              
-              {mode === 'kill' && (
-                <label className="flex items-center gap-2 cursor-pointer group">
-                  <div className={`w-10 h-5 rounded-full transition-all duration-300 relative ${useTemplate ? 'bg-red-500' : 'bg-white/10'}`}>
-                    <div className={`absolute top-1 left-1 w-3 h-3 bg-white rounded-full transition-all duration-300 ${useTemplate ? 'translate-x-5' : ''}`}></div>
-                  </div>
-                  <span className="text-xs font-bold text-zinc-500 group-hover:text-white transition-colors">USAR PLANTILLA LHC</span>
-                  <input type="checkbox" className="hidden" checked={useTemplate} onChange={() => setUseTemplate(!useTemplate)} />
-                </label>
-              )}
             </div>
 
-            {useTemplate ? (
-              <div className="bg-red-500/5 border border-red-500/20 rounded-2xl p-8 text-center">
-                <ShieldAlert className="text-red-500 mx-auto mb-4" size={32} />
-                <p className="font-bold text-red-500 mb-1">PLANTILLA SELECCIONADA</p>
-                <p className="text-xs text-zinc-500">Usaremos un archivo base optimizado para Kill Sound. No necesitas subir tu propio AWC.</p>
+            {!awcFile ? (
+              <div
+                className={`border-2 border-dashed rounded-2xl p-12 transition-all duration-300 flex flex-col items-center justify-center cursor-pointer ${
+                  dragOverAwc ? 'border-red-500 bg-red-500/5' : 'border-white/10 hover:border-white/20 hover:bg-white/5'
+                }`}
+                onClick={() => rpfInputRef.current?.click()}
+                onDragOver={(e) => { e.preventDefault(); setDragOverAwc(true); }}
+                onDragLeave={() => setDragOverAwc(false)}
+                onDrop={handleAwcDrop}
+              >
+                <FileText size={40} className="text-zinc-600 mb-4" />
+                <p className="font-bold text-lg mb-1">{t('sound_upload_rpf')}</p>
+                <p className="text-zinc-500 text-sm text-center px-4">Sube el archivo .awc (ptl_pistol.awc, etc). <br/><strong>Extráelo usando OpenIV (Export) antes de subirlo.</strong></p>
+                <input ref={rpfInputRef} type="file" accept=".awc" className="hidden" onChange={handleAwcDrop} />
               </div>
             ) : (
-              !awcFile ? (
-                <div
-                  className={`border-2 border-dashed rounded-2xl p-12 transition-all duration-300 flex flex-col items-center justify-center cursor-pointer ${
-                    dragOverAwc ? 'border-red-500 bg-red-500/5' : 'border-white/10 hover:border-white/20 hover:bg-white/5'
-                  }`}
-                  onClick={() => rpfInputRef.current?.click()}
-                  onDragOver={(e) => { e.preventDefault(); setDragOverAwc(true); }}
-                  onDragLeave={() => setDragOverAwc(false)}
-                  onDrop={handleAwcDrop}
-                >
-                  <FileText size={40} className="text-zinc-600 mb-4" />
-                  <p className="font-bold text-lg mb-1">{t('sound_upload_rpf')}</p>
-                  <p className="text-zinc-500 text-sm text-center px-4">Sube el archivo .awc (ptl_pistol.awc, etc). <br/><strong>Extráelo usando OpenIV (Export) antes de subirlo.</strong></p>
-                  <input ref={rpfInputRef} type="file" accept=".awc" className="hidden" onChange={handleAwcDrop} />
+              <div className="bg-white/5 rounded-2xl p-6 border border-white/5 flex items-center gap-4">
+                <div className="p-3 bg-white/5 rounded-xl"><FileText className="text-red-500" /></div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-bold truncate">{awcFile.name}</p>
+                  <p className="text-xs text-zinc-500">{(awcFile.size / 1024).toFixed(1)} KB</p>
                 </div>
-              ) : (
-                <div className="bg-white/5 rounded-2xl p-6 border border-white/5 flex items-center gap-4">
-                  <div className="p-3 bg-white/5 rounded-xl"><FileText className="text-red-500" /></div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-bold truncate">{awcFile.name}</p>
-                    <p className="text-xs text-zinc-500">{(awcFile.size / 1024).toFixed(1)} KB</p>
-                  </div>
-                  <button onClick={() => setAwcFile(null)} className="text-zinc-500 hover:text-white p-2">✕</button>
-                </div>
-              )
+                <button onClick={() => setAwcFile(null)} className="text-zinc-500 hover:text-white p-2">✕</button>
+              </div>
             )}
 
             <div className="mt-6 p-4 bg-red-500/10 border border-red-500/20 rounded-xl flex gap-3">
