@@ -231,10 +231,9 @@ export default function HomePage() {
               </div>
 
               <div>
-                <Link href="/premium?tab=WEB" className="w-full py-3 md:py-4 bg-red-500 text-black rounded-xl text-[10px] md:text-xs font-black flex items-center justify-center gap-2 hover:bg-red-400 transition-all shadow-[0_0_20px_rgba(234,179,8,0.3)]">
+                <Link href="/premium?tab=WEB" className="w-full py-3 md:py-4 bg-red-500 text-black rounded-xl text-[10px] md:text-[13px] font-black flex items-center justify-center gap-2 hover:bg-red-400 transition-all shadow-[0_0_20px_rgba(234,179,8,0.3)]">
                   <Crown size={14} /> {t('mejora_premium')}
                 </Link>
-                <p className="text-center text-[9px] md:text-[10px] text-zinc-500 mt-4 font-bold uppercase tracking-tight">{t('desde')} $4.99/mes</p>
               </div>
             </GlassCard>
           </div>
@@ -362,7 +361,7 @@ export default function HomePage() {
                       <img src={plan.icon} className={`w-12 h-12 ai-icon-blend opacity-20 group-hover:opacity-100 group-hover:rotate-6 transition-all ${plan.glow}`} />
                     </div>
                     <p className="text-[11px] text-zinc-400 mb-6">{plan.desc}</p>
-                    <div className="btn-pill btn-red py-2 text-[10px]">{t('ver_detalles')}</div>
+                    <div className="btn-pill bg-zinc-800 text-zinc-500 cursor-not-allowed py-2 text-[10px] text-center">AGOTADO</div>
                   </GlassCard>
                 </Link>
               ))}

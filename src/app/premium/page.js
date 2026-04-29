@@ -145,14 +145,20 @@ function PremiumContent() {
                     ))}
                   </ul>
 
-                  <a 
-                    href="https://discord.gg/lhcds" 
-                    target="_blank" 
-                    rel="noopener noreferrer" 
-                    className="btn-pill btn-red w-full"
-                  >
-                    {t('unete_ahora')}
-                  </a>
+                  {activeTab === 'SHOP' ? (
+                    <div className="btn-pill bg-zinc-800 text-zinc-500 cursor-not-allowed w-full text-center">
+                      AGOTADO
+                    </div>
+                  ) : (
+                    <a 
+                      href="https://discord.gg/lhcds" 
+                      target="_blank" 
+                      rel="noopener noreferrer" 
+                      className="btn-pill btn-red w-full"
+                    >
+                      {t('unete_ahora')}
+                    </a>
+                  )}
                 </GlassCard>
               </motion.div>
             ))}
