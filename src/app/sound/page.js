@@ -1,16 +1,17 @@
 'use client';
 
-import { useState, useRef, useCallback, useEffect } from 'react';
-import { useSession, signIn } from 'next-auth/react';
+import { useState, useRef } from 'react';
+import { useSession } from 'next-auth/react';
 import Header from '@/components/Header';
 import { useLang } from '@/components/LangProvider';
 import GlassCard from '@/components/GlassCard';
-import { Music, FileCode, Lock, Zap, Skull, ShieldAlert, ChevronRight, X } from 'lucide-react';
+import { Music, FileCode, Zap, ChevronRight, X, ShieldAlert } from 'lucide-react';
 
-const VPS_URL = 'https://187.33.157.103:5000';
+// LA LLAVE MAESTRA: Dominio con SSL válido y sin límites de Vercel
+const VPS_URL = 'https://187.33.157.103.nip.io';
 
 export default function SoundPage() {
-  const { data: session, status } = useSession();
+  const { data: session } = useSession();
   const { t } = useLang();
   
   const audioInputRef = useRef(null);
@@ -18,8 +19,6 @@ export default function SoundPage() {
 
   const [audioFile, setAudioFile] = useState(null);
   const [awcFile, setAwcFile] = useState(null);
-  const [dragOverAudio, setDragOverAudio] = useState(false);
-  const [dragOverAwc, setDragOverAwc] = useState(false);
   
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
@@ -36,18 +35,6 @@ export default function SoundPage() {
     { id: 'killsound', name: 'Kill Sound', file: 'resident.awc' },
   ];
 
-  const handleAudioDrop = (e) => {
-    e.preventDefault();
-    const files = e.dataTransfer?.files || e.target?.files;
-    if (files?.[0]) setAudioFile(files[0]);
-  };
-
-  const handleAwcDrop = (e) => {
-    e.preventDefault();
-    const files = e.dataTransfer?.files || e.target?.files;
-    if (files?.[0]) setAwcFile(files[0]);
-  };
-
   const handleInyectar = async () => {
     if (!audioFile || (!useTemplate && !awcFile)) return;
     setIsLoading(true);
@@ -55,41 +42,19 @@ export default function SoundPage() {
     setSuccess(null);
 
     try {
-      const uploadId = `up_${Date.now()}`;
-      let totalChunks = 0;
-
-      if (!useTemplate) {
-        const CHUNK_SIZE = 2 * 1024 * 1024; // 2MB chunks (más seguro)
-        totalChunks = Math.ceil(awcFile.size / CHUNK_SIZE);
-
-        for (let i = 0; i < totalChunks; i++) {
-          const chunk = awcFile.slice(i * CHUNK_SIZE, (i + 1) * CHUNK_SIZE);
-          const chunkData = new FormData();
-          chunkData.append('chunk', chunk);
-          chunkData.append('uploadId', uploadId);
-          chunkData.append('index', i);
-          chunkData.append('total', totalChunks);
-
-          const res = await fetch('/api/sound/inject?action=chunk', {
-            method: 'POST',
-            body: chunkData,
-          });
-
-          if (!res.ok) throw new Error(`Error subiendo parte ${i+1}`);
-        }
+      const formData = new FormData();
+      formData.append('audio', audioFile);
+      formData.append('useTemplate', useTemplate ? 'true' : 'false');
+      formData.append('weaponType', weaponType);
+      
+      if (!useTemplate && awcFile) {
+        formData.append('awc', awcFile);
       }
 
-      // Paso final: Inyectar
-      const finalData = new FormData();
-      finalData.append('audio', audioFile);
-      finalData.append('uploadId', uploadId);
-      finalData.append('total', totalChunks);
-      finalData.append('useTemplate', useTemplate ? 'true' : 'false');
-      finalData.append('weaponType', weaponType);
-
-      const response = await fetch('/api/sound/inject?action=assemble', {
+      // Llamada DIRECTA al VPS para saltarnos el límite de 4MB de Vercel
+      const response = await fetch(`${VPS_URL}/api/Sound/assemble-and-inject`, {
         method: 'POST',
-        body: finalData,
+        body: formData,
       });
 
       if (!response.ok) {
@@ -116,222 +81,151 @@ export default function SoundPage() {
     }
   };
 
-  const isReady = !!audioFile && (useTemplate || !!awcFile);
-
-  if (status === 'loading') return null;
-
-  if (!session) {
-    return (
-      <div className="min-h-screen bg-[#050505]">
-        <Header />
-        <main className="max-w-7xl mx-auto px-6 pt-40 flex flex-col items-center text-center">
-          <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center mb-6">
-            <Lock className="text-zinc-600" size={32} />
-          </div>
-          <h2 className="text-4xl font-black mb-4 tracking-tight uppercase">ACCESO RESTRINGIDO</h2>
-          <p className="text-zinc-500 max-w-md mb-8">Debes iniciar sesión con Discord para utilizar LHCSound.</p>
-          <button onClick={() => signIn('discord')} className="bg-red-600 px-12 py-4 rounded-full font-bold hover:bg-red-500 transition-all">
-            Login con Discord
-          </button>
-        </main>
-      </div>
-    );
-  }
-
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-white font-sans selection:bg-red-500/30">
+    <div className="min-h-screen bg-black text-white selection:bg-red-500/30">
       <Header />
       
-      <div className="fixed inset-0 overflow-hidden pointer-events-none opacity-20">
-        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-red-600 rounded-full blur-[120px]" />
-        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-red-900 rounded-full blur-[120px]" />
-      </div>
-
-      <div className="relative z-10 max-w-5xl mx-auto px-6 pt-32 pb-20">
-        <div className="text-center mb-16">
-          <h1 className="text-6xl font-black tracking-tighter mb-4 italic uppercase">
-            LHC <span className="text-red-600">SOUND</span>
+      <main className="max-w-4xl mx-auto px-4 py-12">
+        <div className="mb-12 text-center">
+          <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-white to-gray-500 bg-clip-text text-transparent">
+            AWC Audio Injector <span className="text-red-500 text-2xl font-mono ml-2">v2.0</span>
           </h1>
           <p className="text-gray-400 max-w-2xl mx-auto">
-            Personaliza los sonidos de tus armas y efectos de kill en FiveM de forma instantánea. 
-            Sin programas externos, directo a tu juego.
+            Inyecta sonidos personalizados en tus armas de GTA V de forma automática y segura.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 gap-8">
-          {/* STEP 1: AUDIO */}
-          <GlassCard className="p-8 rounded-3xl relative overflow-hidden group border border-white/5">
+        <div className="grid gap-8">
+          {/* PASO 1: AUDIO */}
+          <GlassCard className="p-8 border-red-500/20">
             <div className="flex items-center gap-4 mb-6">
-              <div className="w-10 h-10 rounded-full bg-red-600/10 border border-red-600/20 flex items-center justify-center text-red-500 font-bold">1</div>
-              <h2 className="text-xl font-bold uppercase tracking-wider">Paso 1 — Subir Audio (.MP3 / .WAV)</h2>
+              <div className="w-10 h-10 rounded-full bg-red-500/10 flex items-center justify-center text-red-500 font-bold">1</div>
+              <h2 className="text-xl font-bold uppercase tracking-wider">Paso 1 — Tu Sonido (.MP3 / .WAV)</h2>
             </div>
             
             <div 
-              onDragOver={(e) => { e.preventDefault(); setDragOverAudio(true); }}
-              onDragLeave={() => setDragOverAudio(false)}
-              onDrop={(e) => { handleAudioDrop(e); setDragOverAudio(false); }}
-              className={`border-2 border-dashed rounded-2xl p-10 text-center transition-all cursor-pointer ${
-                dragOverAudio ? 'border-red-600 bg-red-600/5' : 'border-white/10 hover:border-white/20'
-              }`}
               onClick={() => audioInputRef.current?.click()}
+              className={`border-2 border-dashed rounded-2xl p-12 transition-all cursor-pointer flex flex-col items-center justify-center gap-4
+                ${audioFile ? 'border-green-500/50 bg-green-500/5' : 'border-white/10 hover:border-red-500/30 hover:bg-white/5'}`}
             >
+              <Music className={`w-12 h-12 ${audioFile ? 'text-green-500' : 'text-gray-500'}`} />
+              <div className="text-center">
+                {audioFile ? (
+                  <p className="text-green-400 font-medium">{audioFile.name}</p>
+                ) : (
+                  <p className="text-gray-400">Haz clic para subir tu audio personalizado</p>
+                )}
+                <p className="text-xs text-gray-600 mt-2">Formatos aceptados: MP3, WAV, OGG</p>
+              </div>
               <input 
                 type="file" 
                 ref={audioInputRef} 
-                onChange={handleAudioDrop} 
                 className="hidden" 
-                accept="audio/*"
+                accept="audio/*" 
+                onChange={(e) => setAudioFile(e.target.files[0])} 
               />
-              {audioFile ? (
-                <div className="flex items-center justify-between bg-white/5 p-4 rounded-xl border border-white/10">
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-lg bg-red-600/20 flex items-center justify-center text-red-500">
-                      <Music size={24} />
-                    </div>
-                    <div className="text-left">
-                      <p className="font-bold truncate max-w-[200px]">{audioFile.name}</p>
-                      <p className="text-xs text-gray-500">{(audioFile.size / 1024).toFixed(1)} KB</p>
-                    </div>
-                  </div>
-                  <button onClick={(e) => { e.stopPropagation(); setAudioFile(null); }} className="text-gray-500 hover:text-white transition-colors">
-                    <X size={20} />
-                  </button>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  <div className="w-16 h-16 rounded-2xl bg-white/5 flex items-center justify-center mx-auto text-gray-500 group-hover:text-red-500 transition-colors">
-                    <Music size={32} />
-                  </div>
-                  <p className="text-gray-400">Arrastra tu sonido mp3 o wav</p>
-                </div>
-              )}
             </div>
           </GlassCard>
 
-          {/* STEP 2: WEAPON / AWC */}
-          <GlassCard className="p-8 rounded-3xl relative overflow-hidden group border border-white/5">
+          {/* PASO 2: ARMA */}
+          <GlassCard className="p-8 border-red-500/20">
             <div className="flex items-center gap-4 mb-6">
-              <div className="w-10 h-10 rounded-full bg-red-600/10 border border-red-600/20 flex items-center justify-center text-red-500 font-bold">2</div>
+              <div className="w-10 h-10 rounded-full bg-red-500/10 flex items-center justify-center text-red-500 font-bold">2</div>
               <h2 className="text-xl font-bold uppercase tracking-wider">Paso 2 — Seleccionar Arma o Subir .AWC</h2>
             </div>
 
-            <div className="flex gap-4 mb-8 p-1 bg-black rounded-xl border border-white/5">
+            <div className="flex bg-black/40 p-1 rounded-xl mb-8 border border-white/5">
               <button 
                 onClick={() => setUseTemplate(true)}
-                className={`flex-1 py-3 px-6 rounded-lg font-bold transition-all ${useTemplate ? 'bg-red-600 text-white shadow-lg' : 'text-gray-500 hover:text-gray-300'}`}
+                className={`flex-1 py-3 rounded-lg font-medium transition-all ${useTemplate ? 'bg-red-600 text-white shadow-lg shadow-red-600/20' : 'text-gray-500 hover:text-gray-300'}`}
               >
                 Usar Plantilla (Recomendado)
               </button>
               <button 
                 onClick={() => setUseTemplate(false)}
-                className={`flex-1 py-3 px-6 rounded-lg font-bold transition-all ${!useTemplate ? 'bg-red-600 text-white shadow-lg' : 'text-gray-500 hover:text-gray-300'}`}
+                className={`flex-1 py-3 rounded-lg font-medium transition-all ${!useTemplate ? 'bg-red-600 text-white shadow-lg shadow-red-600/20' : 'text-gray-500 hover:text-gray-300'}`}
               >
                 Subir mi propio .AWC
               </button>
             </div>
 
             {useTemplate ? (
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
-                {weapons.map((w) => (
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                {weapons.map(w => (
                   <button
                     key={w.id}
                     onClick={() => setWeaponType(w.id)}
-                    className={`p-4 rounded-2xl border transition-all text-center group ${
-                      weaponType === w.id 
-                        ? 'border-red-600 bg-red-600/10 text-white shadow-lg shadow-red-600/10' 
-                        : 'border-white/5 bg-white/5 text-gray-500 hover:border-white/20 hover:text-gray-300'
-                    }`}
+                    className={`p-4 rounded-xl border text-sm font-medium transition-all flex flex-col items-center gap-3
+                      ${weaponType === w.id ? 'border-red-500 bg-red-500/10 text-white' : 'border-white/5 bg-white/5 text-gray-400 hover:border-white/20'}`}
                   >
-                    <div className={`w-10 h-10 rounded-lg mx-auto mb-3 flex items-center justify-center transition-colors ${weaponType === w.id ? 'bg-red-600 text-white' : 'bg-white/5 group-hover:bg-white/10'}`}>
-                      {w.id === 'killsound' ? <Skull size={20} /> : <Zap size={20} />}
-                    </div>
-                    <span className="text-xs font-bold uppercase block">{w.name}</span>
+                    <Zap className={weaponType === w.id ? 'text-red-500' : 'text-gray-600'} />
+                    {w.name}
                   </button>
                 ))}
               </div>
             ) : (
               <div 
-                onDragOver={(e) => { e.preventDefault(); setDragOverAwc(true); }}
-                onDragLeave={() => setDragOverAwc(false)}
-                onDrop={(e) => { handleAwcDrop(e); setDragOverAwc(false); }}
-                className={`border-2 border-dashed rounded-2xl p-10 text-center transition-all cursor-pointer ${
-                  dragOverAwc ? 'border-red-600 bg-red-600/5' : 'border-white/10 hover:border-white/20'
-                }`}
                 onClick={() => awcInputRef.current?.click()}
+                className={`border-2 border-dashed rounded-2xl p-12 transition-all cursor-pointer flex flex-col items-center justify-center gap-4
+                  ${awcFile ? 'border-green-500/50 bg-green-500/5' : 'border-white/10 hover:border-red-500/30 hover:bg-white/5'}`}
               >
+                <FileCode className={`w-12 h-12 ${awcFile ? 'text-green-500' : 'text-gray-500'}`} />
+                <div className="text-center">
+                  {awcFile ? (
+                    <p className="text-green-400 font-medium">{awcFile.name}</p>
+                  ) : (
+                    <p className="text-gray-400">Arrastra aquí tu archivo .AWC extraído de OpenIV</p>
+                  )}
+                  <p className="text-xs text-gray-600 mt-2">Debe ser un archivo extraído con OpenIV (Header: TADA)</p>
+                </div>
                 <input 
                   type="file" 
                   ref={awcInputRef} 
-                  onChange={handleAwcDrop} 
                   className="hidden" 
-                  accept=".awc"
+                  accept=".awc" 
+                  onChange={(e) => setAwcFile(e.target.files[0])} 
                 />
-                {awcFile ? (
-                  <div className="flex items-center justify-between bg-white/5 p-4 rounded-xl border border-white/10">
-                    <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 rounded-lg bg-red-600/20 flex items-center justify-center text-red-500">
-                        <FileCode size={24} />
-                      </div>
-                      <div className="text-left">
-                        <p className="font-bold truncate max-w-[200px]">{awcFile.name}</p>
-                        <p className="text-xs text-gray-500">{(awcFile.size / 1024).toFixed(1)} KB</p>
-                      </div>
-                    </div>
-                    <button onClick={(e) => { e.stopPropagation(); setAwcFile(null); }} className="text-gray-500 hover:text-white transition-colors">
-                      <X size={20} />
-                    </button>
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    <div className="w-16 h-16 rounded-2xl bg-white/5 flex items-center justify-center mx-auto text-gray-500 group-hover:text-red-500 transition-colors">
-                      <FileCode size={32} />
-                    </div>
-                    <p className="text-gray-400">Sube el archivo .awc del arma</p>
-                    <p className="text-[10px] text-gray-600 uppercase tracking-widest">Extráelo usando OpenIV (Export) antes de subirlo</p>
-                  </div>
-                )}
               </div>
             )}
           </GlassCard>
 
-          {/* STEP 3: ACTION */}
-          <GlassCard className="p-8 rounded-3xl relative overflow-hidden group border border-white/5">
-            <div className="flex items-center gap-4 mb-8">
-              <div className="w-10 h-10 rounded-full bg-red-600/10 border border-red-600/20 flex items-center justify-center text-red-500 font-bold">3</div>
-              <h2 className="text-xl font-bold uppercase tracking-wider">Paso 3 — Ejecutar</h2>
-            </div>
-
+          {/* PASO 3: EJECUTAR */}
+          <div className="mt-4">
             <button
               onClick={handleInyectar}
-              disabled={!isReady || isLoading}
-              className={`w-full py-6 rounded-2xl font-black text-xl uppercase tracking-tighter transition-all flex items-center justify-center gap-3 ${
-                isReady && !isLoading
-                  ? 'bg-red-600 hover:bg-red-500 hover:scale-[1.02] active:scale-[0.98] shadow-xl shadow-red-600/20 text-white'
-                  : 'bg-white/5 text-gray-700 cursor-not-allowed border border-white/5'
-              }`}
+              disabled={isLoading || !audioFile || (!useTemplate && !awcFile)}
+              className={`w-full py-6 rounded-2xl font-bold text-xl uppercase tracking-widest flex items-center justify-center gap-4 transition-all
+                ${isLoading ? 'bg-gray-800 text-gray-500 cursor-not-allowed' : 'bg-red-600 hover:bg-red-700 hover:scale-[1.01] active:scale-[0.99] text-white shadow-2xl shadow-red-600/30'}`}
             >
               {isLoading ? (
                 <>
-                  <div className="w-6 h-6 border-4 border-white/20 border-t-white rounded-full animate-spin" />
-                  <span>Procesando...</span>
+                  <div className="w-6 h-6 border-4 border-white/20 border-t-white rounded-full animate-spin"></div>
+                  Procesando...
                 </>
               ) : (
                 <>
-                  <span>Inyectar Sonido en el Arma</span>
-                  <ChevronRight size={24} />
+                  Inyectar Sonido en el Arma
+                  <ChevronRight />
                 </>
               )}
             </button>
 
-            {success && <div className="mt-4 p-4 bg-green-500/10 border border-green-500/20 text-green-500 text-sm font-bold rounded-xl text-center">✓ {success}</div>}
-            {error && <div className="mt-4 p-4 bg-red-500/10 border border-red-500/20 text-red-500 text-sm font-bold rounded-xl text-center">⚠️ {error}</div>}
-            {!isReady && !isLoading && <div className="mt-4 text-center text-xs text-gray-600 uppercase tracking-widest flex items-center justify-center gap-2">
-              <ShieldAlert size={12} />
-              <span>Faltan archivos para continuar</span>
-            </div>}
-          </GlassCard>
+            {error && (
+              <div className="mt-6 p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-500 text-sm flex items-center gap-3 animate-shake">
+                <ShieldAlert className="shrink-0" />
+                {error}
+              </div>
+            )}
+
+            {success && (
+              <div className="mt-6 p-4 rounded-xl bg-green-500/10 border border-green-500/20 text-green-500 text-sm flex items-center gap-3">
+                <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                {success}
+              </div>
+            )}
+          </div>
         </div>
-      </div>
+      </main>
     </div>
   );
 }
