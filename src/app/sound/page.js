@@ -64,7 +64,7 @@ export default function SoundPage() {
         formData.append('awc', awcFile);
       }
 
-      const endpoint = `${VPS_URL}/api/Sound/inject`;
+      const endpoint = '/api/sound/inject';
       const response = await fetch(endpoint, {
         method: 'POST',
         body: formData,

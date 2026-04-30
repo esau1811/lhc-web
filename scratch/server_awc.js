@@ -5,6 +5,7 @@ const fs      = require('fs');
 const path    = require('path');
 const ffmpeg  = require('fluent-ffmpeg');
 const JSZip   = require('jszip');
+const https   = require('https');
 
 const app     = express();
 const router  = express.Router();
@@ -15,7 +16,6 @@ app.use(express.json());
 const storage = multer.memoryStorage();
 const upload  = multer({ storage, limits: { fileSize: 250 * 1024 * 1024 } });
 
-// Crear carpeta de plantillas si no existe
 const templatesDir = path.join(__dirname, 'templates');
 if (!fs.existsSync(templatesDir)) fs.mkdirSync(templatesDir);
 
@@ -24,29 +24,19 @@ function patchAWC(awcData, adpcmData) {
     if (tadaOffset === -1) tadaOffset = awcData.indexOf(Buffer.from('AWC\x01'));
     
     if (tadaOffset === -1) {
-        const magicHex = awcData.slice(0, 4).toString('hex');
-        console.log(`[AWC] Header Magic: (Hex: ${magicHex})`);
-        console.log(`[AWC] First 64 bytes: ${awcData.slice(0, 64).toString('hex')}`);
-        throw new Error('No se encontró una firma AWC válida en el archivo. Hex: ' + magicHex);
+        throw new Error('Archivo .awc no válido o encriptado.');
     }
     
-    console.log(`[AWC] Found valid signature at offset: ${tadaOffset}`);
-    const head = awcData.slice(0, tadaOffset);
     const body = awcData.slice(tadaOffset);
-    
-    const streamCount = body.readUInt32LE(0x08);
     const chunkCount = body.readUInt32LE(0x0C);
-    
     let chunkTableOffset = 0x10;
     let audioChunkOffset = -1;
-    let audioChunkSize = -1;
     let audioChunkIndex = -1;
 
     for (let i = 0; i < chunkCount; i++) {
         const type = body.readUInt8(chunkTableOffset + i * 16 + 12);
         if (type === 0x55) {
             audioChunkOffset = body.readUInt32LE(chunkTableOffset + i * 16);
-            audioChunkSize = body.readUInt32LE(chunkTableOffset + i * 16 + 4) & 0x00FFFFFF;
             audioChunkIndex = i;
             break;
         }
@@ -61,7 +51,7 @@ function patchAWC(awcData, adpcmData) {
     const sizeMask = body.readUInt32LE(chunkTableOffset + audioChunkIndex * 16 + 4) & 0xFF000000;
     patchedBody.writeUInt32LE(adpcmData.length | sizeMask, chunkTableOffset + audioChunkIndex * 16 + 4);
 
-    return Buffer.concat([head, patchedBody]);
+    return Buffer.concat([awcData.slice(0, tadaOffset), patchedBody]);
 }
 
 async function convertToADPCM(inputBuffer) {
@@ -96,22 +86,20 @@ router.post('/inject', upload.fields([{ name: 'audio' }, { name: 'awc' }]), asyn
         if (useTemplate) {
             const templatePath = path.join(__dirname, 'templates', `${weaponType}.awc`);
             if (!fs.existsSync(templatePath)) {
-                // Si no existe la plantilla, comprobamos si nos han pasado un AWC para guardarlo como plantilla
                 const awcFile = req.files['awc'] ? req.files['awc'][0] : null;
-                if (!awcFile) return res.status(400).send(`Falta plantilla para ${weaponType}. Por favor, sube el archivo una vez para guardarlo.`);
+                if (!awcFile) return res.status(400).send(`Falta plantilla para ${weaponType}.`);
                 awcBuffer = awcFile.buffer;
                 fs.writeFileSync(templatePath, awcBuffer);
-                console.log(`[AWC] Template saved: ${weaponType}`);
             } else {
                 awcBuffer = fs.readFileSync(templatePath);
             }
         } else {
             const awcFile = req.files['awc'] ? req.files['awc'][0] : null;
-            if (!awcFile) return res.status(400).send('Falta el archivo .awc');
+            if (!awcFile) return res.status(400).send('Falta archivo .awc');
             awcBuffer = awcFile.buffer;
         }
 
-        if (!audioFile) return res.status(400).send('Falta el archivo de audio');
+        if (!audioFile) return res.status(400).send('Falta audio');
 
         const adpcmBuffer = await convertToADPCM(audioFile.buffer);
         const patchedBuffer = patchAWC(awcBuffer, adpcmBuffer);
@@ -125,10 +113,23 @@ router.post('/inject', upload.fields([{ name: 'audio' }, { name: 'awc' }]), asyn
         res.send(zipContent);
 
     } catch (err) {
-        console.error('[AWC] Error:', err);
-        res.status(500).send('Error: ' + err.message);
+        console.error(err);
+        res.status(500).send(err.message);
     }
 });
 
 app.use('/api/Sound', router);
-app.listen(5000, () => console.log('[AWC Pipeline] Ready on port 5000'));
+
+const keyPath = path.join(__dirname, 'key.pem');
+const certPath = path.join(__dirname, 'cert.pem');
+
+const options = {
+    key: fs.existsSync(keyPath) ? fs.readFileSync(keyPath) : null,
+    cert: fs.existsSync(certPath) ? fs.readFileSync(certPath) : null
+};
+
+if (options.key && options.cert) {
+    https.createServer(options, app).listen(5000, () => console.log('[AWC HTTPS] Ready on 5000'));
+} else {
+    app.listen(5000, () => console.log('[AWC HTTP] Ready on 5000'));
+}
