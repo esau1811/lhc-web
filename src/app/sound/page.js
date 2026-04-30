@@ -35,6 +35,23 @@ export default function SoundPage() {
     { id: 'killsound', name: 'Kill Sound', file: 'resident.awc' },
   ];
 
+  const [dragOverAudio, setDragOverAudio] = useState(false);
+  const [dragOverAwc, setDragOverAwc] = useState(false);
+
+  const handleAudioDrop = (e) => {
+    e.preventDefault();
+    setDragOverAudio(false);
+    const files = e.dataTransfer?.files;
+    if (files?.[0]) setAudioFile(files[0]);
+  };
+
+  const handleAwcDrop = (e) => {
+    e.preventDefault();
+    setDragOverAwc(false);
+    const files = e.dataTransfer?.files;
+    if (files?.[0]) setAwcFile(files[0]);
+  };
+
   const handleInyectar = async () => {
     if (!audioFile || (!useTemplate && !awcFile)) return;
     setIsLoading(true);
@@ -105,8 +122,11 @@ export default function SoundPage() {
             
             <div 
               onClick={() => audioInputRef.current?.click()}
+              onDragOver={(e) => { e.preventDefault(); setDragOverAudio(true); }}
+              onDragLeave={() => setDragOverAudio(false)}
+              onDrop={handleAudioDrop}
               className={`border-2 border-dashed rounded-2xl p-12 transition-all cursor-pointer flex flex-col items-center justify-center gap-4
-                ${audioFile ? 'border-green-500/50 bg-green-500/5' : 'border-white/10 hover:border-red-500/30 hover:bg-white/5'}`}
+                ${audioFile ? 'border-green-500/50 bg-green-500/5' : dragOverAudio ? 'border-red-500 bg-red-500/5' : 'border-white/10 hover:border-red-500/30 hover:bg-white/5'}`}
             >
               <Music className={`w-12 h-12 ${audioFile ? 'text-green-500' : 'text-gray-500'}`} />
               <div className="text-center">
@@ -166,8 +186,11 @@ export default function SoundPage() {
             ) : (
               <div 
                 onClick={() => awcInputRef.current?.click()}
+                onDragOver={(e) => { e.preventDefault(); setDragOverAwc(true); }}
+                onDragLeave={() => setDragOverAwc(false)}
+                onDrop={handleAwcDrop}
                 className={`border-2 border-dashed rounded-2xl p-12 transition-all cursor-pointer flex flex-col items-center justify-center gap-4
-                  ${awcFile ? 'border-green-500/50 bg-green-500/5' : 'border-white/10 hover:border-red-500/30 hover:bg-white/5'}`}
+                  ${awcFile ? 'border-green-500/50 bg-green-500/5' : dragOverAwc ? 'border-red-500 bg-red-500/5' : 'border-white/10 hover:border-red-500/30 hover:bg-white/5'}`}
               >
                 <FileCode className={`w-12 h-12 ${awcFile ? 'text-green-500' : 'text-gray-500'}`} />
                 <div className="text-center">
