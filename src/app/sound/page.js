@@ -1,104 +1,70 @@
 'use client';
 
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { useSession, signIn } from 'next-auth/react';
 import Header from '@/components/Header';
-import Footer from '@/components/Footer';
 import { useLang } from '@/components/LangProvider';
 import GlassCard from '@/components/GlassCard';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Upload, Music, FileText, Lock, Crosshair, Skull, ShieldAlert, ChevronRight } from 'lucide-react';
+import { Music, FileCode, Lock, Zap, Skull, ShieldAlert, ChevronRight, X } from 'lucide-react';
+
+const VPS_URL = 'http://187.33.157.103:5000';
 
 export default function SoundPage() {
   const { data: session, status } = useSession();
   const { t } = useLang();
   
   const audioInputRef = useRef(null);
-  const rpfInputRef = useRef(null);
+  const awcInputRef = useRef(null);
 
-  const [mode, setMode] = useState('weapon'); // 'weapon' | 'kill'
   const [audioFile, setAudioFile] = useState(null);
   const [awcFile, setAwcFile] = useState(null);
-  const [audioDuration, setAudioDuration] = useState(0);
   const [dragOverAudio, setDragOverAudio] = useState(false);
   const [dragOverAwc, setDragOverAwc] = useState(false);
   
-  const [isProcessing, setIsProcessing] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
-  const getAudioDuration = (file) => {
-    return new Promise((resolve) => {
-      const url = URL.createObjectURL(file);
-      const audio = new Audio(url);
-      audio.onloadedmetadata = () => {
-        resolve(audio.duration);
-        URL.revokeObjectURL(url);
-      };
-      audio.onerror = () => {
-        resolve(0);
-        URL.revokeObjectURL(url);
-      };
-    });
+  const [weaponType, setWeaponType] = useState('pistol');
+  const [useTemplate, setUseTemplate] = useState(true);
+
+  const weapons = [
+    { id: 'pistol', name: 'Pistola', file: 'ptl_pistol.awc' },
+    { id: 'combatpistol', name: 'Combat Pistol', file: 'ptl_combat.awc' },
+    { id: 'smg', name: 'SMG', file: 'smg_smg.awc' },
+    { id: 'microsmg', name: 'Micro SMG', file: 'smg_micro.awc' },
+    { id: 'killsound', name: 'Kill Sound', file: 'resident.awc' },
+  ];
+
+  const handleAudioDrop = (e) => {
+    e.preventDefault();
+    const files = e.dataTransfer?.files || e.target?.files;
+    if (files?.[0]) setAudioFile(files[0]);
   };
 
-  const handleAudioDrop = useCallback(async (e) => {
+  const handleAwcDrop = (e) => {
     e.preventDefault();
-    setDragOverAudio(false);
     const files = e.dataTransfer?.files || e.target?.files;
-    const file = files?.[0];
-    if (!file) return;
+    if (files?.[0]) setAwcFile(files[0]);
+  };
 
-    setError('');
-    setSuccess('');
-
-    if (!file.name.toLowerCase().endsWith('.mp3') && !file.name.toLowerCase().endsWith('.wav')) {
-      setError('Solo se permiten archivos de audio .mp3 o .wav');
-      return;
-    }
-
-    const duration = await getAudioDuration(file);
-    
-    if (duration > 3.0) {
-      setError(`El audio dura ${duration.toFixed(1)}s. El máximo permitido son 3 segundos.`);
-      return;
-    }
-
-    setAudioFile(file);
-    setAudioDuration(duration);
-  }, []);
-
-  const handleAwcDrop = useCallback((e) => {
-    e.preventDefault();
-    setDragOverAwc(false);
-    const files = e.dataTransfer?.files || e.target?.files;
-    const file = files?.[0];
-    if (!file) return;
-
-    setError('');
-    setSuccess('');
-
-    if (!file.name.toLowerCase().endsWith('.awc')) {
-      setError('Solo se permiten archivos de audio .awc extraídos de OpenIV');
-      return;
-    }
-    setAwcFile(file);
-  }, []);
-
-  const VPS_URL = 'https://187.33.157.103.nip.io';
-
-  const handleProcess = async () => {
-    setIsProcessing(true);
-    setError('');
-    setSuccess('');
+  const handleInyectar = async () => {
+    if (!audioFile || (!useTemplate && !awcFile)) return;
+    setIsLoading(true);
+    setError(null);
+    setSuccess(null);
 
     try {
       const formData = new FormData();
       formData.append('audio', audioFile);
-      formData.append('awc', awcFile);
+      if (useTemplate) {
+        formData.append('weaponType', weaponType);
+        formData.append('useTemplate', 'true');
+      } else {
+        formData.append('awc', awcFile);
+      }
 
       const endpoint = `${VPS_URL}/api/Sound/inject`;
-
       const response = await fetch(endpoint, {
         method: 'POST',
         body: formData,
@@ -106,36 +72,29 @@ export default function SoundPage() {
 
       if (!response.ok) {
         const errText = await response.text();
-        throw new Error(errText || `Error del servidor (${response.status})`);
+        throw new Error(errText || 'Error en el servidor');
       }
 
       const blob = await response.blob();
-      const url  = window.URL.createObjectURL(blob);
-      const a    = document.createElement('a');
-      a.href     = url;
-      a.download = 'LHC_Sound_Boost.zip';
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `LHC_Sound_${weaponType}.zip`;
       document.body.appendChild(a);
       a.click();
-      document.body.removeChild(a);
-      window.URL.revokeObjectURL(url);
-
-      setSuccess('¡Procesado con éxito! Se ha descargado tu .awc modificado. Solo tienes que arrastrarlo de vuelta a OpenIV.');
+      a.remove();
+      
+      setSuccess('¡Procesado con éxito! Se ha descargado tu sonido inyectado.');
     } catch (err) {
-      setError(err.message || 'Error al procesar el archivo.');
+      setError(err.message);
     } finally {
-      setIsProcessing(false);
+      setIsLoading(false);
     }
   };
 
-  const isReady = !!audioFile && !!awcFile;
+  const isReady = !!audioFile && (useTemplate || !!awcFile);
 
-  if (status === 'loading') {
-    return (
-      <div className="min-h-screen bg-[#050505] flex items-center justify-center">
-        <div className="w-10 h-10 border-4 border-red-500 border-t-transparent rounded-full animate-spin"></div>
-      </div>
-    );
-  }
+  if (status === 'loading') return null;
 
   if (!session) {
     return (
@@ -145,9 +104,9 @@ export default function SoundPage() {
           <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center mb-6">
             <Lock className="text-zinc-600" size={32} />
           </div>
-          <h2 className="text-4xl font-black mb-4 tracking-tight">ACCESO RESTRINGIDO</h2>
+          <h2 className="text-4xl font-black mb-4 tracking-tight uppercase">ACCESO RESTRINGIDO</h2>
           <p className="text-zinc-500 max-w-md mb-8">Debes iniciar sesión con Discord para utilizar LHCSound.</p>
-          <button onClick={() => signIn('discord')} className="btn-pill btn-red px-12">
+          <button onClick={() => signIn('discord')} className="bg-red-600 px-12 py-4 rounded-full font-bold hover:bg-red-500 transition-all">
             Login con Discord
           </button>
         </main>
@@ -156,166 +115,199 @@ export default function SoundPage() {
   }
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-[#0a0a0a] text-white font-sans selection:bg-red-500/30">
       <Header />
-      <main className="max-w-4xl mx-auto px-6 pt-32 pb-32">
-        
-        <div className="mb-12 flex flex-col md:flex-row md:items-center gap-6">
-          <img src="/icon_sound.png" alt="Sound" className="w-24 h-24 object-contain ai-icon-blend nitro-glow" />
-          <div>
-            <h1 className="text-4xl font-black mb-2 tracking-tight uppercase">
-              LHC<span className="text-red-500">SOUND</span>
-            </h1>
-            <p className="text-zinc-500 font-medium max-w-xl">
-              {t('soundDesc')}
-            </p>
-          </div>
+      
+      <div className="fixed inset-0 overflow-hidden pointer-events-none opacity-20">
+        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-red-600 rounded-full blur-[120px]" />
+        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-red-900 rounded-full blur-[120px]" />
+      </div>
+
+      <div className="relative z-10 max-w-5xl mx-auto px-6 pt-32 pb-20">
+        <div className="text-center mb-16">
+          <h1 className="text-6xl font-black tracking-tighter mb-4 italic uppercase">
+            LHC <span className="text-red-600">SOUND</span>
+          </h1>
+          <p className="text-gray-400 max-w-2xl mx-auto">
+            Personaliza los sonidos de tus armas y efectos de kill en FiveM de forma instantánea. 
+            Sin programas externos, directo a tu juego.
+          </p>
         </div>
 
-        {/* MODE SELECTOR */}
-        <div className="flex flex-wrap gap-4 mb-12">
-          <button 
-            onClick={() => { setMode('weapon'); setError(''); setSuccess(''); }}
-            className={`btn-pill border flex items-center gap-2 ${
-              mode === 'weapon' 
-              ? 'bg-red-500/10 border-red-500 text-red-500' 
-              : 'bg-white/5 border-white/10 text-zinc-400 hover:text-white'
-            }`}
-          >
-            <Crosshair size={16} /> {t('sound_mode_weapon')}
-          </button>
-          <button 
-            onClick={() => { setMode('kill'); setError(''); setSuccess(''); }}
-            className={`btn-pill border flex items-center gap-2 ${
-              mode === 'kill' 
-              ? 'bg-red-500/10 border-red-500 text-red-500' 
-              : 'bg-white/5 border-white/10 text-zinc-400 hover:text-white'
-            }`}
-          >
-            <Skull size={16} /> {t('sound_mode_kill')}
-          </button>
-        </div>
-
-        <div className="space-y-8">
-          
+        <div className="grid grid-cols-1 gap-8">
           {/* STEP 1: AUDIO */}
-          <GlassCard className="p-8">
-            <div className="flex items-center gap-3 mb-6">
-              <span className="bg-white/10 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold">1</span>
-              <h3 className="font-bold text-zinc-400 text-sm tracking-widest uppercase">{t('sound_step_1')}</h3>
-            </div>
-
-            {!audioFile ? (
-              <div
-                className={`border-2 border-dashed rounded-2xl p-12 transition-all duration-300 flex flex-col items-center justify-center cursor-pointer ${
-                  dragOverAudio ? 'border-red-500 bg-red-500/5' : 'border-white/10 hover:border-white/20 hover:bg-white/5'
-                }`}
-                onClick={() => audioInputRef.current?.click()}
-                onDragOver={(e) => { e.preventDefault(); setDragOverAudio(true); }}
-                onDragLeave={() => setDragOverAudio(false)}
-                onDrop={handleAudioDrop}
-              >
-                <Music size={40} className="text-zinc-600 mb-4" />
-                <p className="font-bold text-lg mb-1">{t('sound_upload_audio')}</p>
-                <p className="text-zinc-500 text-sm">{t('sound_duration_hint')}</p>
-                <input ref={audioInputRef} type="file" accept=".mp3,.wav" className="hidden" onChange={handleAudioDrop} />
-              </div>
-            ) : (
-              <div className="bg-white/5 rounded-2xl p-6 border border-white/5 flex items-center gap-4">
-                <div className="p-3 bg-white/5 rounded-xl"><Music className="text-red-500" /></div>
-                <div className="flex-1 min-w-0">
-                  <p className="font-bold truncate">{audioFile.name}</p>
-                  <p className="text-xs text-zinc-500">{(audioFile.size / 1024).toFixed(1)} KB — {audioDuration.toFixed(1)}s</p>
-                </div>
-                <button onClick={() => setAudioFile(null)} className="text-zinc-500 hover:text-white p-2">✕</button>
-              </div>
-            )}
-          </GlassCard>
-
-
-
-          {/* STEP 2: RPF */}
-          <GlassCard className="p-8">
-            <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center gap-3">
-                <span className="bg-white/10 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold">2</span>
-                <h3 className="font-bold text-zinc-400 text-sm tracking-widest uppercase">{t('sound_step_2')}</h3>
-              </div>
-            </div>
-
-            {!awcFile ? (
-              <div
-                className={`border-2 border-dashed rounded-2xl p-12 transition-all duration-300 flex flex-col items-center justify-center cursor-pointer ${
-                  dragOverAwc ? 'border-red-500 bg-red-500/5' : 'border-white/10 hover:border-white/20 hover:bg-white/5'
-                }`}
-                onClick={() => rpfInputRef.current?.click()}
-                onDragOver={(e) => { e.preventDefault(); setDragOverAwc(true); }}
-                onDragLeave={() => setDragOverAwc(false)}
-                onDrop={handleAwcDrop}
-              >
-                <FileText size={40} className="text-zinc-600 mb-4" />
-                <p className="font-bold text-lg mb-1">{t('sound_upload_rpf')}</p>
-                <p className="text-zinc-500 text-sm text-center px-4">Sube el archivo .awc (ptl_pistol.awc, etc). <br/><strong>Extráelo usando OpenIV (Export) antes de subirlo.</strong></p>
-                <input ref={rpfInputRef} type="file" accept=".awc" className="hidden" onChange={handleAwcDrop} />
-              </div>
-            ) : (
-              <div className="bg-white/5 rounded-2xl p-6 border border-white/5 flex items-center gap-4">
-                <div className="p-3 bg-white/5 rounded-xl"><FileText className="text-red-500" /></div>
-                <div className="flex-1 min-w-0">
-                  <p className="font-bold truncate">{awcFile.name}</p>
-                  <p className="text-xs text-zinc-500">{(awcFile.size / 1024).toFixed(1)} KB</p>
-                </div>
-                <button onClick={() => setAwcFile(null)} className="text-zinc-500 hover:text-white p-2">✕</button>
-              </div>
-            )}
-
-            <div className="mt-6 p-4 bg-red-500/10 border border-red-500/20 rounded-xl flex gap-3">
-              <ShieldAlert className="text-red-500 shrink-0" size={20} />
-              <p className="text-xs text-red-500/80 leading-relaxed font-bold">
-                IMPORTANTE: Sube el archivo .awc que has extraído de OpenIV. No subas el .rpf entero aquí.
-              </p>
-            </div>
-          </GlassCard>
-
-          {/* STEP 3: PROCESS */}
-          <GlassCard className="p-8">
-            <div className="flex items-center gap-3 mb-6">
-              <span className="bg-white/10 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold">3</span>
-              <h3 className="font-bold text-zinc-400 text-sm tracking-widest uppercase">{t('sound_step_3')}</h3>
+          <GlassCard className="p-8 rounded-3xl relative overflow-hidden group border border-white/5">
+            <div className="flex items-center gap-4 mb-6">
+              <div className="w-10 h-10 rounded-full bg-red-600/10 border border-red-600/20 flex items-center justify-center text-red-500 font-bold">1</div>
+              <h2 className="text-xl font-bold uppercase tracking-wider">Paso 1 — Subir Audio (.MP3 / .WAV)</h2>
             </div>
             
+            <div 
+              onDragOver={(e) => { e.preventDefault(); setDragOverAudio(true); }}
+              onDragLeave={() => setDragOverAudio(false)}
+              onDrop={(e) => { handleAudioDrop(e); setDragOverAudio(false); }}
+              className={`border-2 border-dashed rounded-2xl p-10 text-center transition-all cursor-pointer ${
+                dragOverAudio ? 'border-red-600 bg-red-600/5' : 'border-white/10 hover:border-white/20'
+              }`}
+              onClick={() => audioInputRef.current?.click()}
+            >
+              <input 
+                type="file" 
+                ref={audioInputRef} 
+                onChange={handleAudioDrop} 
+                className="hidden" 
+                accept="audio/*"
+              />
+              {audioFile ? (
+                <div className="flex items-center justify-between bg-white/5 p-4 rounded-xl border border-white/10">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-lg bg-red-600/20 flex items-center justify-center text-red-500">
+                      <Music size={24} />
+                    </div>
+                    <div className="text-left">
+                      <p className="font-bold truncate max-w-[200px]">{audioFile.name}</p>
+                      <p className="text-xs text-gray-500">{(audioFile.size / 1024).toFixed(1)} KB</p>
+                    </div>
+                  </div>
+                  <button onClick={(e) => { e.stopPropagation(); setAudioFile(null); }} className="text-gray-500 hover:text-white transition-colors">
+                    <X size={20} />
+                  </button>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div className="w-16 h-16 rounded-2xl bg-white/5 flex items-center justify-center mx-auto text-gray-500 group-hover:text-red-500 transition-colors">
+                    <Music size={32} />
+                  </div>
+                  <p className="text-gray-400">Arrastra tu sonido mp3 o wav</p>
+                </div>
+              )}
+            </div>
+          </GlassCard>
+
+          {/* STEP 2: WEAPON / AWC */}
+          <GlassCard className="p-8 rounded-3xl relative overflow-hidden group border border-white/5">
+            <div className="flex items-center gap-4 mb-6">
+              <div className="w-10 h-10 rounded-full bg-red-600/10 border border-red-600/20 flex items-center justify-center text-red-500 font-bold">2</div>
+              <h2 className="text-xl font-bold uppercase tracking-wider">Paso 2 — Seleccionar Arma o Subir .AWC</h2>
+            </div>
+
+            <div className="flex gap-4 mb-8 p-1 bg-black rounded-xl border border-white/5">
+              <button 
+                onClick={() => setUseTemplate(true)}
+                className={`flex-1 py-3 px-6 rounded-lg font-bold transition-all ${useTemplate ? 'bg-red-600 text-white shadow-lg' : 'text-gray-500 hover:text-gray-300'}`}
+              >
+                Usar Plantilla (Recomendado)
+              </button>
+              <button 
+                onClick={() => setUseTemplate(false)}
+                className={`flex-1 py-3 px-6 rounded-lg font-bold transition-all ${!useTemplate ? 'bg-red-600 text-white shadow-lg' : 'text-gray-500 hover:text-gray-300'}`}
+              >
+                Subir mi propio .AWC
+              </button>
+            </div>
+
+            {useTemplate ? (
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
+                {weapons.map((w) => (
+                  <button
+                    key={w.id}
+                    onClick={() => setWeaponType(w.id)}
+                    className={`p-4 rounded-2xl border transition-all text-center group ${
+                      weaponType === w.id 
+                        ? 'border-red-600 bg-red-600/10 text-white shadow-lg shadow-red-600/10' 
+                        : 'border-white/5 bg-white/5 text-gray-500 hover:border-white/20 hover:text-gray-300'
+                    }`}
+                  >
+                    <div className={`w-10 h-10 rounded-lg mx-auto mb-3 flex items-center justify-center transition-colors ${weaponType === w.id ? 'bg-red-600 text-white' : 'bg-white/5 group-hover:bg-white/10'}`}>
+                      {w.id === 'killsound' ? <Skull size={20} /> : <Zap size={20} />}
+                    </div>
+                    <span className="text-xs font-bold uppercase block">{w.name}</span>
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <div 
+                onDragOver={(e) => { e.preventDefault(); setDragOverAwc(true); }}
+                onDragLeave={() => setDragOverAwc(false)}
+                onDrop={(e) => { handleAwcDrop(e); setDragOverAwc(false); }}
+                className={`border-2 border-dashed rounded-2xl p-10 text-center transition-all cursor-pointer ${
+                  dragOverAwc ? 'border-red-600 bg-red-600/5' : 'border-white/10 hover:border-white/20'
+                }`}
+                onClick={() => awcInputRef.current?.click()}
+              >
+                <input 
+                  type="file" 
+                  ref={awcInputRef} 
+                  onChange={handleAwcDrop} 
+                  className="hidden" 
+                  accept=".awc"
+                />
+                {awcFile ? (
+                  <div className="flex items-center justify-between bg-white/5 p-4 rounded-xl border border-white/10">
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 rounded-lg bg-red-600/20 flex items-center justify-center text-red-500">
+                        <FileCode size={24} />
+                      </div>
+                      <div className="text-left">
+                        <p className="font-bold truncate max-w-[200px]">{awcFile.name}</p>
+                        <p className="text-xs text-gray-500">{(awcFile.size / 1024).toFixed(1)} KB</p>
+                      </div>
+                    </div>
+                    <button onClick={(e) => { e.stopPropagation(); setAwcFile(null); }} className="text-gray-500 hover:text-white transition-colors">
+                      <X size={20} />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <div className="w-16 h-16 rounded-2xl bg-white/5 flex items-center justify-center mx-auto text-gray-500 group-hover:text-red-500 transition-colors">
+                      <FileCode size={32} />
+                    </div>
+                    <p className="text-gray-400">Sube el archivo .awc del arma</p>
+                    <p className="text-[10px] text-gray-600 uppercase tracking-widest">Extráelo usando OpenIV (Export) antes de subirlo</p>
+                  </div>
+                )}
+              </div>
+            )}
+          </GlassCard>
+
+          {/* STEP 3: ACTION */}
+          <GlassCard className="p-8 rounded-3xl relative overflow-hidden group border border-white/5">
+            <div className="flex items-center gap-4 mb-8">
+              <div className="w-10 h-10 rounded-full bg-red-600/10 border border-red-600/20 flex items-center justify-center text-red-500 font-bold">3</div>
+              <h2 className="text-xl font-bold uppercase tracking-wider">Paso 3 — Ejecutar</h2>
+            </div>
+
             <button
-              onClick={handleProcess}
-              disabled={!isReady || isProcessing}
-              className={`w-full btn-pill py-4 text-lg flex items-center justify-center gap-2 ${
-                isReady && !isProcessing ? 'btn-red' : 'bg-white/5 text-zinc-600 cursor-not-allowed border border-white/10'
+              onClick={handleInyectar}
+              disabled={!isReady || isLoading}
+              className={`w-full py-6 rounded-2xl font-black text-xl uppercase tracking-tighter transition-all flex items-center justify-center gap-3 ${
+                isReady && !isLoading
+                  ? 'bg-red-600 hover:bg-red-500 hover:scale-[1.02] active:scale-[0.98] shadow-xl shadow-red-600/20 text-white'
+                  : 'bg-white/5 text-gray-700 cursor-not-allowed border border-white/5'
               }`}
             >
-              {isProcessing ? (
-                <div className="w-5 h-5 border-2 border-black border-t-transparent rounded-full animate-spin"></div>
+              {isLoading ? (
+                <>
+                  <div className="w-6 h-6 border-4 border-white/20 border-t-white rounded-full animate-spin" />
+                  <span>Procesando...</span>
+                </>
               ) : (
                 <>
-                  {mode === 'weapon' ? t('sound_process_weapon') : t('sound_process_kill')}
-                  <ChevronRight size={20} />
+                  <span>Inyectar Sonido en el Arma</span>
+                  <ChevronRight size={24} />
                 </>
               )}
             </button>
 
             {success && <div className="mt-4 p-4 bg-green-500/10 border border-green-500/20 text-green-500 text-sm font-bold rounded-xl text-center">✓ {success}</div>}
             {error && <div className="mt-4 p-4 bg-red-500/10 border border-red-500/20 text-red-500 text-sm font-bold rounded-xl text-center">⚠️ {error}</div>}
+            {!isReady && !isLoading && <div className="mt-4 text-center text-xs text-gray-600 uppercase tracking-widest flex items-center justify-center gap-2">
+              <ShieldAlert size={12} />
+              <span>Faltan archivos para continuar</span>
+            </div>}
           </GlassCard>
-
-          <div className="p-6 bg-red-500/5 border border-red-500/10 rounded-2xl flex gap-4">
-            <ShieldAlert className="text-red-500 shrink-0" />
-            <p className="text-xs text-zinc-500 leading-relaxed font-medium">
-              Sube tu audio (MP3/WAV) y el archivo .awc que quieres modificar. 
-              Recuerda extraer el .awc desde OpenIV antes de subirlo. El sistema lo modificará y te devolverá el archivo listo para arrastrarlo de nuevo a OpenIV.
-            </p>
-          </div>
-
         </div>
-      </main>
-      <Footer />
+      </div>
     </div>
   );
 }
