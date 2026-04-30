@@ -5,9 +5,8 @@ import { useSession } from 'next-auth/react';
 import Header from '@/components/Header';
 import { useLang } from '@/components/LangProvider';
 import GlassCard from '@/components/GlassCard';
-import { Music, FileCode, Zap, ChevronRight, X, ShieldAlert } from 'lucide-react';
+import { Music, FileCode, Zap, ChevronRight, X, ShieldAlert, CheckCircle2 } from 'lucide-react';
 
-// LA LLAVE MAESTRA: Dominio con SSL válido y sin límites de Vercel
 const VPS_URL = 'https://187.33.157.103.nip.io';
 
 export default function SoundPage() {
@@ -27,30 +26,15 @@ export default function SoundPage() {
   const [weaponType, setWeaponType] = useState('pistol');
   const [useTemplate, setUseTemplate] = useState(true);
 
+  // Lista detallada de armas basada en los archivos reales de GTA V
   const weapons = [
-    { id: 'pistol', name: 'Pistola', file: 'ptl_pistol.awc' },
-    { id: 'combatpistol', name: 'Combat Pistol', file: 'ptl_combat.awc' },
-    { id: 'smg', name: 'SMG', file: 'smg_smg.awc' },
-    { id: 'microsmg', name: 'Micro SMG', file: 'smg_micro.awc' },
-    { id: 'killsound', name: 'Kill Sound', file: 'resident.awc' },
+    { id: 'pistol', name: 'Pistola Básica', file: 'ptl_pistol.awc', desc: 'w_pi_pistol.awc' },
+    { id: 'combatpistol', name: 'Pistola de Combate', file: 'ptl_combat.awc', desc: 'w_pi_combatpistol.awc' },
+    { id: 'smg', name: 'SMG (MP5)', file: 'smg_smg.awc', desc: 'w_sb_smg.awc' },
+    { id: 'microsmg', name: 'Micro SMG (Uzi)', file: 'smg_micro.awc', desc: 'w_sb_microsmg.awc' },
+    { id: 'appistol', name: 'Pistola AP', file: 'ptl_ap.awc', desc: 'w_pi_appistol.awc' },
+    { id: 'killsound', name: 'Kill Sound', file: 'resident.awc', desc: 'resident.rpf/resident.awc' },
   ];
-
-  const [dragOverAudio, setDragOverAudio] = useState(false);
-  const [dragOverAwc, setDragOverAwc] = useState(false);
-
-  const handleAudioDrop = (e) => {
-    e.preventDefault();
-    setDragOverAudio(false);
-    const files = e.dataTransfer?.files;
-    if (files?.[0]) setAudioFile(files[0]);
-  };
-
-  const handleAwcDrop = (e) => {
-    e.preventDefault();
-    setDragOverAwc(false);
-    const files = e.dataTransfer?.files;
-    if (files?.[0]) setAwcFile(files[0]);
-  };
 
   const handleInyectar = async () => {
     if (!audioFile || (!useTemplate && !awcFile)) return;
@@ -68,7 +52,6 @@ export default function SoundPage() {
         formData.append('awc', awcFile);
       }
 
-      // Llamada DIRECTA al VPS para saltarnos el límite de 4MB de Vercel
       const response = await fetch(`${VPS_URL}/api/Sound/assemble-and-inject`, {
         method: 'POST',
         body: formData,
@@ -109,38 +92,41 @@ export default function SoundPage() {
       
       <main className="max-w-4xl mx-auto px-4 py-12">
         <div className="mb-12 text-center">
-          <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-white to-gray-500 bg-clip-text text-transparent">
-            AWC Audio Injector <span className="text-red-500 text-2xl font-mono ml-2">v2.0</span>
+          <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-white to-gray-500 bg-clip-text text-transparent uppercase tracking-tighter">
+            LHC Sound <span className="text-red-500 font-mono">Injector</span>
           </h1>
           <p className="text-gray-400 max-w-2xl mx-auto">
-            Inyecta sonidos personalizados en tus armas de GTA V de forma automática y segura.
+            Inyecta sonidos en armas de GTA V. Usa nuestras plantillas desencriptadas para evitar errores de firma.
           </p>
         </div>
 
         <div className="grid gap-8">
           {/* PASO 1: AUDIO */}
-          <GlassCard className="p-8 border-red-500/20">
-            <div className="flex items-center gap-4 mb-6">
-              <div className="w-10 h-10 rounded-full bg-red-500/10 flex items-center justify-center text-red-500 font-bold">1</div>
-              <h2 className="text-xl font-bold uppercase tracking-wider">Paso 1 — Tu Sonido (.MP3 / .WAV)</h2>
+          <GlassCard className="p-8 border-red-500/20 relative overflow-hidden group">
+            <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+                <Music size={120} />
+            </div>
+            <div className="flex items-center gap-4 mb-6 relative z-10">
+              <div className="w-10 h-10 rounded-full bg-red-500/10 flex items-center justify-center text-red-500 font-bold border border-red-500/20 shadow-[0_0_15px_rgba(239,68,68,0.2)]">1</div>
+              <h2 className="text-xl font-bold uppercase tracking-wider">Tu Sonido (.MP3 / .WAV)</h2>
             </div>
             
             <div 
               onClick={() => audioInputRef.current?.click()}
-              onDragOver={(e) => { e.preventDefault(); setDragOverAudio(true); }}
-              onDragLeave={() => setDragOverAudio(false)}
-              onDrop={handleAudioDrop}
-              className={`border-2 border-dashed rounded-2xl p-12 transition-all cursor-pointer flex flex-col items-center justify-center gap-4
-                ${audioFile ? 'border-green-500/50 bg-green-500/5' : dragOverAudio ? 'border-red-500 bg-red-500/5' : 'border-white/10 hover:border-red-500/30 hover:bg-white/5'}`}
+              className={`border-2 border-dashed rounded-2xl p-10 transition-all cursor-pointer flex flex-col items-center justify-center gap-4 relative z-10
+                ${audioFile ? 'border-green-500/50 bg-green-500/10' : 'border-white/10 hover:border-red-500/30 hover:bg-white/5'}`}
             >
-              <Music className={`w-12 h-12 ${audioFile ? 'text-green-500' : 'text-gray-500'}`} />
+              <Music className={`w-12 h-12 ${audioFile ? 'text-green-500 animate-pulse' : 'text-gray-500'}`} />
               <div className="text-center">
                 {audioFile ? (
-                  <p className="text-green-400 font-medium">{audioFile.name}</p>
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 className="text-green-500 w-5 h-5" />
+                    <p className="text-green-400 font-medium">{audioFile.name}</p>
+                  </div>
                 ) : (
-                  <p className="text-gray-400">Haz clic para subir tu audio personalizado</p>
+                  <p className="text-gray-400">Haz clic o arrastra tu audio personalizado</p>
                 )}
-                <p className="text-xs text-gray-600 mt-2">Formatos aceptados: MP3, WAV, OGG</p>
+                <p className="text-xs text-gray-600 mt-2 italic">Formatos: MP3, WAV, OGG (32khz 16bit recomendado)</p>
               </div>
               <input 
                 type="file" 
@@ -155,56 +141,68 @@ export default function SoundPage() {
           {/* PASO 2: ARMA */}
           <GlassCard className="p-8 border-red-500/20">
             <div className="flex items-center gap-4 mb-6">
-              <div className="w-10 h-10 rounded-full bg-red-500/10 flex items-center justify-center text-red-500 font-bold">2</div>
-              <h2 className="text-xl font-bold uppercase tracking-wider">Paso 2 — Seleccionar Arma o Subir .AWC</h2>
+              <div className="w-10 h-10 rounded-full bg-red-500/10 flex items-center justify-center text-red-500 font-bold border border-red-500/20 shadow-[0_0_15px_rgba(239,68,68,0.2)]">2</div>
+              <h2 className="text-xl font-bold uppercase tracking-wider">Base de Arma (.AWC)</h2>
             </div>
 
-            <div className="flex bg-black/40 p-1 rounded-xl mb-8 border border-white/5">
+            <div className="flex bg-black/60 p-1 rounded-xl mb-8 border border-white/10">
               <button 
                 onClick={() => setUseTemplate(true)}
-                className={`flex-1 py-3 rounded-lg font-medium transition-all ${useTemplate ? 'bg-red-600 text-white shadow-lg shadow-red-600/20' : 'text-gray-500 hover:text-gray-300'}`}
+                className={`flex-1 py-3 rounded-lg font-bold text-sm uppercase tracking-widest transition-all ${useTemplate ? 'bg-red-600 text-white shadow-lg shadow-red-600/30' : 'text-gray-500 hover:text-gray-300'}`}
               >
-                Usar Plantilla (Recomendado)
+                Plantillas Pro
               </button>
               <button 
                 onClick={() => setUseTemplate(false)}
-                className={`flex-1 py-3 rounded-lg font-medium transition-all ${!useTemplate ? 'bg-red-600 text-white shadow-lg shadow-red-600/20' : 'text-gray-500 hover:text-gray-300'}`}
+                className={`flex-1 py-3 rounded-lg font-bold text-sm uppercase tracking-widest transition-all ${!useTemplate ? 'bg-red-600 text-white shadow-lg shadow-red-600/30' : 'text-gray-500 hover:text-gray-300'}`}
               >
-                Subir mi propio .AWC
+                Mi propio .AWC
               </button>
             </div>
 
             {useTemplate ? (
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {weapons.map(w => (
                   <button
                     key={w.id}
                     onClick={() => setWeaponType(w.id)}
-                    className={`p-4 rounded-xl border text-sm font-medium transition-all flex flex-col items-center gap-3
-                      ${weaponType === w.id ? 'border-red-500 bg-red-500/10 text-white' : 'border-white/5 bg-white/5 text-gray-400 hover:border-white/20'}`}
+                    className={`p-5 rounded-2xl border text-left transition-all relative overflow-hidden group
+                      ${weaponType === w.id ? 'border-red-500 bg-red-500/10 ring-1 ring-red-500/50' : 'border-white/5 bg-white/5 text-gray-400 hover:border-white/20'}`}
                   >
-                    <Zap className={weaponType === w.id ? 'text-red-500' : 'text-gray-600'} />
-                    {w.name}
+                    <div className="flex items-center gap-4">
+                        <div className={`p-3 rounded-xl ${weaponType === w.id ? 'bg-red-500 text-white shadow-lg shadow-red-500/40' : 'bg-black/40 text-gray-600 group-hover:text-gray-400'}`}>
+                            <Zap size={20} />
+                        </div>
+                        <div>
+                            <div className={`font-bold uppercase tracking-tighter ${weaponType === w.id ? 'text-white' : 'text-gray-400'}`}>{w.name}</div>
+                            <div className="text-[10px] font-mono text-gray-600 mt-1 opacity-60">{w.desc}</div>
+                        </div>
+                        {weaponType === w.id && (
+                            <div className="ml-auto text-red-500">
+                                <CheckCircle2 size={24} />
+                            </div>
+                        )}
+                    </div>
                   </button>
                 ))}
               </div>
             ) : (
               <div 
                 onClick={() => awcInputRef.current?.click()}
-                onDragOver={(e) => { e.preventDefault(); setDragOverAwc(true); }}
-                onDragLeave={() => setDragOverAwc(false)}
-                onDrop={handleAwcDrop}
-                className={`border-2 border-dashed rounded-2xl p-12 transition-all cursor-pointer flex flex-col items-center justify-center gap-4
-                  ${awcFile ? 'border-green-500/50 bg-green-500/5' : dragOverAwc ? 'border-red-500 bg-red-500/5' : 'border-white/10 hover:border-red-500/30 hover:bg-white/5'}`}
+                className={`border-2 border-dashed rounded-2xl p-10 transition-all cursor-pointer flex flex-col items-center justify-center gap-4
+                  ${awcFile ? 'border-green-500/50 bg-green-500/10' : 'border-white/10 hover:border-red-500/30 hover:bg-white/5'}`}
               >
-                <FileCode className={`w-12 h-12 ${awcFile ? 'text-green-500' : 'text-gray-500'}`} />
+                <FileCode className={`w-12 h-12 ${awcFile ? 'text-green-500 animate-bounce' : 'text-gray-500'}`} />
                 <div className="text-center">
                   {awcFile ? (
-                    <p className="text-green-400 font-medium">{awcFile.name}</p>
+                    <div className="flex items-center gap-2">
+                        <CheckCircle2 className="text-green-500 w-5 h-5" />
+                        <p className="text-green-400 font-medium">{awcFile.name}</p>
+                    </div>
                   ) : (
-                    <p className="text-gray-400">Arrastra aquí tu archivo .AWC extraído de OpenIV</p>
+                    <p className="text-gray-400">Suelta aquí tu archivo .AWC (Debe ser TADA)</p>
                   )}
-                  <p className="text-xs text-gray-600 mt-2">Debe ser un archivo extraído con OpenIV (Header: TADA)</p>
+                  <p className="text-xs text-gray-600 mt-2 font-mono uppercase">Header Requerido: TADA (Desencriptado)</p>
                 </div>
                 <input 
                   type="file" 
@@ -222,38 +220,52 @@ export default function SoundPage() {
             <button
               onClick={handleInyectar}
               disabled={isLoading || !audioFile || (!useTemplate && !awcFile)}
-              className={`w-full py-6 rounded-2xl font-bold text-xl uppercase tracking-widest flex items-center justify-center gap-4 transition-all
-                ${isLoading ? 'bg-gray-800 text-gray-500 cursor-not-allowed' : 'bg-red-600 hover:bg-red-700 hover:scale-[1.01] active:scale-[0.99] text-white shadow-2xl shadow-red-600/30'}`}
+              className={`w-full py-6 rounded-2xl font-black text-xl uppercase tracking-[0.2em] flex items-center justify-center gap-4 transition-all
+                ${isLoading ? 'bg-gray-800 text-gray-500 cursor-not-allowed' : 'bg-red-600 hover:bg-red-700 hover:shadow-[0_0_30px_rgba(220,38,38,0.4)] hover:scale-[1.01] active:scale-[0.98] text-white shadow-2xl shadow-red-600/30'}`}
             >
               {isLoading ? (
                 <>
                   <div className="w-6 h-6 border-4 border-white/20 border-t-white rounded-full animate-spin"></div>
-                  Procesando...
+                  Procesando AWC...
                 </>
               ) : (
                 <>
-                  Inyectar Sonido en el Arma
-                  <ChevronRight />
+                  Inyectar Sonido
+                  <ChevronRight strokeWidth={3} />
                 </>
               )}
             </button>
 
             {error && (
-              <div className="mt-6 p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-500 text-sm flex items-center gap-3 animate-shake">
-                <ShieldAlert className="shrink-0" />
-                {error}
+              <div className="mt-6 p-5 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-500 text-sm flex items-start gap-4 animate-shake shadow-lg shadow-red-500/5">
+                <ShieldAlert className="shrink-0 mt-0.5" />
+                <div>
+                    <div className="font-bold uppercase mb-1">Error de Inyección</div>
+                    <div className="font-mono text-xs opacity-80 leading-relaxed">{error}</div>
+                </div>
               </div>
             )}
 
             {success && (
-              <div className="mt-6 p-4 rounded-xl bg-green-500/10 border border-green-500/20 text-green-500 text-sm flex items-center gap-3">
-                <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                {success}
+              <div className="mt-6 p-5 rounded-2xl bg-green-500/10 border border-green-500/20 text-green-500 text-sm flex items-center gap-4 shadow-lg shadow-green-500/5">
+                <CheckCircle2 className="shrink-0" />
+                <div className="font-bold uppercase">{success}</div>
               </div>
             )}
           </div>
         </div>
       </main>
+
+      <style jsx global>{`
+        @keyframes shake {
+          0%, 100% { transform: translateX(0); }
+          25% { transform: translateX(-4px); }
+          75% { transform: translateX(4px); }
+        }
+        .animate-shake {
+          animation: shake 0.2s ease-in-out 0s 2;
+        }
+      `}</style>
     </div>
   );
 }
