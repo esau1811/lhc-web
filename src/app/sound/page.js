@@ -59,7 +59,7 @@ export default function SoundPage() {
       let totalChunks = 0;
 
       if (!useTemplate) {
-        const CHUNK_SIZE = 4 * 1024 * 1024; // 4MB chunks
+        const CHUNK_SIZE = 2 * 1024 * 1024; // 2MB chunks (más seguro)
         totalChunks = Math.ceil(awcFile.size / CHUNK_SIZE);
 
         for (let i = 0; i < totalChunks; i++) {
