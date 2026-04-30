@@ -7,7 +7,7 @@ import { useLang } from '@/components/LangProvider';
 import GlassCard from '@/components/GlassCard';
 import { Music, FileCode, Lock, Zap, Skull, ShieldAlert, ChevronRight, X } from 'lucide-react';
 
-const VPS_URL = 'http://187.33.157.103:5000';
+const VPS_URL = 'https://187.33.157.103:5000';
 
 export default function SoundPage() {
   const { data: session, status } = useSession();
