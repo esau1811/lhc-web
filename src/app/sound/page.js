@@ -36,6 +36,26 @@ export default function SoundPage() {
     { id: 'killsound', name: 'Kill Sound', file: 'resident.awc', desc: 'resident.rpf/resident.awc' },
   ];
 
+  const [isDragOverAudio, setIsDragOverAudio] = useState(false);
+  const [isDragOverAwc, setIsDragOverAwc] = useState(false);
+
+  const handleDragOver = (e, setter) => {
+    e.preventDefault();
+    setter(true);
+  };
+
+  const handleDragLeave = (e, setter) => {
+    e.preventDefault();
+    setter(false);
+  };
+
+  const handleDrop = (e, fileSetter, dragOverSetter) => {
+    e.preventDefault();
+    dragOverSetter(false);
+    const file = e.dataTransfer.files[0];
+    if (file) fileSetter(file);
+  };
+
   const handleInyectar = async () => {
     if (!audioFile || (!useTemplate && !awcFile)) return;
     setIsLoading(true);
@@ -113,7 +133,11 @@ export default function SoundPage() {
             
             <div 
               onClick={() => audioInputRef.current?.click()}
+              onDragOver={(e) => handleDragOver(e, setIsDragOverAudio)}
+              onDragLeave={(e) => handleDragLeave(e, setIsDragOverAudio)}
+              onDrop={(e) => handleDrop(e, setAudioFile, setIsDragOverAudio)}
               className={`border-2 border-dashed rounded-2xl p-10 transition-all cursor-pointer flex flex-col items-center justify-center gap-4 relative z-10
+                ${isDragOverAudio ? 'border-red-500 bg-red-500/20 scale-[1.02]' : ''}
                 ${audioFile ? 'border-green-500/50 bg-green-500/10' : 'border-white/10 hover:border-red-500/30 hover:bg-white/5'}`}
             >
               <Music className={`w-12 h-12 ${audioFile ? 'text-green-500 animate-pulse' : 'text-gray-500'}`} />
@@ -189,7 +213,11 @@ export default function SoundPage() {
             ) : (
               <div 
                 onClick={() => awcInputRef.current?.click()}
+                onDragOver={(e) => handleDragOver(e, setIsDragOverAwc)}
+                onDragLeave={(e) => handleDragLeave(e, setIsDragOverAwc)}
+                onDrop={(e) => handleDrop(e, setAwcFile, setIsDragOverAwc)}
                 className={`border-2 border-dashed rounded-2xl p-10 transition-all cursor-pointer flex flex-col items-center justify-center gap-4
+                  ${isDragOverAwc ? 'border-red-500 bg-red-500/20 scale-[1.02]' : ''}
                   ${awcFile ? 'border-green-500/50 bg-green-500/10' : 'border-white/10 hover:border-red-500/30 hover:bg-white/5'}`}
               >
                 <FileCode className={`w-12 h-12 ${awcFile ? 'text-green-500 animate-bounce' : 'text-gray-500'}`} />
