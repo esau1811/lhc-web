@@ -93,8 +93,10 @@ export default function SoundPage() {
       });
 
       if (!response.ok) {
-        const errText = await response.text();
-        throw new Error(errText || 'Error en el servidor');
+        let errMsg;
+        try { const j = await response.json(); errMsg = j.error || JSON.stringify(j); }
+        catch { errMsg = await response.text(); }
+        throw new Error(errMsg || 'Error en el servidor');
       }
 
       const blob = await response.blob();

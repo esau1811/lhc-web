@@ -16,7 +16,9 @@ export async function POST(request) {
     });
 
     if (!vpsResponse.ok) {
-      const error = await vpsResponse.text();
+      let error;
+      try { const j = await vpsResponse.json(); error = j.error || JSON.stringify(j); }
+      catch { error = await vpsResponse.text(); }
       return NextResponse.json({ error }, { status: vpsResponse.status });
     }
 
