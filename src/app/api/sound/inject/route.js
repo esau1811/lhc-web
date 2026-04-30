@@ -1,11 +1,16 @@
 import { NextResponse } from 'next/server';
 
 export async function POST(request) {
+  const url = new URL(request.url);
+  const action = url.searchParams.get('action') || 'inject';
+  
   try {
     const formData = await request.formData();
-    
-    // Forward the request to the VPS (HTTP is fine server-to-server)
-    const vpsResponse = await fetch('http://187.33.157.103:5000/api/Sound/inject', {
+    const endpoint = action === 'chunk' 
+      ? 'http://187.33.157.103:5000/api/Sound/upload-chunk'
+      : 'http://187.33.157.103:5000/api/Sound/assemble-and-inject';
+
+    const vpsResponse = await fetch(endpoint, {
       method: 'POST',
       body: formData,
     });
@@ -15,9 +20,11 @@ export async function POST(request) {
       return NextResponse.json({ error }, { status: vpsResponse.status });
     }
 
+    if (action === 'chunk') {
+      return NextResponse.json({ status: 'ok' });
+    }
+
     const blob = await vpsResponse.blob();
-    
-    // Return the binary data back to the client
     return new NextResponse(blob, {
       status: 200,
       headers: {
@@ -26,7 +33,6 @@ export async function POST(request) {
       },
     });
   } catch (error) {
-    console.error('[Proxy Error]:', error);
-    return NextResponse.json({ error: 'Error interno en el servidor de la web' }, { status: 500 });
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

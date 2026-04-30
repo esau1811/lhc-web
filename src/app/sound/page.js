@@ -55,19 +55,41 @@ export default function SoundPage() {
     setSuccess(null);
 
     try {
-      const formData = new FormData();
-      formData.append('audio', audioFile);
-      if (useTemplate) {
-        formData.append('weaponType', weaponType);
-        formData.append('useTemplate', 'true');
-      } else {
-        formData.append('awc', awcFile);
+      const uploadId = `up_${Date.now()}`;
+      let totalChunks = 0;
+
+      if (!useTemplate) {
+        const CHUNK_SIZE = 4 * 1024 * 1024; // 4MB chunks
+        totalChunks = Math.ceil(awcFile.size / CHUNK_SIZE);
+
+        for (let i = 0; i < totalChunks; i++) {
+          const chunk = awcFile.slice(i * CHUNK_SIZE, (i + 1) * CHUNK_SIZE);
+          const chunkData = new FormData();
+          chunkData.append('chunk', chunk);
+          chunkData.append('uploadId', uploadId);
+          chunkData.append('index', i);
+          chunkData.append('total', totalChunks);
+
+          const res = await fetch('/api/sound/inject?action=chunk', {
+            method: 'POST',
+            body: chunkData,
+          });
+
+          if (!res.ok) throw new Error(`Error subiendo parte ${i+1}`);
+        }
       }
 
-      const endpoint = '/api/sound/inject';
-      const response = await fetch(endpoint, {
+      // Paso final: Inyectar
+      const finalData = new FormData();
+      finalData.append('audio', audioFile);
+      finalData.append('uploadId', uploadId);
+      finalData.append('total', totalChunks);
+      finalData.append('useTemplate', useTemplate ? 'true' : 'false');
+      finalData.append('weaponType', weaponType);
+
+      const response = await fetch('/api/sound/inject?action=assemble', {
         method: 'POST',
-        body: formData,
+        body: finalData,
       });
 
       if (!response.ok) {

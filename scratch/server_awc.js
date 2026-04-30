@@ -5,7 +5,6 @@ const fs      = require('fs');
 const path    = require('path');
 const ffmpeg  = require('fluent-ffmpeg');
 const JSZip   = require('jszip');
-const https   = require('https');
 
 const app     = express();
 const router  = express.Router();
@@ -14,7 +13,10 @@ app.use(cors());
 app.use(express.json());
 
 const storage = multer.memoryStorage();
-const upload  = multer({ storage, limits: { fileSize: 250 * 1024 * 1024 } });
+const upload  = multer({ storage });
+
+const chunksDir = path.join(__dirname, 'chunks');
+if (!fs.existsSync(chunksDir)) fs.mkdirSync(chunksDir);
 
 const templatesDir = path.join(__dirname, 'templates');
 if (!fs.existsSync(templatesDir)) fs.mkdirSync(templatesDir);
@@ -22,10 +24,7 @@ if (!fs.existsSync(templatesDir)) fs.mkdirSync(templatesDir);
 function patchAWC(awcData, adpcmData) {
     let tadaOffset = awcData.indexOf(Buffer.from('TADA'));
     if (tadaOffset === -1) tadaOffset = awcData.indexOf(Buffer.from('AWC\x01'));
-    
-    if (tadaOffset === -1) {
-        throw new Error('Archivo .awc no válido o encriptado.');
-    }
+    if (tadaOffset === -1) throw new Error('AWC Magic not found');
     
     const body = awcData.slice(tadaOffset);
     const chunkCount = body.readUInt32LE(0x0C);
@@ -42,7 +41,7 @@ function patchAWC(awcData, adpcmData) {
         }
     }
 
-    if (audioChunkOffset === -1) throw new Error('No se encontró bloque de audio (0x55)');
+    if (audioChunkOffset === -1) throw new Error('No audio chunk');
 
     const patchedBody = Buffer.alloc(audioChunkOffset + adpcmData.length);
     body.copy(patchedBody, 0, 0, audioChunkOffset);
@@ -55,63 +54,63 @@ function patchAWC(awcData, adpcmData) {
 }
 
 async function convertToADPCM(inputBuffer) {
-    const tempIn = path.join(__dirname, `temp_in_${Date.now()}.mp3`);
-    const tempOut = path.join(__dirname, `temp_out_${Date.now()}.wav`);
+    const tempIn = path.join(__dirname, `temp_${Date.now()}.mp3`);
+    const tempOut = path.join(__dirname, `temp_${Date.now()}.wav`);
     fs.writeFileSync(tempIn, inputBuffer);
-
     return new Promise((resolve, reject) => {
-        ffmpeg(tempIn)
-            .toFormat('wav')
-            .audioCodec('adpcm_ima_wav')
-            .audioChannels(1)
-            .audioFrequency(32000)
-            .on('error', (err) => reject(err))
+        ffmpeg(tempIn).toFormat('wav').audioCodec('adpcm_ima_wav').audioChannels(1).audioFrequency(32000)
             .on('end', () => {
-                const result = fs.readFileSync(tempOut);
-                fs.unlinkSync(tempIn);
-                fs.unlinkSync(tempOut);
-                resolve(result.slice(result.indexOf('data') + 8));
-            })
-            .save(tempOut);
+                const res = fs.readFileSync(tempOut);
+                fs.unlinkSync(tempIn); fs.unlinkSync(tempOut);
+                resolve(res.slice(res.indexOf('data') + 8));
+            }).on('error', reject).save(tempOut);
     });
 }
 
-router.post('/inject', upload.fields([{ name: 'audio' }, { name: 'awc' }]), async (req, res) => {
-    try {
-        const audioFile = req.files['audio'] ? req.files['audio'][0] : null;
-        const useTemplate = req.body.useTemplate === 'true';
-        const weaponType = req.body.weaponType || 'pistol';
+// ENDPOINT PARA CHUNKS
+router.post('/upload-chunk', upload.single('chunk'), (req, res) => {
+    const { uploadId, index, total } = req.body;
+    const chunkPath = path.join(chunksDir, `${uploadId}_${index}`);
+    fs.writeFileSync(chunkPath, req.file.buffer);
+    res.send({ status: 'ok' });
+});
 
+router.post('/assemble-and-inject', upload.single('audio'), async (req, res) => {
+    try {
+        const { uploadId, total, useTemplate, weaponType } = req.body;
         let awcBuffer;
-        if (useTemplate) {
-            const templatePath = path.join(__dirname, 'templates', `${weaponType}.awc`);
-            if (!fs.existsSync(templatePath)) {
-                const awcFile = req.files['awc'] ? req.files['awc'][0] : null;
-                if (!awcFile) return res.status(400).send(`Falta plantilla para ${weaponType}.`);
-                awcBuffer = awcFile.buffer;
-                fs.writeFileSync(templatePath, awcBuffer);
-            } else {
-                awcBuffer = fs.readFileSync(templatePath);
+
+        if (useTemplate === 'true') {
+            const tPath = path.join(templatesDir, `${weaponType}.awc`);
+            if (fs.existsSync(tPath)) awcBuffer = fs.readFileSync(tPath);
+            else {
+                // Assemble from chunks if template doesn't exist
+                awcBuffer = Buffer.alloc(0);
+                for (let i = 0; i < total; i++) {
+                    const cPath = path.join(chunksDir, `${uploadId}_${i}`);
+                    awcBuffer = Buffer.concat([awcBuffer, fs.readFileSync(cPath)]);
+                    fs.unlinkSync(cPath);
+                }
+                fs.writeFileSync(tPath, awcBuffer);
             }
         } else {
-            const awcFile = req.files['awc'] ? req.files['awc'][0] : null;
-            if (!awcFile) return res.status(400).send('Falta archivo .awc');
-            awcBuffer = awcFile.buffer;
+            awcBuffer = Buffer.alloc(0);
+            for (let i = 0; i < total; i++) {
+                const cPath = path.join(chunksDir, `${uploadId}_${i}`);
+                awcBuffer = Buffer.concat([awcBuffer, fs.readFileSync(cPath)]);
+                fs.unlinkSync(cPath);
+            }
         }
 
-        if (!audioFile) return res.status(400).send('Falta audio');
-
-        const adpcmBuffer = await convertToADPCM(audioFile.buffer);
-        const patchedBuffer = patchAWC(awcBuffer, adpcmBuffer);
+        const adpcm = await convertToADPCM(req.file.buffer);
+        const patched = patchAWC(awcBuffer, adpcm);
 
         const zip = new JSZip();
-        zip.file(useTemplate ? `${weaponType}.awc` : 'patched.awc', patchedBuffer);
-        const zipContent = await zip.generateAsync({ type: 'nodebuffer' });
+        zip.file('patched.awc', patched);
+        const zipBuf = await zip.generateAsync({ type: 'nodebuffer' });
 
         res.set('Content-Type', 'application/zip');
-        res.set('Content-Disposition', `attachment; filename=LHC_Sound_${weaponType}.zip`);
-        res.send(zipContent);
-
+        res.send(zipBuf);
     } catch (err) {
         console.error(err);
         res.status(500).send(err.message);
@@ -119,17 +118,4 @@ router.post('/inject', upload.fields([{ name: 'audio' }, { name: 'awc' }]), asyn
 });
 
 app.use('/api/Sound', router);
-
-const keyPath = path.join(__dirname, 'key.pem');
-const certPath = path.join(__dirname, 'cert.pem');
-
-const options = {
-    key: fs.existsSync(keyPath) ? fs.readFileSync(keyPath) : null,
-    cert: fs.existsSync(certPath) ? fs.readFileSync(certPath) : null
-};
-
-if (options.key && options.cert) {
-    https.createServer(options, app).listen(5000, () => console.log('[AWC HTTPS] Ready on 5000'));
-} else {
-    app.listen(5000, () => console.log('[AWC HTTP] Ready on 5000'));
-}
+app.listen(5000, () => console.log('[Hacker Chunk Mode] Ready on 5000'));
