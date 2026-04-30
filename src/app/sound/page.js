@@ -75,9 +75,14 @@ export default function SoundPage() {
       });
 
       if (!response.ok) {
+        const clone = response.clone();
         let errMsg;
-        try { const j = await response.json(); errMsg = j.error || JSON.stringify(j); }
-        catch { errMsg = await response.text(); }
+        try { 
+          const j = await response.json(); 
+          errMsg = j.error || JSON.stringify(j); 
+        } catch { 
+          errMsg = await clone.text(); 
+        }
         throw new Error(errMsg || 'Error en el servidor');
       }
 
