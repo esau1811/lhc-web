@@ -44,11 +44,6 @@ export default function SoundPage() {
   const [sampleRate, setSampleRate] = useState('32000');
   const [isDragOverAudio, setIsDragOverAudio] = useState(false);
   const [isDragOverAwc, setIsDragOverAwc] = useState(false);
-  
-  // Estados para Firma RPF
-  const [rpfFile, setRPFFile] = useState(null);
-  const [isFixing, setIsFixing] = useState(false);
-  const [isDragOverRPF, setIsDragOverRPF] = useState(false);
 
   const handleDragOver = (e, setter) => {
     e.preventDefault();
