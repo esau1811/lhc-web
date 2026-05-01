@@ -292,12 +292,12 @@ export default function SoundPage() {
             </div>
             
             <p className="text-xs text-gray-500 mb-4 uppercase tracking-widest font-mono">Si el sonido chirría, prueba a cambiar la frecuencia:</p>
-            <div className="grid grid-cols-3 gap-4">
-              {['32000', '24000', '22050'].map(rate => (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {['36000', '32000', '24000', '22050'].map(rate => (
                 <button
                   key={rate}
                   onClick={() => setSampleRate(rate)}
-                  className={`py-3 rounded-xl border font-mono transition-all ${sampleRate === rate ? 'border-red-500 bg-red-500/20 text-white' : 'border-white/5 bg-white/5 text-gray-500'}`}
+                  className={`py-3 rounded-xl border font-mono transition-all ${sampleRate === rate ? 'border-red-500 bg-red-500/20 text-white shadow-[0_0_15px_rgba(239,68,68,0.1)]' : 'border-white/5 bg-white/5 text-gray-500 hover:border-white/20'}`}
                 >
                   {rate} Hz
                 </button>
