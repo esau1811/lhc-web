@@ -133,7 +133,7 @@ export default function SoundPage() {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `FIXED_${rpfFile.name}`;
+      a.download = rpfFile.name;
       document.body.appendChild(a);
       a.click();
       a.remove();
