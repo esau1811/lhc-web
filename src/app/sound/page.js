@@ -5,7 +5,7 @@ import { useSession } from 'next-auth/react';
 import Header from '@/components/Header';
 import { useLang } from '@/components/LangProvider';
 import GlassCard from '@/components/GlassCard';
-import { Music, FileCode, Zap, ChevronRight, X, ShieldAlert, CheckCircle2 } from 'lucide-react';
+import { Music, FileCode, Zap, ChevronRight, X, ShieldAlert, CheckCircle2, LockKeyhole, FileArchive } from 'lucide-react';
 
 const VPS_URL = 'https://187.33.157.103.nip.io';
 
@@ -22,6 +22,11 @@ export default function SoundPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  
+  // Firma RPF
+  const [rpfFile, setRPFFile] = useState(null);
+  const [isFixing, setIsFixing] = useState(false);
+  const [isDragOverRPF, setIsDragOverRPF] = useState(false);
 
   const [weaponType, setWeaponType] = useState('pistol');
   const [useTemplate, setUseTemplate] = useState(true);
@@ -36,8 +41,14 @@ export default function SoundPage() {
     { id: 'killsound', name: 'Kill Sound', file: 'resident.awc', desc: 'resident.rpf/resident.awc' },
   ];
 
+  const [sampleRate, setSampleRate] = useState('32000');
   const [isDragOverAudio, setIsDragOverAudio] = useState(false);
   const [isDragOverAwc, setIsDragOverAwc] = useState(false);
+  
+  // Estados para Firma RPF
+  const [rpfFile, setRPFFile] = useState(null);
+  const [isFixing, setIsFixing] = useState(false);
+  const [isDragOverRPF, setIsDragOverRPF] = useState(false);
 
   const handleDragOver = (e, setter) => {
     e.preventDefault();
@@ -67,6 +78,7 @@ export default function SoundPage() {
       formData.append('audio', audioFile);
       formData.append('useTemplate', useTemplate ? 'true' : 'false');
       formData.append('weaponType', weaponType);
+      formData.append('sampleRate', sampleRate);
       
       if (!useTemplate && awcFile) {
         formData.append('awc', awcFile);
@@ -105,6 +117,40 @@ export default function SoundPage() {
       setIsLoading(false);
     }
   };
+  const handleFixRPF = async () => {
+    if (!rpfFile) return;
+    setIsFixing(true);
+    setError(null);
+    setSuccess(null);
+
+    try {
+      const formData = new FormData();
+      formData.append('rpf', rpfFile);
+
+      const response = await fetch(`${VPS_URL}/api/Sound/fix-rpf`, {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) throw new Error('Error al firmar el RPF');
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `FIXED_${rpfFile.name}`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      
+      setSuccess('¡Archivo RPF firmado correctamente! Ya puedes usarlo en tu juego.');
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setIsFixing(false);
+    }
+  };
+
 
   return (
     <div className="min-h-screen bg-black text-white selection:bg-red-500/30">
@@ -243,6 +289,27 @@ export default function SoundPage() {
             )}
           </GlassCard>
 
+          {/* PASO 3: CALIBRACIÓN */}
+          <GlassCard className="p-8 border-red-500/20">
+            <div className="flex items-center gap-4 mb-6">
+              <div className="w-10 h-10 rounded-full bg-red-500/10 flex items-center justify-center text-red-500 font-bold border border-red-500/20 shadow-[0_0_15px_rgba(239,68,68,0.2)]">3</div>
+              <h2 className="text-xl font-bold uppercase tracking-wider">Ajustes de Sonido</h2>
+            </div>
+            
+            <p className="text-xs text-gray-500 mb-4 uppercase tracking-widest font-mono">Si el sonido chirría, prueba a cambiar la frecuencia:</p>
+            <div className="grid grid-cols-3 gap-4">
+              {['32000', '24000', '22050'].map(rate => (
+                <button
+                  key={rate}
+                  onClick={() => setSampleRate(rate)}
+                  className={`py-3 rounded-xl border font-mono transition-all ${sampleRate === rate ? 'border-red-500 bg-red-500/20 text-white' : 'border-white/5 bg-white/5 text-gray-500'}`}
+                >
+                  {rate} Hz
+                </button>
+              ))}
+            </div>
+          </GlassCard>
+
           {/* PASO 3: EJECUTAR */}
           <div className="mt-4">
             <button
@@ -280,6 +347,68 @@ export default function SoundPage() {
                 <div className="font-bold uppercase">{success}</div>
               </div>
             )}
+          </div>
+
+          {/* FIRMA RPF (REPARACIÓN) */}
+          <div className="relative pt-8 mt-4 border-t border-white/5">
+            <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-black px-4 py-1 border border-white/10 rounded-full text-[10px] uppercase tracking-widest text-gray-500 font-bold">Opcional / Reparación</div>
+            
+            <GlassCard className="p-8 border-yellow-500/10 hover:border-yellow-500/20 transition-colors">
+                <div className="flex items-center gap-4 mb-6">
+                    <div className="w-10 h-10 rounded-full bg-yellow-500/10 flex items-center justify-center text-yellow-500 font-bold border border-yellow-500/20 shadow-[0_0_15px_rgba(234,179,8,0.1)]">
+                        <LockKeyhole size={20} />
+                    </div>
+                    <h2 className="text-xl font-bold uppercase tracking-wider">Firmar Archivo .RPF</h2>
+                </div>
+                
+                <p className="text-[11px] text-gray-500 mb-6 italic leading-relaxed">
+                    Si el juego da error de "Modified game files", sube aquí tu archivo .RPF guardado de OpenIV para repararlo automáticamente.
+                </p>
+
+                <div 
+                    onDragOver={(e) => handleDragOver(e, setIsDragOverRPF)}
+                    onDragLeave={(e) => handleDragLeave(e, setIsDragOverRPF)}
+                    onDrop={(e) => handleDrop(e, setRPFFile, setIsDragOverRPF)}
+                    onClick={() => {
+                        const input = document.createElement('input');
+                        input.type = 'file';
+                        input.accept = '.rpf';
+                        input.onchange = (e) => setRPFFile(e.target.files[0]);
+                        input.click();
+                    }}
+                    className={`border-2 border-dashed rounded-2xl p-8 transition-all cursor-pointer flex flex-col items-center justify-center gap-4 mb-6
+                        ${isDragOverRPF ? 'border-yellow-500 bg-yellow-500/10 scale-[1.02]' : 'border-white/5 hover:border-yellow-500/30 hover:bg-white/5'}
+                        ${rpfFile ? 'border-green-500/50 bg-green-500/5' : ''}`}
+                >
+                    <FileArchive className={`w-10 h-10 ${rpfFile ? 'text-green-500 animate-pulse' : 'text-gray-600'}`} />
+                    <div className="text-center">
+                        {rpfFile ? (
+                            <div className="flex items-center gap-2">
+                                <CheckCircle2 className="text-green-500 w-4 h-4" />
+                                <p className="text-green-400 font-mono text-sm">{rpfFile.name}</p>
+                            </div>
+                        ) : (
+                            <p className="text-gray-500 text-sm">Haz clic o arrastra tu archivo .RPF aquí</p>
+                        )}
+                    </div>
+                </div>
+
+                <button 
+                    disabled={isFixing || !rpfFile}
+                    onClick={handleFixRPF}
+                    className={`w-full py-4 rounded-xl font-bold uppercase tracking-widest transition-all flex items-center justify-center gap-3
+                        ${isFixing ? 'bg-gray-800 text-gray-600 cursor-not-allowed' : 'bg-yellow-600/10 text-yellow-500 border border-yellow-600/30 hover:bg-yellow-600/20 active:scale-[0.98]'}`}
+                >
+                    {isFixing ? (
+                        <>
+                            <div className="w-4 h-4 border-2 border-yellow-500/20 border-t-yellow-500 rounded-full animate-spin"></div>
+                            Firmando...
+                        </>
+                    ) : (
+                        <>Firmar y Descargar RPF</>
+                    )}
+                </button>
+            </GlassCard>
           </div>
         </div>
       </main>

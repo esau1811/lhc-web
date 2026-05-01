@@ -1,0 +1,15 @@
+[Unit]
+Description=LHC Sound Server
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/var/www/lhc-node
+ExecStart=/usr/bin/node server.js
+Restart=always
+StandardOutput=file:/var/www/lhc-node/server.log
+StandardError=file:/var/www/lhc-node/server.log
+
+[Install]
+WantedBy=multi-user.target
