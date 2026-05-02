@@ -50,38 +50,6 @@ export default function SoundPage() {
     { id: 'appistol', name: 'Pistola AP', file: 'ptl_ap.awc' },
     { id: 'killsound', name: 'Kill Sound', file: 'resident.awc' },
   ];
-<<<<<<< HEAD
-
-  const handleDragOver = (e, setter) => { e.preventDefault(); setter(true); };
-  const handleDragLeave = (e, setter) => { e.preventDefault(); setter(false); };
-  const handleDrop = (e, fileSetter, dragOverSetter) => { e.preventDefault(); dragOverSetter(false); const file = e.dataTransfer.files[0]; if (file) fileSetter(file); };
-
-  const handleFixRPF = async () => {
-    if (!rpfFile) return;
-    setIsFixing(true); setError(null); setSuccess(null); setFixProgress(0);
-
-    try {
-      const formData = new FormData();
-      formData.append('rpf', rpfFile);
-
-      const response = await fetch(`${VPS_URL}/api/Sound/fix-rpf`, {
-        method: 'POST',
-        body: formData,
-      });
-
-      if (!response.ok) {
-        let errMsg = 'Error al firmar el RPF';
-        try { const j = await response.clone().json(); errMsg = j.error || errMsg; } catch {}
-        throw new Error(errMsg);
-      }
-
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url; a.download = rpfFile.name; document.body.appendChild(a); a.click(); a.remove();
-      setSuccess('¡RPF Firmado con éxito!');
-    } catch (err) { setError(err.message); } finally { setIsFixing(false); }
-=======
 
   const handleDragOver = (e, setter) => { e.preventDefault(); setter(true); };
   const handleDragLeave = (e, setter) => { e.preventDefault(); setter(false); };
@@ -128,7 +96,6 @@ export default function SoundPage() {
       a.href = url; a.download = 'weapons_patched.awc'; document.body.appendChild(a); a.click(); a.remove();
       setSuccess('¡weapons.awc parcheado! Ahora mételo en resident.rpf con OpenIV y fírmalo.');
     } catch (err) { setError(err.message); } finally { setIsResidentLoading(false); }
->>>>>>> 522c537 (Add Resident RPF direct patch mode)
   };
 
   const handleInyectar = async () => {
@@ -304,35 +271,23 @@ export default function SoundPage() {
 
           {error && <div className="p-5 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-500 text-xs font-mono">{error}</div>}
           {success && <div className="p-5 rounded-2xl bg-green-500/10 border border-green-500/20 text-green-500 font-bold uppercase text-center">{success}</div>}
-<<<<<<< HEAD
-=======
-
           {/* SECCIÓN RESIDENT RPF */}
           <GlassCard className="mt-6">
             <h2 className="text-xl font-bold uppercase tracking-wider text-purple-400 mb-1">Resident RPF — Modo Directo</h2>
             <p className="text-gray-500 text-xs mb-4">Sube el <span className="text-white font-bold">resident.rpf</span> entero + tu audio. El servidor extrae weapons.awc, parchea el canal y te lo devuelve listo.</p>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-              {/* resident.rpf */}
               <div>
                 <label className="text-xs text-gray-400 uppercase tracking-wider mb-2 block">1. resident.rpf</label>
-                <div
-                  onClick={() => document.getElementById('residentRpfInput').click()}
-                  className={`cursor-pointer border-2 border-dashed rounded-xl p-4 text-center transition-all ${residentRpf ? 'border-purple-500/50 bg-purple-500/10' : 'border-white/10 hover:border-purple-500/30'}`}
-                >
+                <div onClick={() => document.getElementById('residentRpfInput').click()} className={`cursor-pointer border-2 border-dashed rounded-xl p-4 text-center transition-all ${residentRpf ? 'border-purple-500/50 bg-purple-500/10' : 'border-white/10 hover:border-purple-500/30'}`}>
                   <FileArchive className={`w-8 h-8 mx-auto mb-1 ${residentRpf ? 'text-purple-400' : 'text-gray-500'}`} />
                   <p className="text-xs text-gray-400">{residentRpf ? residentRpf.name : 'resident.rpf (120MB aprox)'}</p>
                   <input id="residentRpfInput" type="file" accept=".rpf" className="hidden" onChange={e => setResidentRpf(e.target.files[0])} />
                 </div>
               </div>
-
-              {/* Audio nuevo */}
               <div>
                 <label className="text-xs text-gray-400 uppercase tracking-wider mb-2 block">2. Tu audio nuevo</label>
-                <div
-                  onClick={() => document.getElementById('residentAudioInput').click()}
-                  className={`cursor-pointer border-2 border-dashed rounded-xl p-4 text-center transition-all ${residentAudio ? 'border-green-500/50 bg-green-500/10' : 'border-white/10 hover:border-green-500/30'}`}
-                >
+                <div onClick={() => document.getElementById('residentAudioInput').click()} className={`cursor-pointer border-2 border-dashed rounded-xl p-4 text-center transition-all ${residentAudio ? 'border-green-500/50 bg-green-500/10' : 'border-white/10 hover:border-green-500/30'}`}>
                   <Music className={`w-8 h-8 mx-auto mb-1 ${residentAudio ? 'text-green-400' : 'text-gray-500'}`} />
                   <p className="text-xs text-gray-400">{residentAudio ? residentAudio.name : 'WAV / MP3 / OGG'}</p>
                   <input id="residentAudioInput" type="file" accept="audio/*" className="hidden" onChange={e => setResidentAudio(e.target.files[0])} />
@@ -340,17 +295,10 @@ export default function SoundPage() {
               </div>
             </div>
 
-            {/* Canal y sample rate */}
             <div className="grid grid-cols-2 gap-4 mb-4">
               <div>
                 <label className="text-xs text-gray-400 uppercase tracking-wider mb-1 block">3. Nombre del canal</label>
-                <input
-                  type="text"
-                  value={residentChannel}
-                  onChange={e => setResidentChannel(e.target.value.toUpperCase())}
-                  placeholder="PTL_PISTOL_SHOT.R"
-                  className="w-full bg-black border border-white/10 rounded-xl px-4 py-2 text-sm font-mono focus:border-purple-500 outline-none uppercase"
-                />
+                <input type="text" value={residentChannel} onChange={e => setResidentChannel(e.target.value.toUpperCase())} placeholder="PTL_PISTOL_SHOT.R" className="w-full bg-black border border-white/10 rounded-xl px-4 py-2 text-sm font-mono focus:border-purple-500 outline-none uppercase" />
               </div>
               <div>
                 <label className="text-xs text-gray-400 uppercase tracking-wider mb-1 block">Sample Rate</label>
@@ -362,15 +310,10 @@ export default function SoundPage() {
               </div>
             </div>
 
-            <button
-              onClick={handleResidentPatch}
-              disabled={isResidentLoading || !residentRpf || !residentAudio}
-              className={`w-full py-4 rounded-xl font-bold uppercase tracking-widest border transition-all ${isResidentLoading ? 'bg-gray-800 text-gray-500 border-white/5' : 'bg-purple-600/10 text-purple-400 border-purple-600/30 hover:bg-purple-600/20 shadow-lg shadow-purple-600/10'}`}
-            >
+            <button onClick={handleResidentPatch} disabled={isResidentLoading || !residentRpf || !residentAudio} className={`w-full py-4 rounded-xl font-bold uppercase tracking-widest border transition-all ${isResidentLoading ? 'bg-gray-800 text-gray-500 border-white/5' : 'bg-purple-600/10 text-purple-400 border-purple-600/30 hover:bg-purple-600/20 shadow-lg shadow-purple-600/10'}`}>
               {isResidentLoading ? 'Procesando...' : 'Parchear Canal en Resident.rpf'}
             </button>
           </GlassCard>
->>>>>>> 522c537 (Add Resident RPF direct patch mode)
         </div>
       </main>
     </div>
