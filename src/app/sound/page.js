@@ -51,41 +51,26 @@ export default function SoundPage() {
   const handleFixRPF = async () => {
     if (!rpfFile) return;
     setIsFixing(true); setError(null); setSuccess(null); setFixProgress(0);
-    
-    try {
-      const uploadId = Date.now().toString();
-      const totalChunks = Math.ceil(rpfFile.size / CHUNK_SIZE);
-      
-      for (let i = 0; i < totalChunks; i++) {
-        const start = i * CHUNK_SIZE;
-        const end = Math.min(start + CHUNK_SIZE, rpfFile.size);
-        const chunk = rpfFile.slice(start, end);
-        
-        const formData = new FormData();
-        formData.append('chunk', chunk);
-        formData.append('uploadId', uploadId);
-        formData.append('index', i);
-        
-        await fetch(`${VPS_URL}/api/Sound/upload-chunk`, { method: 'POST', body: formData });
-        setFixProgress(Math.round(((i + 1) / totalChunks) * 100));
-      }
 
-      // Avisar al servidor para unir y firmar
-      const response = await fetch(`${VPS_URL}/api/Sound/assemble-and-fix-rpf`, {
+    try {
+      const formData = new FormData();
+      formData.append('rpf', rpfFile);
+
+      const response = await fetch(`${VPS_URL}/api/Sound/fix-rpf`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ uploadId, total: totalChunks, fileName: rpfFile.name })
+        body: formData,
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Error al procesar el RPF');
+        let errMsg = 'Error al firmar el RPF';
+        try { const j = await response.clone().json(); errMsg = j.error || errMsg; } catch {}
+        throw new Error(errMsg);
       }
-      
+
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
-      a.href = url; a.download = `Fixed_${rpfFile.name}`; a.click();
+      a.href = url; a.download = rpfFile.name; document.body.appendChild(a); a.click(); a.remove();
       setSuccess('¡RPF Firmado con éxito!');
     } catch (err) { setError(err.message); } finally { setIsFixing(false); }
   };
