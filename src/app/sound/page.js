@@ -70,13 +70,18 @@ export default function SoundPage() {
         setFixProgress(Math.round(((i + 1) / totalChunks) * 100));
       }
 
+      // Avisar al servidor para unir y firmar
       const response = await fetch(`${VPS_URL}/api/Sound/assemble-and-fix-rpf`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ uploadId, total: totalChunks, fileName: rpfFile.name })
       });
 
-      if (!response.ok) throw new Error('Error al procesar el RPF');
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Error al procesar el RPF');
+      }
+      
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
