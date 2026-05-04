@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import Header from '@/components/Header';
 import GlassCard from '@/components/GlassCard';
@@ -27,20 +27,24 @@ export default function SoundPage() {
   const [fixProgress, setFixProgress] = useState(0);
   const [isDragOverRPF, setIsDragOverRPF] = useState(false);
 
-  // Resident RPF modo directo
-  const [residentRpf, setResidentRpf] = useState(null);
-  const [residentAudio, setResidentAudio] = useState(null);
-  const [residentChannel, setResidentChannel] = useState('PTL_PISTOL_SHOT.R');
-  const [residentSampleRate, setResidentSampleRate] = useState('32000');
-  const [isResidentLoading, setIsResidentLoading] = useState(false);
-
   const [weaponType, setWeaponType] = useState('pistol');
   const [useTemplate, setUseTemplate] = useState(true);
-  const [surgicalName, setSurgicalName] = useState(''); 
+  const [surgicalName, setSurgicalName] = useState('');
   const [sampleRate, setSampleRate] = useState('32000');
-  
+
   const [isDragOverAudio, setIsDragOverAudio] = useState(false);
   const [isDragOverAwc, setIsDragOverAwc] = useState(false);
+
+  // Bloquear drag-to-download del navegador en toda la página
+  useEffect(() => {
+    const block = e => e.preventDefault();
+    document.addEventListener('dragover', block);
+    document.addEventListener('drop', block);
+    return () => {
+      document.removeEventListener('dragover', block);
+      document.removeEventListener('drop', block);
+    };
+  }, []);
 
   const weapons = [
     { id: 'pistol', name: 'Pistola Básica', file: 'ptl_pistol.awc' },
@@ -75,48 +79,47 @@ export default function SoundPage() {
     } catch (err) { setError(err.message); } finally { setIsFixing(false); }
   };
 
-  const handleResidentPatch = async () => {
-    if (!residentRpf || !residentAudio || !residentChannel) return;
-    setIsResidentLoading(true); setError(null); setSuccess(null);
-    try {
-      const formData = new FormData();
-      formData.append('rpf', residentRpf);
-      formData.append('audio', residentAudio);
-      formData.append('channelName', residentChannel);
-      formData.append('sampleRate', residentSampleRate);
-      const res = await fetch(`${VPS_URL}/api/Sound/patch-resident`, { method: 'POST', body: formData });
-      if (!res.ok) {
-        let errMsg = 'Error en el servidor';
-        try { const j = await res.clone().json(); errMsg = j.error || errMsg; } catch {}
-        throw new Error(errMsg);
-      }
-      const blob = await res.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url; a.download = 'weapons_patched.awc'; document.body.appendChild(a); a.click(); a.remove();
-      setSuccess('¡weapons.awc parcheado! Ahora mételo en resident.rpf con OpenIV y fírmalo.');
-    } catch (err) { setError(err.message); } finally { setIsResidentLoading(false); }
-  };
+
 
   const handleInyectar = async () => {
     if (!audioFile || (!useTemplate && !awcFile)) return;
-    setIsLoading(true); setError(null);
+    setIsLoading(true); setError(null); setSuccess(null);
     try {
-      const formData = new FormData();
-      formData.append('audio', audioFile);
-      formData.append('useTemplate', useTemplate ? 'true' : 'false');
-      formData.append('weaponType', weaponType);
-      formData.append('sampleRate', sampleRate);
-      formData.append('surgicalName', surgicalName);
-      if (!useTemplate && awcFile) formData.append('awc', awcFile);
-
-      const res = await fetch(`${VPS_URL}/api/Sound/assemble-and-inject`, { method: 'POST', body: formData });
-      if (!res.ok) throw new Error('Error en el servidor');
-      const blob = await res.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url; a.download = `LHC_Sound.zip`; a.click();
-      setSuccess('¡Inyectado con éxito!');
+      // Si el archivo subido es un .rpf, usar el endpoint de resident directo
+      const isRpf = awcFile && awcFile.name.toLowerCase().endsWith('.rpf');
+      if (!useTemplate && isRpf) {
+        const formData = new FormData();
+        formData.append('rpf', awcFile);
+        formData.append('audio', audioFile);
+        formData.append('channelName', surgicalName || 'PTL_PISTOL_SHOT.R');
+        formData.append('sampleRate', sampleRate);
+        const res = await fetch(`${VPS_URL}/api/Sound/patch-resident`, { method: 'POST', body: formData });
+        if (!res.ok) {
+          let e = 'Error en el servidor';
+          try { const j = await res.clone().json(); e = j.error || e; } catch {}
+          throw new Error(e);
+        }
+        const blob = await res.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = 'weapons_patched.awc'; document.body.appendChild(a); a.click(); a.remove();
+        setSuccess('¡weapons.awc parcheado! Métetelo en resident.rpf con OpenIV y fírmalo.');
+      } else {
+        const formData = new FormData();
+        formData.append('audio', audioFile);
+        formData.append('useTemplate', useTemplate ? 'true' : 'false');
+        formData.append('weaponType', weaponType);
+        formData.append('sampleRate', sampleRate);
+        formData.append('surgicalName', surgicalName);
+        if (!useTemplate && awcFile) formData.append('awc', awcFile);
+        const res = await fetch(`${VPS_URL}/api/Sound/assemble-and-inject`, { method: 'POST', body: formData });
+        if (!res.ok) throw new Error('Error en el servidor');
+        const blob = await res.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = 'LHC_Sound.zip'; a.click();
+        setSuccess('¡Inyectado con éxito!');
+      }
     } catch (err) { setError(err.message); } finally { setIsLoading(false); }
   };
 
@@ -199,11 +202,16 @@ export default function SoundPage() {
                 onDrop={(e) => handleDrop(e, setAwcFile, setIsDragOverAwc)}
                 className={`border-2 border-dashed rounded-2xl p-10 transition-all cursor-pointer flex flex-col items-center justify-center gap-4
                   ${isDragOverAwc ? 'border-red-500 bg-red-500/20' : 'border-white/10 hover:border-red-500/30'}
-                  ${awcFile ? 'border-green-500/50 bg-green-500/10' : ''}`}
+                  ${awcFile ? (awcFile.name.endsWith('.rpf') ? 'border-purple-500/50 bg-purple-500/10' : 'border-green-500/50 bg-green-500/10') : ''}`}
               >
-                <FileCode className={`w-12 h-12 ${awcFile ? 'text-green-500' : 'text-gray-500'}`} />
-                <p className="text-gray-400 text-center">{awcFile ? awcFile.name : 'Suelta tu weapons.awc o resident.awc'}</p>
-                <input type="file" ref={awcInputRef} className="hidden" accept=".awc" onChange={(e) => setAwcFile(e.target.files[0])} />
+                {awcFile?.name.endsWith('.rpf')
+                  ? <FileArchive className="w-12 h-12 text-purple-400" />
+                  : <FileCode className={`w-12 h-12 ${awcFile ? 'text-green-500' : 'text-gray-500'}`} />}
+                <p className="text-gray-400 text-center">
+                  {awcFile ? <span className={awcFile.name.endsWith('.rpf') ? 'text-purple-300 font-bold' : ''}>{awcFile.name}</span> : 'Suelta tu .awc o resident.rpf'}
+                </p>
+                {!awcFile && <span className="text-[10px] text-gray-600 uppercase tracking-widest">Acepta .awc y .rpf</span>}
+                <input type="file" ref={awcInputRef} className="hidden" accept=".awc,.rpf" onChange={(e) => setAwcFile(e.target.files[0])} />
               </div>
             )}
           </GlassCard>
@@ -272,82 +280,6 @@ export default function SoundPage() {
           {error && <div className="p-5 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-500 text-xs font-mono">{error}</div>}
           {success && <div className="p-5 rounded-2xl bg-green-500/10 border border-green-500/20 text-green-500 font-bold uppercase text-center">{success}</div>}
 
-          {/* RESIDENT RPF DIRECTO */}
-          <div className="pt-12 mt-4 border-t border-white/5">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-2 h-8 bg-purple-500 rounded-full shadow-[0_0_12px_rgba(168,85,247,0.6)]"></div>
-              <h2 className="text-xl font-black uppercase tracking-widest text-white">Resident RPF — Canal Directo</h2>
-            </div>
-
-            <GlassCard className="p-8 border-purple-500/20 hover:border-purple-500/30 transition-colors">
-              <p className="text-gray-500 text-sm mb-8">Sube el <span className="text-purple-400 font-bold">resident.rpf</span> completo + tu audio. El servidor extrae <span className="text-white font-mono text-xs">weapons.awc</span>, parchea el canal y te lo devuelve listo para importar con OpenIV.</p>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                {/* resident.rpf */}
-                <div>
-                  <div className="flex items-center gap-3 mb-3">
-                    <div className="w-7 h-7 rounded-full bg-purple-500/10 flex items-center justify-center text-purple-400 font-bold text-xs border border-purple-500/20">1</div>
-                    <span className="text-xs text-gray-400 uppercase tracking-wider font-bold">resident.rpf</span>
-                  </div>
-                  <div
-                    onClick={() => document.getElementById('residentRpfInput').click()}
-                    className={`cursor-pointer border-2 border-dashed rounded-2xl p-8 transition-all flex flex-col items-center justify-center gap-3
-                      ${residentRpf ? 'border-purple-500/50 bg-purple-500/10' : 'border-white/10 hover:border-purple-500/30 hover:bg-white/5'}`}
-                  >
-                    <FileArchive className={`w-10 h-10 ${residentRpf ? 'text-purple-400' : 'text-gray-600'}`} />
-                    <p className="text-sm text-gray-400 text-center">{residentRpf ? <span className="text-purple-300 font-bold">{residentRpf.name}</span> : 'Haz clic o arrastra resident.rpf'}</p>
-                    <input id="residentRpfInput" type="file" accept=".rpf" className="hidden" onChange={e => setResidentRpf(e.target.files[0])} />
-                  </div>
-                </div>
-
-                {/* Audio nuevo */}
-                <div>
-                  <div className="flex items-center gap-3 mb-3">
-                    <div className="w-7 h-7 rounded-full bg-purple-500/10 flex items-center justify-center text-purple-400 font-bold text-xs border border-purple-500/20">2</div>
-                    <span className="text-xs text-gray-400 uppercase tracking-wider font-bold">Tu audio nuevo</span>
-                  </div>
-                  <div
-                    onClick={() => document.getElementById('residentAudioInput').click()}
-                    className={`cursor-pointer border-2 border-dashed rounded-2xl p-8 transition-all flex flex-col items-center justify-center gap-3
-                      ${residentAudio ? 'border-green-500/50 bg-green-500/10' : 'border-white/10 hover:border-purple-500/30 hover:bg-white/5'}`}
-                  >
-                    <Music className={`w-10 h-10 ${residentAudio ? 'text-green-400 animate-pulse' : 'text-gray-600'}`} />
-                    <p className="text-sm text-gray-400 text-center">{residentAudio ? <span className="text-green-300 font-bold">{residentAudio.name}</span> : 'WAV / MP3 / OGG'}</p>
-                    <input id="residentAudioInput" type="file" accept="audio/*" className="hidden" onChange={e => setResidentAudio(e.target.files[0])} />
-                  </div>
-                </div>
-              </div>
-
-              {/* Canal + sample rate */}
-              <div className="flex items-center gap-3 mb-3">
-                <div className="w-7 h-7 rounded-full bg-purple-500/10 flex items-center justify-center text-purple-400 font-bold text-xs border border-purple-500/20">3</div>
-                <span className="text-xs text-gray-400 uppercase tracking-wider font-bold">Nombre del Canal</span>
-              </div>
-              <div className="grid grid-cols-2 gap-4 mb-8">
-                <input
-                  type="text"
-                  value={residentChannel}
-                  onChange={e => setResidentChannel(e.target.value.toUpperCase())}
-                  placeholder="PTL_PISTOL_SHOT.R"
-                  className="w-full bg-black/60 border border-white/10 rounded-xl px-5 py-3 text-sm font-mono focus:border-purple-500 outline-none uppercase tracking-wider"
-                />
-                <select value={residentSampleRate} onChange={e => setResidentSampleRate(e.target.value)} className="w-full bg-black/60 border border-white/10 rounded-xl px-5 py-3 text-sm focus:border-purple-500 outline-none">
-                  <option value="22050">22050 Hz</option>
-                  <option value="32000">32000 Hz</option>
-                  <option value="44100">44100 Hz</option>
-                </select>
-              </div>
-
-              <button
-                onClick={handleResidentPatch}
-                disabled={isResidentLoading || !residentRpf || !residentAudio}
-                className={`w-full py-5 rounded-2xl font-black text-lg uppercase tracking-widest flex items-center justify-center gap-3 transition-all shadow-2xl
-                  ${isResidentLoading ? 'bg-gray-800 text-gray-500' : 'bg-purple-600 hover:bg-purple-700 text-white shadow-purple-600/30'}`}
-              >
-                {isResidentLoading ? 'Extrayendo y parcheando...' : <><Target size={20} /> Parchear Canal en Resident.rpf</>}
-              </button>
-            </GlassCard>
-          </div>
         </div>
       </main>
     </div>
