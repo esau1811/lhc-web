@@ -271,49 +271,83 @@ export default function SoundPage() {
 
           {error && <div className="p-5 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-500 text-xs font-mono">{error}</div>}
           {success && <div className="p-5 rounded-2xl bg-green-500/10 border border-green-500/20 text-green-500 font-bold uppercase text-center">{success}</div>}
-          {/* SECCIÓN RESIDENT RPF */}
-          <GlassCard className="mt-6">
-            <h2 className="text-xl font-bold uppercase tracking-wider text-purple-400 mb-1">Resident RPF — Modo Directo</h2>
-            <p className="text-gray-500 text-xs mb-4">Sube el <span className="text-white font-bold">resident.rpf</span> entero + tu audio. El servidor extrae weapons.awc, parchea el canal y te lo devuelve listo.</p>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-              <div>
-                <label className="text-xs text-gray-400 uppercase tracking-wider mb-2 block">1. resident.rpf</label>
-                <div onClick={() => document.getElementById('residentRpfInput').click()} className={`cursor-pointer border-2 border-dashed rounded-xl p-4 text-center transition-all ${residentRpf ? 'border-purple-500/50 bg-purple-500/10' : 'border-white/10 hover:border-purple-500/30'}`}>
-                  <FileArchive className={`w-8 h-8 mx-auto mb-1 ${residentRpf ? 'text-purple-400' : 'text-gray-500'}`} />
-                  <p className="text-xs text-gray-400">{residentRpf ? residentRpf.name : 'resident.rpf (120MB aprox)'}</p>
-                  <input id="residentRpfInput" type="file" accept=".rpf" className="hidden" onChange={e => setResidentRpf(e.target.files[0])} />
-                </div>
-              </div>
-              <div>
-                <label className="text-xs text-gray-400 uppercase tracking-wider mb-2 block">2. Tu audio nuevo</label>
-                <div onClick={() => document.getElementById('residentAudioInput').click()} className={`cursor-pointer border-2 border-dashed rounded-xl p-4 text-center transition-all ${residentAudio ? 'border-green-500/50 bg-green-500/10' : 'border-white/10 hover:border-green-500/30'}`}>
-                  <Music className={`w-8 h-8 mx-auto mb-1 ${residentAudio ? 'text-green-400' : 'text-gray-500'}`} />
-                  <p className="text-xs text-gray-400">{residentAudio ? residentAudio.name : 'WAV / MP3 / OGG'}</p>
-                  <input id="residentAudioInput" type="file" accept="audio/*" className="hidden" onChange={e => setResidentAudio(e.target.files[0])} />
-                </div>
-              </div>
+          {/* RESIDENT RPF DIRECTO */}
+          <div className="pt-12 mt-4 border-t border-white/5">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-2 h-8 bg-purple-500 rounded-full shadow-[0_0_12px_rgba(168,85,247,0.6)]"></div>
+              <h2 className="text-xl font-black uppercase tracking-widest text-white">Resident RPF — Canal Directo</h2>
             </div>
 
-            <div className="grid grid-cols-2 gap-4 mb-4">
-              <div>
-                <label className="text-xs text-gray-400 uppercase tracking-wider mb-1 block">3. Nombre del canal</label>
-                <input type="text" value={residentChannel} onChange={e => setResidentChannel(e.target.value.toUpperCase())} placeholder="PTL_PISTOL_SHOT.R" className="w-full bg-black border border-white/10 rounded-xl px-4 py-2 text-sm font-mono focus:border-purple-500 outline-none uppercase" />
+            <GlassCard className="p-8 border-purple-500/20 hover:border-purple-500/30 transition-colors">
+              <p className="text-gray-500 text-sm mb-8">Sube el <span className="text-purple-400 font-bold">resident.rpf</span> completo + tu audio. El servidor extrae <span className="text-white font-mono text-xs">weapons.awc</span>, parchea el canal y te lo devuelve listo para importar con OpenIV.</p>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                {/* resident.rpf */}
+                <div>
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-7 h-7 rounded-full bg-purple-500/10 flex items-center justify-center text-purple-400 font-bold text-xs border border-purple-500/20">1</div>
+                    <span className="text-xs text-gray-400 uppercase tracking-wider font-bold">resident.rpf</span>
+                  </div>
+                  <div
+                    onClick={() => document.getElementById('residentRpfInput').click()}
+                    className={`cursor-pointer border-2 border-dashed rounded-2xl p-8 transition-all flex flex-col items-center justify-center gap-3
+                      ${residentRpf ? 'border-purple-500/50 bg-purple-500/10' : 'border-white/10 hover:border-purple-500/30 hover:bg-white/5'}`}
+                  >
+                    <FileArchive className={`w-10 h-10 ${residentRpf ? 'text-purple-400' : 'text-gray-600'}`} />
+                    <p className="text-sm text-gray-400 text-center">{residentRpf ? <span className="text-purple-300 font-bold">{residentRpf.name}</span> : 'Haz clic o arrastra resident.rpf'}</p>
+                    <input id="residentRpfInput" type="file" accept=".rpf" className="hidden" onChange={e => setResidentRpf(e.target.files[0])} />
+                  </div>
+                </div>
+
+                {/* Audio nuevo */}
+                <div>
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-7 h-7 rounded-full bg-purple-500/10 flex items-center justify-center text-purple-400 font-bold text-xs border border-purple-500/20">2</div>
+                    <span className="text-xs text-gray-400 uppercase tracking-wider font-bold">Tu audio nuevo</span>
+                  </div>
+                  <div
+                    onClick={() => document.getElementById('residentAudioInput').click()}
+                    className={`cursor-pointer border-2 border-dashed rounded-2xl p-8 transition-all flex flex-col items-center justify-center gap-3
+                      ${residentAudio ? 'border-green-500/50 bg-green-500/10' : 'border-white/10 hover:border-purple-500/30 hover:bg-white/5'}`}
+                  >
+                    <Music className={`w-10 h-10 ${residentAudio ? 'text-green-400 animate-pulse' : 'text-gray-600'}`} />
+                    <p className="text-sm text-gray-400 text-center">{residentAudio ? <span className="text-green-300 font-bold">{residentAudio.name}</span> : 'WAV / MP3 / OGG'}</p>
+                    <input id="residentAudioInput" type="file" accept="audio/*" className="hidden" onChange={e => setResidentAudio(e.target.files[0])} />
+                  </div>
+                </div>
               </div>
-              <div>
-                <label className="text-xs text-gray-400 uppercase tracking-wider mb-1 block">Sample Rate</label>
-                <select value={residentSampleRate} onChange={e => setResidentSampleRate(e.target.value)} className="w-full bg-black border border-white/10 rounded-xl px-4 py-2 text-sm focus:border-purple-500 outline-none">
+
+              {/* Canal + sample rate */}
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-7 h-7 rounded-full bg-purple-500/10 flex items-center justify-center text-purple-400 font-bold text-xs border border-purple-500/20">3</div>
+                <span className="text-xs text-gray-400 uppercase tracking-wider font-bold">Nombre del Canal</span>
+              </div>
+              <div className="grid grid-cols-2 gap-4 mb-8">
+                <input
+                  type="text"
+                  value={residentChannel}
+                  onChange={e => setResidentChannel(e.target.value.toUpperCase())}
+                  placeholder="PTL_PISTOL_SHOT.R"
+                  className="w-full bg-black/60 border border-white/10 rounded-xl px-5 py-3 text-sm font-mono focus:border-purple-500 outline-none uppercase tracking-wider"
+                />
+                <select value={residentSampleRate} onChange={e => setResidentSampleRate(e.target.value)} className="w-full bg-black/60 border border-white/10 rounded-xl px-5 py-3 text-sm focus:border-purple-500 outline-none">
                   <option value="22050">22050 Hz</option>
                   <option value="32000">32000 Hz</option>
                   <option value="44100">44100 Hz</option>
                 </select>
               </div>
-            </div>
 
-            <button onClick={handleResidentPatch} disabled={isResidentLoading || !residentRpf || !residentAudio} className={`w-full py-4 rounded-xl font-bold uppercase tracking-widest border transition-all ${isResidentLoading ? 'bg-gray-800 text-gray-500 border-white/5' : 'bg-purple-600/10 text-purple-400 border-purple-600/30 hover:bg-purple-600/20 shadow-lg shadow-purple-600/10'}`}>
-              {isResidentLoading ? 'Procesando...' : 'Parchear Canal en Resident.rpf'}
-            </button>
-          </GlassCard>
+              <button
+                onClick={handleResidentPatch}
+                disabled={isResidentLoading || !residentRpf || !residentAudio}
+                className={`w-full py-5 rounded-2xl font-black text-lg uppercase tracking-widest flex items-center justify-center gap-3 transition-all shadow-2xl
+                  ${isResidentLoading ? 'bg-gray-800 text-gray-500' : 'bg-purple-600 hover:bg-purple-700 text-white shadow-purple-600/30'}`}
+              >
+                {isResidentLoading ? 'Extrayendo y parcheando...' : <><Target size={20} /> Parchear Canal en Resident.rpf</>}
+              </button>
+            </GlassCard>
+          </div>
         </div>
       </main>
     </div>
