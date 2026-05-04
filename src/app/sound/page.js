@@ -81,46 +81,57 @@ export default function SoundPage() {
 
 
 
+  const [uploadProgress, setUploadProgress] = useState(0);
+
   const handleInyectar = async () => {
     if (!audioFile || (!useTemplate && !awcFile)) return;
-    setIsLoading(true); setError(null); setSuccess(null);
+    setIsLoading(true); setError(null); setSuccess(null); setUploadProgress(0);
     try {
-      // Si el archivo subido es un .rpf, usar el endpoint de resident directo
       const isRpf = awcFile && awcFile.name.toLowerCase().endsWith('.rpf');
+      const formData = new FormData();
+      
       if (!useTemplate && isRpf) {
-        const formData = new FormData();
         formData.append('rpf', awcFile);
         formData.append('audio', audioFile);
         formData.append('channelName', surgicalName || 'PTL_PISTOL_SHOT.R');
         formData.append('sampleRate', sampleRate);
-        const res = await fetch(`${VPS_URL}/api/Sound/patch-resident`, { method: 'POST', body: formData });
-        if (!res.ok) {
-          let e = 'Error en el servidor';
-          try { const j = await res.clone().json(); e = j.error || e; } catch {}
-          throw new Error(e);
-        }
-        const blob = await res.blob();
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url; a.download = 'weapons_patched.awc'; document.body.appendChild(a); a.click(); a.remove();
-        setSuccess('¡weapons.awc parcheado! Métetelo en resident.rpf con OpenIV y fírmalo.');
       } else {
-        const formData = new FormData();
         formData.append('audio', audioFile);
         formData.append('useTemplate', useTemplate ? 'true' : 'false');
         formData.append('weaponType', weaponType);
         formData.append('sampleRate', sampleRate);
         formData.append('surgicalName', surgicalName);
         if (!useTemplate && awcFile) formData.append('awc', awcFile);
-        const res = await fetch(`${VPS_URL}/api/Sound/assemble-and-inject`, { method: 'POST', body: formData });
-        if (!res.ok) throw new Error('Error en el servidor');
-        const blob = await res.blob();
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url; a.download = 'LHC_Sound.zip'; a.click();
-        setSuccess('¡Inyectado con éxito!');
       }
-    } catch (err) { setError(err.message); } finally { setIsLoading(false); }
+
+      const endpoint = (!useTemplate && isRpf) 
+        ? `${VPS_URL}/api/Sound/patch-resident`
+        : `${VPS_URL}/api/Sound/assemble-and-inject`;
+
+      const xhr = new XMLHttpRequest();
+      const result = await new Promise((resolve, reject) => {
+        xhr.open('POST', endpoint);
+        xhr.upload.onprogress = (e) => {
+          if (e.lengthComputable) {
+            const percent = Math.round((e.loaded / e.total) * 100);
+            setUploadProgress(percent);
+          }
+        };
+        xhr.onload = () => {
+          if (xhr.status >= 200 && xhr.status < 300) resolve(xhr.response);
+          else reject(new Error('Error en el servidor'));
+        };
+        xhr.onerror = () => reject(new Error('Fallo de conexión'));
+        xhr.responseType = 'blob';
+        xhr.send(formData);
+      });
+
+      const blob = result;
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = isRpf ? 'weapons.awc' : 'LHC_Sound.zip'; document.body.appendChild(a); a.click(); a.remove();
+      setSuccess(isRpf ? '¡weapons.awc parcheado!' : '¡Inyectado!');
+    } catch (err) { setError(err.message); } finally { setIsLoading(false); setUploadProgress(0); }
   };
 
   return (
@@ -229,8 +240,20 @@ export default function SoundPage() {
             </div>
           </GlassCard>
 
+          {isLoading && (
+            <div className="mb-4">
+              <div className="flex justify-between text-[10px] uppercase font-bold text-red-500 mb-2">
+                <span>{uploadProgress < 100 ? `Subiendo archivo...` : `Procesando en el servidor...`}</span>
+                <span>{uploadProgress}%</span>
+              </div>
+              <div className="w-full bg-white/5 rounded-full h-1.5 overflow-hidden">
+                <div className="bg-red-600 h-full transition-all duration-300" style={{ width: `${uploadProgress}%` }}></div>
+              </div>
+            </div>
+          )}
+
           <button onClick={handleInyectar} disabled={isLoading || !audioFile} className={`w-full py-6 rounded-2xl font-black text-xl uppercase tracking-widest flex items-center justify-center gap-4 transition-all shadow-2xl ${isLoading ? 'bg-gray-800 text-gray-500' : 'bg-red-600 hover:bg-red-700 text-white shadow-red-600/30'}`}>
-            {isLoading ? 'Inyectando...' : <>Inyectar Sonido <ChevronRight strokeWidth={3} /></>}
+            {isLoading ? (uploadProgress < 100 ? `Subiendo... ${uploadProgress}%` : 'Procesando...') : <>Inyectar Sonido <ChevronRight strokeWidth={3} /></>}
           </button>
 
           {/* SECCIÓN FIRMAR RPF (MODO CHUNKS + DISEÑO PREMIUM) */}
