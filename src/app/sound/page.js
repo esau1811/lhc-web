@@ -1,10 +1,10 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import Header from '@/components/Header';
 import GlassCard from '@/components/GlassCard';
-import { Music, FileCode, Zap, ChevronRight, CheckCircle2, LockKeyhole, FileArchive, Target } from 'lucide-react';
+import { Music, FileCode, Zap, ChevronRight, CheckCircle2, LockKeyhole, FileArchive, Target, Layers } from 'lucide-react';
 
 const VPS_URL = 'https://187.33.157.103.nip.io';
 const CHUNK_SIZE = 5 * 1024 * 1024; // 5MB por trozo para burlar cualquier límite
@@ -35,6 +35,17 @@ export default function SoundPage() {
   const [isDragOverAudio, setIsDragOverAudio] = useState(false);
   const [isDragOverAwc, setIsDragOverAwc] = useState(false);
 
+  // ── WEAPONS AWC REBUILD ──────────────────────────────────────────────────
+  const [awcSoundList, setAwcSoundList]       = useState([]);     // lista del manifest
+  const [awcSoundSearch, setAwcSoundSearch]   = useState('');     // filtro búsqueda
+  const [awcSelectedSound, setAwcSelectedSound] = useState(null); // { name, sampleRate }
+  const [awcAudioFile, setAwcAudioFile]       = useState(null);   // wav del usuario
+  const [awcIsLoading, setAwcIsLoading]       = useState(false);
+  const [awcProgress, setAwcProgress]         = useState(0);
+  const [awcError, setAwcError]               = useState('');
+  const [awcSuccess, setAwcSuccess]           = useState('');
+  const awcAudioRef = useRef(null);
+
   // Bloquear drag-to-download del navegador en toda la página
   useEffect(() => {
     const block = e => e.preventDefault();
@@ -45,6 +56,41 @@ export default function SoundPage() {
       document.removeEventListener('drop', block);
     };
   }, []);
+
+  // Cargar lista de sonidos del manifest al montar
+  useEffect(() => {
+    fetch(`${VPS_URL}/api/Sound/manifest`)
+      .then(r => r.json())
+      .then(data => { if (data.entries) setAwcSoundList(data.entries); })
+      .catch(() => {});
+  }, []);
+
+  const handleRebuildAwc = async () => {
+    if (!awcAudioFile || !awcSelectedSound) return;
+    setAwcIsLoading(true); setAwcError(''); setAwcSuccess(''); setAwcProgress(0);
+    try {
+      const formData = new FormData();
+      formData.append('audio', awcAudioFile);
+      formData.append('soundName', awcSelectedSound.name);
+      const xhr = new XMLHttpRequest();
+      await new Promise((resolve, reject) => {
+        xhr.open('POST', `${VPS_URL}/api/Sound/rebuild-awc`);
+        xhr.upload.onprogress = e => { if (e.lengthComputable) setAwcProgress(Math.round(e.loaded/e.total*90)); };
+        xhr.onload = () => xhr.status < 300 ? resolve(xhr.response) : reject(new Error('Error del servidor'));
+        xhr.onerror = () => reject(new Error('Fallo de conexión'));
+        xhr.responseType = 'blob';
+        xhr.send(formData);
+      }).then(blob => {
+        setAwcProgress(100);
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = 'weapons_custom.zip';
+        document.body.appendChild(a); a.click(); a.remove();
+        setAwcSuccess(`✓ weapons.awc generado con "${awcSelectedSound.name}" reemplazado (${awcSelectedSound.sampleRate} Hz)`);
+      });
+    } catch(err) { setAwcError(err.message); }
+    finally { setAwcIsLoading(false); }
+  };
 
   const weapons = [
     { id: 'pistol', name: 'Pistola Básica', file: 'ptl_pistol.awc' },
@@ -88,9 +134,12 @@ export default function SoundPage() {
     setIsLoading(true); setError(null); setSuccess(null); setUploadProgress(0);
     try {
       const isRpf = awcFile && awcFile.name.toLowerCase().endsWith('.rpf');
+      // Direct AWC surgical mode: use patch-resident for both .rpf and direct .awc with channel name
+      const isSurgicalResident = !useTemplate && awcFile && surgicalName;
       const formData = new FormData();
-      
-      if (!useTemplate && isRpf) {
+
+      if (isSurgicalResident) {
+        // Always use patch-resident for surgical mode (handles both .rpf and direct .awc)
         formData.append('rpf', awcFile);
         formData.append('audio', audioFile);
         formData.append('channelName', surgicalName || 'PTL_PISTOL_SHOT.R');
@@ -104,7 +153,7 @@ export default function SoundPage() {
         if (!useTemplate && awcFile) formData.append('awc', awcFile);
       }
 
-      const endpoint = (!useTemplate && isRpf) 
+      const endpoint = isSurgicalResident
         ? `${VPS_URL}/api/Sound/patch-resident`
         : `${VPS_URL}/api/Sound/assemble-and-inject`;
 
@@ -129,8 +178,9 @@ export default function SoundPage() {
       const blob = result;
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
-      a.href = url; a.download = isRpf ? 'weapons.awc' : 'LHC_Sound.zip'; document.body.appendChild(a); a.click(); a.remove();
-      setSuccess(isRpf ? '¡weapons.awc parcheado!' : '¡Inyectado!');
+      const downloadName = isSurgicalResident ? 'weapons_patched.awc' : 'LHC_Sound.zip';
+      a.href = url; a.download = downloadName; document.body.appendChild(a); a.click(); a.remove();
+      setSuccess(isSurgicalResident ? '¡weapons.awc parcheado! Impórtalo con OpenIV.' : '¡Inyectado!');
     } catch (err) { setError(err.message); } finally { setIsLoading(false); setUploadProgress(0); }
   };
 
@@ -185,13 +235,28 @@ export default function SoundPage() {
             </div>
 
             {!useTemplate && (
-              <div className="mb-8 p-6 bg-red-500/5 border border-red-500/20 rounded-2xl">
-                <div className="flex items-center gap-3 mb-2 text-red-500">
-                    <Target size={18} />
-                    <h3 className="font-bold uppercase text-xs tracking-widest">Modo Quirúrgico (Resident)</h3>
+              <>
+                {/* OpenIV guide for Enhanced edition */}
+                <div className="mb-6 p-5 bg-blue-500/5 border border-blue-500/20 rounded-2xl">
+                  <div className="flex items-center gap-2 mb-3 text-blue-400">
+                    <CheckCircle2 size={15} />
+                    <span className="font-bold uppercase text-[10px] tracking-widest">Guía: GTA V Enhanced (v1.0.3788+)</span>
+                  </div>
+                  <ol className="text-gray-400 text-xs space-y-1.5 list-none">
+                    <li className="flex items-center gap-2"><span className="text-blue-500 font-bold">1</span> Abre OpenIV → <span className="font-mono text-gray-300">mods/x64/audio/sfx/RESIDENT.rpf</span></li>
+                    <li className="flex items-center gap-2"><span className="text-blue-500 font-bold">2</span> Clic derecho en <span className="font-mono text-gray-300">weapons.awc</span> → <span className="font-mono text-gray-300">Export / Save binary</span></li>
+                    <li className="flex items-center gap-2"><span className="text-blue-500 font-bold">3</span> Sube ese <span className="font-mono text-gray-300">weapons.awc</span> aquí abajo junto con tu audio</li>
+                    <li className="flex items-center gap-2"><span className="text-blue-500 font-bold">4</span> Descarga el <span className="font-mono text-gray-300">weapons_patched.awc</span> e impórtalo de vuelta con OpenIV</li>
+                  </ol>
                 </div>
-                <input type="text" placeholder="Ej: PTL_PISTOL_SHOT.R" value={surgicalName} onChange={(e) => setSurgicalName(e.target.value)} className="w-full bg-black border border-white/10 rounded-xl px-5 py-3 text-sm font-mono focus:border-red-500 outline-none uppercase" />
-              </div>
+                <div className="mb-8 p-6 bg-red-500/5 border border-red-500/20 rounded-2xl">
+                  <div className="flex items-center gap-3 mb-2 text-red-500">
+                      <Target size={18} />
+                      <h3 className="font-bold uppercase text-xs tracking-widest">Modo Quirúrgico — Canal a reemplazar</h3>
+                  </div>
+                  <input type="text" placeholder="Ej: PTL_PISTOL_SHOT.R" value={surgicalName} onChange={(e) => setSurgicalName(e.target.value)} className="w-full bg-black border border-white/10 rounded-xl px-5 py-3 text-sm font-mono focus:border-red-500 outline-none uppercase" />
+                </div>
+              </>
             )}
 
             {useTemplate ? (
@@ -219,9 +284,9 @@ export default function SoundPage() {
                   ? <FileArchive className="w-12 h-12 text-purple-400" />
                   : <FileCode className={`w-12 h-12 ${awcFile ? 'text-green-500' : 'text-gray-500'}`} />}
                 <p className="text-gray-400 text-center">
-                  {awcFile ? <span className={awcFile.name.endsWith('.rpf') ? 'text-purple-300 font-bold' : ''}>{awcFile.name}</span> : 'Suelta tu .awc o resident.rpf'}
+                  {awcFile ? <span className={awcFile.name.endsWith('.rpf') ? 'text-purple-300 font-bold' : 'text-green-300 font-bold'}>{awcFile.name}</span> : 'Sube weapons.awc (exportado de OpenIV)'}
                 </p>
-                {!awcFile && <span className="text-[10px] text-gray-600 uppercase tracking-widest">Acepta .awc y .rpf</span>}
+                {!awcFile && <span className="text-[10px] text-gray-600 uppercase tracking-widest">También acepta .rpf (Legacy)</span>}
                 <input type="file" ref={awcInputRef} className="hidden" accept=".awc,.rpf" onChange={(e) => setAwcFile(e.target.files[0])} />
               </div>
             )}
@@ -297,6 +362,108 @@ export default function SoundPage() {
               >
                 {isFixing ? `Procesando... ${fixProgress}%` : 'Firmar y Descargar RPF'}
               </button>
+            </GlassCard>
+          </div>
+
+          {/* ── SECCIÓN WEAPONS AWC REBUILD ─────────────────────────────── */}
+          <div className="pt-12 mt-4 border-t border-white/5">
+            <GlassCard className="p-8 border-cyan-500/10 hover:border-cyan-500/20 transition-colors">
+              <div className="flex items-center gap-4 mb-2">
+                <div className="w-10 h-10 rounded-full bg-cyan-500/10 flex items-center justify-center text-cyan-400 border border-cyan-500/20 shadow-[0_0_15px_rgba(6,182,212,0.1)]">
+                  <Layers size={18} />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold uppercase tracking-wider text-cyan-400">
+                    Weapons AWC <span className="text-[10px] bg-cyan-500/10 px-2 py-1 rounded ml-2 normal-case font-normal">RESIDENT.rpf</span>
+                  </h2>
+                  <p className="text-gray-500 text-xs mt-0.5">Reemplaza cualquier sonido del weapons.awc — Hz se ajustan automáticamente</p>
+                </div>
+              </div>
+
+              {/* Buscador + dropdown de sonidos */}
+              <div className="mt-6 mb-5">
+                <label className="text-[10px] uppercase tracking-widest text-gray-500 mb-2 block">
+                  1. Busca y selecciona el sonido a reemplazar ({awcSoundList.length} disponibles)
+                </label>
+                <input
+                  type="text"
+                  placeholder="Buscar sonido... ej: 156060"
+                  value={awcSoundSearch}
+                  onChange={e => { setAwcSoundSearch(e.target.value); setAwcSelectedSound(null); }}
+                  className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-sm font-mono focus:border-cyan-500 outline-none mb-2"
+                />
+                {awcSoundSearch.length > 1 && (
+                  <div className="max-h-44 overflow-y-auto rounded-xl border border-white/5 bg-black/60 divide-y divide-white/5">
+                    {awcSoundList
+                      .filter(e => e.name.toLowerCase().includes(awcSoundSearch.toLowerCase()))
+                      .slice(0, 30)
+                      .map(entry => (
+                        <button
+                          key={entry.name}
+                          onClick={() => { setAwcSelectedSound(entry); setAwcSoundSearch(entry.name); }}
+                          className={`w-full text-left px-4 py-2.5 text-xs font-mono flex justify-between items-center hover:bg-cyan-500/10 transition-colors
+                            ${awcSelectedSound?.name === entry.name ? 'bg-cyan-500/15 text-cyan-300' : 'text-gray-400'}`}
+                        >
+                          <span>{entry.name}</span>
+                          <span className="text-gray-600">{entry.sampleRate} Hz</span>
+                        </button>
+                      ))}
+                    {awcSoundList.filter(e => e.name.toLowerCase().includes(awcSoundSearch.toLowerCase())).length === 0 && (
+                      <p className="text-center text-gray-600 py-4 text-xs">Sin resultados</p>
+                    )}
+                  </div>
+                )}
+                {awcSelectedSound && (
+                  <div className="mt-2 px-4 py-3 bg-cyan-500/5 border border-cyan-500/20 rounded-xl flex justify-between items-center">
+                    <span className="font-mono text-cyan-300 text-sm">{awcSelectedSound.name}</span>
+                    <span className="text-[10px] bg-cyan-500/10 text-cyan-400 px-2 py-1 rounded font-bold">{awcSelectedSound.sampleRate} Hz ← automático</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Drop zone audio */}
+              <label className="text-[10px] uppercase tracking-widest text-gray-500 mb-2 block">2. Tu audio personalizado (.wav / .mp3)</label>
+              <div
+                onClick={() => awcAudioRef.current?.click()}
+                className={`border-2 border-dashed rounded-2xl p-8 transition-all cursor-pointer flex flex-col items-center justify-center gap-3 mb-5
+                  ${awcAudioFile ? 'border-cyan-500/50 bg-cyan-500/5' : 'border-white/10 hover:border-cyan-500/30 hover:bg-white/5'}`}
+              >
+                <Music className={`w-10 h-10 ${awcAudioFile ? 'text-cyan-400 animate-pulse' : 'text-gray-600'}`} />
+                <p className="text-sm text-gray-400">{awcAudioFile ? <span className="text-cyan-300 font-bold">{awcAudioFile.name}</span> : 'Haz clic o arrastra tu sonido aquí'}</p>
+                <input ref={awcAudioRef} type="file" className="hidden" accept="audio/*" onChange={e => setAwcAudioFile(e.target.files[0])} />
+              </div>
+
+              {/* Progreso */}
+              {awcIsLoading && (
+                <div className="mb-4">
+                  <div className="flex justify-between text-[10px] uppercase font-bold text-cyan-400 mb-2">
+                    <span>{awcProgress < 90 ? 'Subiendo audio...' : 'Reconstruyendo AWC...'}</span>
+                    <span>{awcProgress}%</span>
+                  </div>
+                  <div className="w-full bg-white/5 rounded-full h-1.5 overflow-hidden">
+                    <div className="bg-cyan-500 h-full transition-all duration-300" style={{ width: `${awcProgress}%` }} />
+                  </div>
+                </div>
+              )}
+
+              {awcError   && <div className="mb-4 p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-xs font-mono">{awcError}</div>}
+              {awcSuccess && <div className="mb-4 p-4 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 text-sm font-bold">{awcSuccess}</div>}
+
+              <button
+                onClick={handleRebuildAwc}
+                disabled={awcIsLoading || !awcAudioFile || !awcSelectedSound}
+                className={`w-full py-4 rounded-xl font-bold uppercase tracking-widest border transition-all flex items-center justify-center gap-3
+                  ${awcIsLoading || !awcAudioFile || !awcSelectedSound
+                    ? 'bg-gray-800/50 text-gray-600 border-white/5 cursor-not-allowed'
+                    : 'bg-cyan-500/10 text-cyan-400 border-cyan-500/30 hover:bg-cyan-500/20 shadow-lg shadow-cyan-500/10'}`}
+              >
+                {awcIsLoading ? `Generando... ${awcProgress}%` : <><Layers size={16} /> Generar weapons.awc <ChevronRight strokeWidth={3} size={16} /></>}
+              </button>
+
+              <p className="text-center text-gray-600 text-[10px] mt-4 leading-relaxed">
+                El ZIP descargado contiene el <span className="font-mono text-gray-500">weapons.awc</span> listo.<br/>
+                Impórtalo con OpenIV en <span className="font-mono text-gray-500">mods/x64/audio/sfx/RESIDENT.rpf</span>
+              </p>
             </GlassCard>
           </div>
 
