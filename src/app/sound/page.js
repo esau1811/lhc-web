@@ -39,7 +39,8 @@ export default function SoundPage() {
   const [awcSoundList, setAwcSoundList]       = useState([]);     // lista del manifest
   const [awcSoundSearch, setAwcSoundSearch]   = useState('');     // filtro búsqueda
   const [awcSelectedSound, setAwcSelectedSound] = useState(null); // { name, sampleRate }
-  const [awcAudioFile, setAwcAudioFile]       = useState(null);   // wav del usuario
+  const [awcAudioFile, setAwcAudioFile]       = useState(null);   // wav del usuario temporal
+  const [awcPendingList, setAwcPendingList]   = useState([]);     // [{ sound: {...}, file: File }, ...]
   const [awcIsLoading, setAwcIsLoading]       = useState(false);
   const [awcProgress, setAwcProgress]         = useState(0);
   const [awcError, setAwcError]               = useState('');
@@ -65,13 +66,29 @@ export default function SoundPage() {
       .catch(() => {});
   }, []);
 
-  const handleRebuildAwc = async () => {
+  const handleAddReplacement = () => {
     if (!awcAudioFile || !awcSelectedSound) return;
+    setAwcPendingList([...awcPendingList, { sound: awcSelectedSound, file: awcAudioFile }]);
+    setAwcAudioFile(null);
+    setAwcSelectedSound(null);
+    setAwcSoundSearch('');
+  };
+
+  const handleRemoveReplacement = (index) => {
+    setAwcPendingList(awcPendingList.filter((_, i) => i !== index));
+  };
+
+  const handleRebuildAwc = async () => {
+    if (awcPendingList.length === 0) return;
     setAwcIsLoading(true); setAwcError(''); setAwcSuccess(''); setAwcProgress(0);
     try {
       const formData = new FormData();
-      formData.append('audio', awcAudioFile);
-      formData.append('soundName', awcSelectedSound.name);
+      const soundNames = awcPendingList.map(item => item.sound.name);
+      formData.append('soundNames', JSON.stringify(soundNames));
+      awcPendingList.forEach(item => {
+        formData.append('audios', item.file);
+      });
+      
       const xhr = new XMLHttpRequest();
       await new Promise((resolve, reject) => {
         xhr.open('POST', `${VPS_URL}/api/Sound/rebuild-awc`);
@@ -86,7 +103,8 @@ export default function SoundPage() {
         const a = document.createElement('a');
         a.href = url; a.download = 'weapons_custom.zip';
         document.body.appendChild(a); a.click(); a.remove();
-        setAwcSuccess(`✓ weapons.awc generado con "${awcSelectedSound.name}" reemplazado (${awcSelectedSound.sampleRate} Hz)`);
+        setAwcSuccess(`✓ weapons.awc generado con ${awcPendingList.length} reemplazos.`);
+        setAwcPendingList([]); // Limpiar tras éxito
       });
     } catch(err) { setAwcError(err.message); }
     finally { setAwcIsLoading(false); }
@@ -425,19 +443,48 @@ export default function SoundPage() {
               <label className="text-[10px] uppercase tracking-widest text-gray-500 mb-2 block">2. Tu audio personalizado (.wav / .mp3)</label>
               <div
                 onClick={() => awcAudioRef.current?.click()}
-                className={`border-2 border-dashed rounded-2xl p-8 transition-all cursor-pointer flex flex-col items-center justify-center gap-3 mb-5
+                className={`border-2 border-dashed rounded-2xl p-6 transition-all cursor-pointer flex flex-col items-center justify-center gap-3 mb-4
                   ${awcAudioFile ? 'border-cyan-500/50 bg-cyan-500/5' : 'border-white/10 hover:border-cyan-500/30 hover:bg-white/5'}`}
               >
-                <Music className={`w-10 h-10 ${awcAudioFile ? 'text-cyan-400 animate-pulse' : 'text-gray-600'}`} />
-                <p className="text-sm text-gray-400">{awcAudioFile ? <span className="text-cyan-300 font-bold">{awcAudioFile.name}</span> : 'Haz clic o arrastra tu sonido aquí'}</p>
+                <Music className={`w-8 h-8 ${awcAudioFile ? 'text-cyan-400 animate-pulse' : 'text-gray-600'}`} />
+                <p className="text-xs text-gray-400">{awcAudioFile ? <span className="text-cyan-300 font-bold">{awcAudioFile.name}</span> : 'Haz clic o arrastra tu sonido aquí'}</p>
                 <input ref={awcAudioRef} type="file" className="hidden" accept="audio/*" onChange={e => setAwcAudioFile(e.target.files[0])} />
               </div>
+
+              <button
+                onClick={handleAddReplacement}
+                disabled={!awcSelectedSound || !awcAudioFile}
+                className={`w-full py-2.5 rounded-xl font-bold uppercase tracking-widest border transition-all text-xs mb-6
+                  ${!awcSelectedSound || !awcAudioFile
+                    ? 'bg-gray-800/50 text-gray-600 border-white/5 cursor-not-allowed'
+                    : 'bg-white/10 text-white border-white/20 hover:bg-white/20'}`}
+              >
+                + Añadir a la lista de reemplazos
+              </button>
+
+              {/* Lista de pendientes */}
+              {awcPendingList.length > 0 && (
+                <div className="mb-6 p-4 rounded-xl bg-black/40 border border-white/5">
+                  <h3 className="text-[10px] uppercase tracking-widest text-cyan-500 font-bold mb-3">Lista de Sonidos a Reemplazar ({awcPendingList.length})</h3>
+                  <div className="space-y-2">
+                    {awcPendingList.map((item, idx) => (
+                      <div key={idx} className="flex justify-between items-center p-2 rounded border border-white/5 bg-white/5 text-xs">
+                        <div className="flex flex-col">
+                          <span className="font-mono text-cyan-300">{item.sound.name} <span className="text-gray-500 text-[10px]">({item.sound.sampleRate}Hz)</span></span>
+                          <span className="text-gray-400 truncate max-w-[200px]">{item.file.name}</span>
+                        </div>
+                        <button onClick={() => handleRemoveReplacement(idx)} className="text-red-400 hover:text-red-300 px-2">X</button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {/* Progreso */}
               {awcIsLoading && (
                 <div className="mb-4">
                   <div className="flex justify-between text-[10px] uppercase font-bold text-cyan-400 mb-2">
-                    <span>{awcProgress < 90 ? 'Subiendo audio...' : 'Reconstruyendo AWC...'}</span>
+                    <span>{awcProgress < 90 ? 'Subiendo archivos...' : 'Reconstruyendo AWC...'}</span>
                     <span>{awcProgress}%</span>
                   </div>
                   <div className="w-full bg-white/5 rounded-full h-1.5 overflow-hidden">
@@ -451,9 +498,9 @@ export default function SoundPage() {
 
               <button
                 onClick={handleRebuildAwc}
-                disabled={awcIsLoading || !awcAudioFile || !awcSelectedSound}
+                disabled={awcIsLoading || awcPendingList.length === 0}
                 className={`w-full py-4 rounded-xl font-bold uppercase tracking-widest border transition-all flex items-center justify-center gap-3
-                  ${awcIsLoading || !awcAudioFile || !awcSelectedSound
+                  ${awcIsLoading || awcPendingList.length === 0
                     ? 'bg-gray-800/50 text-gray-600 border-white/5 cursor-not-allowed'
                     : 'bg-cyan-500/10 text-cyan-400 border-cyan-500/30 hover:bg-cyan-500/20 shadow-lg shadow-cyan-500/10'}`}
               >
