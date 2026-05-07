@@ -35,6 +35,12 @@ export default function SoundPage() {
   const [isDragOverAudio, setIsDragOverAudio] = useState(false);
   const [isDragOverAwc, setIsDragOverAwc] = useState(false);
 
+  // Scan AWC
+  const [awcTracks, setAwcTracks] = useState(null);      // null = no escaneado, [] = vacío
+  const [awcScanLoading, setAwcScanLoading] = useState(false);
+  const [awcScanError, setAwcScanError] = useState('');
+  const [surgicalTrack, setSurgicalTrack] = useState(null); // track seleccionado del scan
+
   // ── WEAPONS AWC REBUILD ──────────────────────────────────────────────────
   const [awcSoundList, setAwcSoundList]       = useState([]);     // lista del manifest
   const [awcSoundSearch, setAwcSoundSearch]   = useState('');     // filtro búsqueda
@@ -221,6 +227,28 @@ export default function SoundPage() {
 
   const [uploadProgress, setUploadProgress] = useState(0);
 
+  // Escanear AWC y detectar canales automáticamente
+  const scanAwcFile = async (file) => {
+    setAwcTracks(null);
+    setSurgicalTrack(null);
+    setSurgicalName('');
+    setAwcScanError('');
+    setAwcScanLoading(true);
+    try {
+      const fd = new FormData();
+      fd.append('file', file);
+      const res = await fetch(`${VPS_URL}/api/Sound/scan-awc`, { method: 'POST', body: fd });
+      if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error(e.error || `HTTP ${res.status}`); }
+      const data = await res.json();
+      setAwcTracks(data.tracks || []);
+    } catch (e) {
+      setAwcScanError('No se pudo escanear el archivo: ' + e.message);
+      setAwcTracks([]);
+    } finally {
+      setAwcScanLoading(false);
+    }
+  };
+
   const handleInyectar = async () => {
     if (!audioFile || (!useTemplate && !awcFile)) return;
     setIsLoading(true); setError(null); setSuccess(null); setUploadProgress(0);
@@ -322,39 +350,78 @@ export default function SoundPage() {
             </div>
           </GlassCard>
 
-          {/* PASO 2: BASE */}
+          {/* PASO 2: BASE con auto-detección de canales */}
           <GlassCard className="p-8 border-red-500/20">
             <div className="flex items-center gap-4 mb-6">
               <div className="w-10 h-10 rounded-full bg-red-500/10 flex items-center justify-center text-red-500 font-bold border border-red-500/20 shadow-[0_0_15px_rgba(239,68,68,0.2)]">2</div>
               <h2 className="text-xl font-bold uppercase tracking-wider">Base de Arma / Resident</h2>
             </div>
-            <div className="flex bg-black/60 p-1 rounded-xl mb-8 border border-white/10">
-              <button className="flex-1 py-3 rounded-lg font-bold text-sm uppercase transition-all bg-red-600 text-white">Mi .AWC / WEAPONS_PLAYER.RPF</button>
-            </div>
 
-            <div className="mb-8 p-6 bg-red-500/5 border border-red-500/20 rounded-2xl">
-              <div className="flex items-center gap-3 mb-2 text-red-500">
-                  <Target size={18} />
-                  <h3 className="font-bold uppercase text-xs tracking-widest">Modo Quirúrgico — Canal a reemplazar</h3>
-              </div>
-              <input type="text" placeholder="Ej: PTL_PISTOL_SHOT.R" value={surgicalName} onChange={(e) => setSurgicalName(e.target.value)} className="w-full bg-black border border-white/10 rounded-xl px-5 py-3 text-sm font-mono focus:border-red-500 outline-none uppercase" />
-            </div>
-
-            <div 
+            {/* Drop zone AWC */}
+            <div
               onClick={() => awcInputRef.current?.click()}
               onDragOver={(e) => handleDragOver(e, setIsDragOverAwc)}
               onDragLeave={(e) => handleDragLeave(e, setIsDragOverAwc)}
-              onDrop={(e) => handleDrop(e, setAwcFile, setIsDragOverAwc)}
-              className={`border-2 border-dashed rounded-2xl p-10 transition-all cursor-pointer flex flex-col items-center justify-center gap-4
+              onDrop={(e) => { e.preventDefault(); setIsDragOverAwc(false); const f = e.dataTransfer.files[0]; if (f) { setAwcFile(f); scanAwcFile(f); } }}
+              className={`border-2 border-dashed rounded-2xl p-8 transition-all cursor-pointer flex flex-col items-center justify-center gap-3 mb-6
                 ${isDragOverAwc ? 'border-red-500 bg-red-500/20' : 'border-white/10 hover:border-red-500/30'}
-                ${awcFile ? 'border-green-500/50 bg-green-500/10' : ''}`}
+                ${awcFile ? 'border-red-500/40 bg-red-500/5' : ''}`}
             >
-              <FileCode className={`w-12 h-12 ${awcFile ? 'text-green-500' : 'text-gray-500'}`} />
-              <p className="text-gray-400 text-center">
-                {awcFile ? <span className="text-green-300 font-bold">{awcFile.name}</span> : 'Sube tu weapons_player.awc / weapons_player.rpf'}
+              <FileCode className={`w-10 h-10 ${awcFile ? 'text-red-400' : 'text-gray-500'}`} />
+              <p className="text-sm text-gray-400 text-center">
+                {awcFile
+                  ? <span className="text-red-300 font-bold">{awcFile.name}</span>
+                  : 'Sube tu .AWC o .RPF — se detectarán los canales automáticamente'}
               </p>
-              <input type="file" ref={awcInputRef} className="hidden" accept=".awc,.rpf" onChange={(e) => setAwcFile(e.target.files[0])} />
+              <input type="file" ref={awcInputRef} className="hidden" accept=".awc,.rpf"
+                onChange={(e) => { const f = e.target.files[0]; if (f) { setAwcFile(f); scanAwcFile(f); } }} />
             </div>
+
+            {/* Spinner de scan */}
+            {awcScanLoading && (
+              <div className="flex items-center gap-3 py-4 text-red-400 text-xs font-mono animate-pulse">
+                <div className="w-4 h-4 border-2 border-red-500 border-t-transparent rounded-full animate-spin" />
+                Analizando canales del archivo...
+              </div>
+            )}
+
+            {/* Error scan */}
+            {awcScanError && !awcScanLoading && (
+              <div className="mb-4 px-4 py-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 text-xs font-mono">{awcScanError}</div>
+            )}
+
+            {/* Lista de canales detectados */}
+            {awcTracks && awcTracks.length > 0 && !awcScanLoading && (
+              <div className="mb-2">
+                <div className="flex items-center gap-2 mb-3">
+                  <Target size={14} className="text-red-500" />
+                  <span className="text-[10px] uppercase tracking-widest text-red-500 font-bold">Canales detectados — elige el que quieres reemplazar</span>
+                </div>
+                <div className="max-h-48 overflow-y-auto rounded-xl border border-white/5 bg-black/60 divide-y divide-white/5">
+                  {awcTracks.map((track, i) => (
+                    <button
+                      key={i}
+                      onClick={() => { setSurgicalTrack(track); setSurgicalName(track.name); }}
+                      className={`w-full text-left px-4 py-2.5 flex justify-between items-center transition-colors text-xs font-mono
+                        ${surgicalTrack?.index === track.index
+                          ? 'bg-red-500/20 text-red-300'
+                          : 'hover:bg-red-500/10 text-gray-400'}`}
+                    >
+                      <span className={track.resolved ? 'text-white' : 'text-gray-500'}>
+                        {track.name}
+                      </span>
+                      <span className="text-[10px] text-gray-600">{track.codec.toUpperCase()} · {(track.size / 1024).toFixed(0)}KB</span>
+                    </button>
+                  ))}
+                </div>
+                {surgicalTrack && (
+                  <div className="mt-3 px-4 py-2 bg-red-500/10 border border-red-500/30 rounded-xl text-xs font-mono text-red-300 flex justify-between">
+                    <span>Reemplazando: <strong>{surgicalTrack.name}</strong></span>
+                    <button onClick={() => { setSurgicalTrack(null); setSurgicalName(''); }} className="text-gray-500 hover:text-red-400">✕</button>
+                  </div>
+                )}
+              </div>
+            )}
           </GlassCard>
 
 
