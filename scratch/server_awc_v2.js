@@ -10,6 +10,8 @@ const os              = require('os');
 const { exec, spawn } = require('child_process');
 const crypto          = require('crypto');
 const archiver        = require('archiver');
+const AdmZip          = require('adm-zip');
+
 
 const app = express();
 app.use(cors());
@@ -30,10 +32,59 @@ const OAC_TEMPLATE_DIR = path.join(BASE_DIR, 'weapons_oac_template');
 
 let AWC_MANIFEST = null;
 function getManifest() {
-    if (!AWC_MANIFEST && fs.existsSync(MANIFEST_PATH)) {
-        AWC_MANIFEST = JSON.parse(fs.readFileSync(MANIFEST_PATH, 'utf8'));
+    if (!AWC_MANIFEST) {
+        if (fs.existsSync(MANIFEST_PATH)) {
+            try {
+                AWC_MANIFEST = JSON.parse(fs.readFileSync(MANIFEST_PATH, 'utf8'));
+            } catch(e) { console.error('[manifest] Error parsing:', e); }
+        }
+        if (!AWC_MANIFEST) {
+            // Fallback mínimo para que la búsqueda no esté vacía
+            AWC_MANIFEST = {
+                "PTL_PISTOL_SHOT.R": { "fileName": "ptl_pistol_shot.wav", "sampleRate": 36000, "channels": 1 },
+                "PTL_PISTOL_SHOT.L": { "fileName": "ptl_pistol_shot_l.wav", "sampleRate": 32000, "channels": 1 },
+                "SNP_HEAVY_VERCVER2.R": { "fileName": "snp_heavy_r.wav", "sampleRate": 32000, "channels": 1 },
+                "SNP_HEAVY_VERCVER2.L": { "fileName": "snp_heavy_l.wav", "sampleRate": 32000, "channels": 1 },
+                "RESIDENT_FOOTSTEP": { "fileName": "footstep.wav", "sampleRate": 32000, "channels": 1 }
+            };
+        }
     }
     return AWC_MANIFEST;
+}
+
+async function prepareAudio(inputBuf, rate, format) {
+    // Si rate es 'auto', intentar detectar del buffer de entrada usando ffmpeg -i
+    let targetRate = parseInt(rate, 10);
+    if (isNaN(targetRate) || targetRate < 8000) targetRate = 32000;
+
+    const tmpIn = path.join(os.tmpdir(), `in_${Date.now()}.wav`);
+    const tmpOut = path.join(os.tmpdir(), `out_${Date.now()}.pcm`);
+    fs.writeFileSync(tmpIn, inputBuf);
+
+    try {
+        // Si el usuario no especificó rate (o es auto), intentar extraer el rate ORIGINAL del archivo subido
+        if (rate === 'auto' || !rate) {
+             const info = await new Promise((resolve) => {
+                 exec(`ffprobe -v error -select_streams a:0 -show_entries stream=sample_rate -of default=noprint_wrappers=1:nokey=1 "${tmpIn}"`, (err, stdout) => {
+                     if (err) resolve(32000);
+                     else resolve(parseInt(stdout.trim(), 10) || 32000);
+                 });
+             });
+             targetRate = info;
+             console.log(`[audio] Auto-detect Hz: ${targetRate}`);
+        }
+
+        await new Promise((resolve, reject) => {
+            const cmd = `ffmpeg -y -i "${tmpIn}" -ar ${targetRate} -ac 1 -c:a ${format === 'adpcm' ? 'adpcm_ima_wav' : 'pcm_s16le'} -f s16le "${tmpOut}"`;
+            exec(cmd, (err) => err ? reject(err) : resolve());
+        });
+        const out = fs.readFileSync(tmpOut);
+        try { fs.unlinkSync(tmpIn); fs.unlinkSync(tmpOut); } catch(e){}
+        return out;
+    } catch (e) {
+        try { fs.unlinkSync(tmpIn); fs.unlinkSync(tmpOut); } catch(e){}
+        throw e;
+    }
 }
 
 function joaat(key) {
@@ -296,19 +347,22 @@ async function patchAWCStreaming(awcDataRaw, audioBuf, channelName, sampleRate) 
     }
     console.log(`[streaming] Hash objetivo: 0x${targetHash.toString(16)} para "${channelName}"`);
 
-    const hashLE = Buffer.alloc(4); hashLE.writeUInt32LE(targetHash, 0);
-    const hashBE = Buffer.alloc(4); hashBE.writeUInt32BE(targetHash, 0);
+    const targets = new Set();
+    targets.add(targetHash);
+    targets.add(targetHash & 0x1FFFFFFF);
+    if (!hexMatch) {
+        const v2 = channelName.toLowerCase().replace(/\.[lr]$/i, '');
+        const h2 = joaat(v2);
+        targets.add(h2);
+        targets.add(h2 & 0x1FFFFFFF);
+    }
 
     const hits = [];
     for (let i = 0; i <= awcData.length - 4; i++) {
-        if (awcData[i] === hashLE[0] && awcData[i+1] === hashLE[1] &&
-            awcData[i+2] === hashLE[2] && awcData[i+3] === hashLE[3]) {
-            hits.push({ pos: i, endian: 'LE' });
-        }
-        if (awcData[i] === hashBE[0] && awcData[i+1] === hashBE[1] &&
-            awcData[i+2] === hashBE[2] && awcData[i+3] === hashBE[3]) {
-            hits.push({ pos: i, endian: 'BE' });
-        }
+        const valLE = awcData.readUInt32LE(i) & 0x1FFFFFFF;
+        const valBE = awcData.readUInt32BE(i) & 0x1FFFFFFF;
+        if (targets.has(valLE)) hits.push({ pos: i, endian: 'LE' });
+        if (targets.has(valBE)) hits.push({ pos: i, endian: 'BE' });
     }
 
     console.log(`[streaming] Hits encontrados: ${hits.length}`);
@@ -325,19 +379,33 @@ async function patchAWCStreaming(awcDataRaw, audioBuf, channelName, sampleRate) 
     console.log(`[streaming] Contexto completo del hit: ${ctx.toString('hex')}`);
 
     let found = null;
-    for (const relOff of [-8, -4, 4, 8, 12]) {
+    // Ampliamos el rango de búsqueda de metadatos (offset/size) alrededor del hash
+    for (const relOff of [-16, -12, -8, -4, 4, 8, 12, 16]) {
         const offPos = hit.pos + relOff;
         if (offPos < 0 || offPos + 8 > awcData.length) continue;
-        const dataOff = awcData.readUInt32LE(offPos);
-        const size    = awcData.readUInt32LE(offPos + 4) & 0xFFFFFF;
-        if (dataOff > 1024 && dataOff < awcData.length && size > 4096 && size < awcData.length) {
-            console.log(`[streaming] dataOff candidato: 0x${dataOff.toString(16)} size=${size} (relOff=${relOff})`);
-            if (!found) found = { dataOff, size };
+        
+        const v1 = awcData.readUInt32LE(offPos);
+        const v2 = awcData.readUInt32LE(offPos + 4);
+        
+        // Probar diferentes combinaciones de [offset, size]
+        const pairs = [
+            { d: v1, s: v2 & 0xFFFFFF },             // Layout A: [off][size+flags]
+            { d: v2, s: v1 & 0xFFFFFF },             // Layout B: [size+flags][off]
+            { d: v1 & 0xFFFFFF, s: v1 >>> 24 },       // Packed A: [off:24][size:8] (raro pero posible)
+            { d: v1 & 0xFFFF, s: v1 >>> 16 }          // Packed B: [off:16][size:16]
+        ];
+
+        for (const p of pairs) {
+            // Umbral de dataOff bajado a 0x40 porque este AWC tiene cabecera pequeña
+            if (p.d >= 0x40 && p.d < awcData.length && p.s > 1024 && p.d + p.s <= awcData.length + 100) {
+                console.log(`[streaming] Candidato hallado en relOff=${relOff}: dataOff=0x${p.d.toString(16)} size=${p.s}`);
+                if (!found || p.s > found.size) found = { dataOff: p.d, size: p.s };
+            }
         }
     }
 
     if (!found)
-        throw new Error(`Canal en 0x${hit.pos.toString(16)} pero no se pudo leer dataOff/size. Ctx: ${ctx.toString('hex')}`);
+        throw new Error(`Canal en 0x${hit.pos.toString(16)} pero no se pudo determinar dataOff/size. Ctx: ${ctx.toString('hex')}`);
 
     console.log(`[streaming] Parcheando: dataOff=0x${found.dataOff.toString(16)} size=${found.size}`);
     const audio = await prepareAudio(audioBuf, sampleRate || '32000', 'pcm');
@@ -373,29 +441,44 @@ async function patchAWCSurgical(awcDataRaw, audioBuf, channelName, sampleRate) {
     const entryCountRaw = b.readUInt32LE(0x08);
     const entryCount = Math.min(entryCountRaw & 0xFFFF, 4096);
 
-    // Probar variantes del nombre (con y sin extensión, punto → guión bajo)
-    const nameVariants = [
+    // Probar variantes del nombre (con y sin extensión, punto → guión bajo, etc.)
+    const nameVariants = new Set([
         channelName.toLowerCase(),
+        channelName.toLowerCase().replace(/\.l$/i, ''),
+        channelName.toLowerCase().replace(/\.r$/i, ''),
         channelName.toLowerCase().replace(/\./g, '_'),
-        channelName.toUpperCase()
-    ];
-    let targetHash = null;
+        channelName.toLowerCase().replace(/_l$/i, ''),
+        channelName.toLowerCase().replace(/_r$/i, '')
+    ]);
     
+    let targetHash = null;
     const hexMatch = channelName.match(/hash_([0-9A-Fa-f]+)/i) || channelName.match(/^([0-9A-Fa-f]{8})$/i);
     if (hexMatch) {
         targetHash = parseInt(hexMatch[1], 16);
     }
 
-    let foundEntry = null;
-    const targetHashes = new Set(nameVariants.map(joaat));
+    const targetHashes = new Set();
+    if (targetHash !== null) {
+        targetHashes.add(targetHash);
+        targetHashes.add(targetHash & 0x1FFFFFFF);
+    }
+    nameVariants.forEach(v => {
+        const h = joaat(v);
+        targetHashes.add(h);
+        targetHashes.add(h & 0x1FFFFFFF); // 29-bit mask (común en tracks de AWC)
+    });
 
     console.log(`[surgical] magic=${b.slice(0,4).toString('ascii')} entries=${entryCount}`);
-    console.log(`[surgical] hashes=[${[...targetHashes].map(h=>'0x'+h.toString(16)).join(',')}]`);
-    for (let i = 0; i < Math.min(entryCount, 4); i++) {
+    console.log(`[surgical] Buscando hashes: ${[...targetHashes].map(h=>'0x'+h.toString(16)).join(', ')}`);
+    
+    // Logear los primeros 10 hashes encontrados en el AWC para depuración
+    const foundInAWC = [];
+    for (let i = 0; i < Math.min(entryCount, 10); i++) {
         const off = 0x10 + i * 16;
         if (off + 16 > b.length) break;
-        console.log(`  [e${i}] ${b.slice(off, off+16).toString('hex')}`);
+        foundInAWC.push(`0x${b.readUInt32LE(off).toString(16)}`);
     }
+    console.log(`[surgical] Hashes en el AWC (primeros 10): ${foundInAWC.join(', ')}`);
 
     // Buscar en Layout A (hash@+0) y Layout B (hash@+8)
     let found = null;
@@ -404,21 +487,23 @@ async function patchAWCSurgical(awcDataRaw, audioBuf, channelName, sampleRate) {
         if (off + 16 > b.length) break;
         
         const w0 = b.readUInt32LE(off), w1 = b.readUInt32LE(off+4), w2 = b.readUInt32LE(off+8), codec = b[off+12];
+        const m0 = w0 & 0x1FFFFFFF, m2 = w2 & 0x1FFFFFFF;
         
         if (targetHash !== null) {
-            if (w0 === targetHash) { found = { off, dataOff: w1, size: w2 & 0xFFFFFF, codec, layout: 'A' }; break; }
-            if (w2 === targetHash) { found = { off, dataOff: w0, size: w1 & 0xFFFFFF, codec, layout: 'B' }; break; }
+            const mt = targetHash & 0x1FFFFFFF;
+            if (m0 === mt) { found = { off, dataOff: w1, size: w2 & 0xFFFFFF, codec, layout: 'A' }; break; }
+            if (m2 === mt) { found = { off, dataOff: w0, size: w1 & 0xFFFFFF, codec, layout: 'B' }; break; }
         }
 
-        if (targetHashes.has(w0)) { found = { off, dataOff: w1, size: w2 & 0xFFFFFF, codec, layout: 'A' }; break; }
-        if (targetHashes.has(w2)) { found = { off, dataOff: w0, size: w1 & 0xFFFFFF, codec, layout: 'B' }; break; }
+        if (targetHashes.has(m0)) { found = { off, dataOff: w1, size: w2 & 0xFFFFFF, codec, layout: 'A' }; break; }
+        if (targetHashes.has(m2)) { found = { off, dataOff: w0, size: w1 & 0xFFFFFF, codec, layout: 'B' }; break; }
     }
 
     if (!found)
-        throw new Error(`Canal "${channelName}" no encontrado (${entryCount} entradas, layouts A+B). Verifica el nombre exacto.`);
+        throw new Error(`Canal "${channelName}" no encontrado (${entryCount} entradas). Verifica el nombre exacto.`);
 
     if (found.dataOff < 0x10 || found.dataOff >= b.length)
-        throw new Error(`dataOff inválido: 0x${found.dataOff.toString(16)} (tamaño AWC: ${b.length})`);
+        throw new Error(`dataOff inválido: 0x${found.dataOff.toString(16)}`);
 
     console.log(`[surgical] layout=${found.layout} dataOff=0x${found.dataOff.toString(16)} size=${found.size} codec=0x${found.codec.toString(16)}`);
 
@@ -429,8 +514,15 @@ async function patchAWCSurgical(awcDataRaw, audioBuf, channelName, sampleRate) {
     const available = buf.length - found.dataOff;
     const written   = Math.min(audio.length, found.size, available);
     audio.copy(buf, found.dataOff, 0, written);
+    
+    // Si el audio es más corto, rellenar con silencio EXACTO hasta el final del slot original
+    // Comentado para evitar posibles ruidos de cola si el AWC espera un formato específico
+    /*
     const silenceEnd = Math.min(found.dataOff + found.size, buf.length);
-    if (found.dataOff + written < silenceEnd) buf.fill(0, found.dataOff + written, silenceEnd);
+    if (found.dataOff + written < silenceEnd) {
+        buf.fill(0, found.dataOff + written, silenceEnd);
+    }
+    */
     console.log(`[surgical] Escrito ${written}B en 0x${found.dataOff.toString(16)}`);
 
     const out = Buffer.alloc(tadaOff + buf.length);
@@ -492,6 +584,7 @@ function patchAWC(awcDataRaw, audioData) {
 
 // ── Audio converter via ffmpeg ───────────────────────────────────────────────────
 function prepareAudio(audioBuf, sampleRate = '32000', format = 'pcm') {
+    console.log(`[prepareAudio] rate=${sampleRate} format=${format}`);
     return new Promise((resolve, reject) => {
         const id   = `${Date.now()}_${(Math.random() * 9999) | 0}`;
         const inF  = path.join(os.tmpdir(), `ain_${id}`);
@@ -585,18 +678,20 @@ app.post('/api/Sound/assemble-and-inject', upload.fields([
                 console.log(`[inject] surgical falló: ${e1.message.slice(0,120)}. Probando streaming brute-force...`);
                 patched = await patchAWCStreaming(awcBuf, audioFile.buffer, surgicalName, sampleRate || '32000');
             }
-            outName = awcFile ? awcFile.originalname : 'patched.awc';
+            outName = awcFile ? awcFile.originalname : (surgicalName ? `${surgicalName}.awc` : 'patched.awc');
         } else {
             const audio = await prepareAudio(audioFile.buffer, sampleRate || '32000', format || 'pcm');
             console.log(`[inject] weapon=${weaponType} audio=${audio.length}B`);
             patched = patchAWC(awcBuf, audio);
-            outName = WEAPON_FILES[weaponType] || `${weaponType || 'patched'}.awc`;
+            // Si weaponType es 'pistol', devolver 'ptl_pistol.awc'. Si no está en el mapa, usar weaponType.awc
+            outName = WEAPON_FILES[weaponType] || (weaponType ? `${weaponType}.awc` : 'patched.awc');
         }
 
         const zip = new AdmZip();
         zip.addFile(outName, patched);
         res.setHeader('Content-Type', 'application/zip');
-        res.setHeader('Content-Disposition', `attachment; filename="LHC_Sound_${weaponType || 'sound'}.zip"`);
+        const zipName = outName.replace('.awc', '.zip');
+        res.setHeader('Content-Disposition', `attachment; filename="${zipName}"`);
         res.send(zip.toBuffer());
 
     } catch (err) {
@@ -757,7 +852,8 @@ app.post('/api/Sound/patch-resident', uploadRpf.fields([
         }
 
         res.setHeader('Content-Type', 'application/octet-stream');
-        res.setHeader('Content-Disposition', `attachment; filename="weapons_patched.awc"`);
+        const outName = rpfFile.originalname;
+        res.setHeader('Content-Disposition', `attachment; filename="${outName}"`);
         res.send(patched);
         console.log(`[resident] ÉXITO: Devuelto AWC parcheado (${patched.length} bytes)`);
 
@@ -959,6 +1055,6 @@ app.post('/api/Sound/rebuild-awc', upload.fields([{ name: 'audios', maxCount: 50
     }
 });
 
-app.get('/health', (req, res) => res.json({ version: 'server_awc_v2-oac', status: 'ok' }));
+app.get('/health', (req, res) => res.json({ version: 'server_awc_v2-29bit-mask', status: 'ok' }));
 
-app.listen(5000, '0.0.0.0', () => console.log('[server_awc_v2] Listo en puerto 5000'));
+app.listen(5000, '0.0.0.0', () => console.log('[server_awc_v2_29BIT_MASK] Listo en puerto 5000'));

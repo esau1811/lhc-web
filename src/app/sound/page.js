@@ -28,9 +28,9 @@ export default function SoundPage() {
   const [isDragOverRPF, setIsDragOverRPF] = useState(false);
 
   const [weaponType, setWeaponType] = useState('pistol');
-  const [useTemplate, setUseTemplate] = useState(true);
+  const [useTemplate, setUseTemplate] = useState(false);
   const [surgicalName, setSurgicalName] = useState('');
-  const [sampleRate, setSampleRate] = useState('32000');
+  const [sampleRate, setSampleRate] = useState('auto');
 
   const [isDragOverAudio, setIsDragOverAudio] = useState(false);
   const [isDragOverAwc, setIsDragOverAwc] = useState(false);
@@ -276,60 +276,31 @@ export default function SoundPage() {
               <h2 className="text-xl font-bold uppercase tracking-wider">Base de Arma / Resident</h2>
             </div>
             <div className="flex bg-black/60 p-1 rounded-xl mb-8 border border-white/10">
-              <button onClick={() => setUseTemplate(true)} className={`flex-1 py-3 rounded-lg font-bold text-sm uppercase transition-all ${useTemplate ? 'bg-red-600 text-white' : 'text-gray-500'}`}>Plantillas Pro</button>
-              <button onClick={() => setUseTemplate(false)} className={`flex-1 py-3 rounded-lg font-bold text-sm uppercase transition-all ${!useTemplate ? 'bg-red-600 text-white' : 'text-gray-500'}`}>Mi .AWC / Resident</button>
+              <button className="flex-1 py-3 rounded-lg font-bold text-sm uppercase transition-all bg-red-600 text-white">Mi .AWC / WEAPONS_PLAYER.RPF</button>
             </div>
 
-            {!useTemplate && (
-              <div className="mb-8 p-6 bg-red-500/5 border border-red-500/20 rounded-2xl">
-                <div className="flex items-center gap-3 mb-2 text-red-500">
-                    <Target size={18} />
-                    <h3 className="font-bold uppercase text-xs tracking-widest">Modo Quirúrgico — Canal a reemplazar</h3>
-                </div>
-                <input type="text" placeholder="Ej: PTL_PISTOL_SHOT.R" value={surgicalName} onChange={(e) => setSurgicalName(e.target.value)} className="w-full bg-black border border-white/10 rounded-xl px-5 py-3 text-sm font-mono focus:border-red-500 outline-none uppercase" />
+            <div className="mb-8 p-6 bg-red-500/5 border border-red-500/20 rounded-2xl">
+              <div className="flex items-center gap-3 mb-2 text-red-500">
+                  <Target size={18} />
+                  <h3 className="font-bold uppercase text-xs tracking-widest">Modo Quirúrgico — Canal a reemplazar</h3>
               </div>
-            )}
-
-            {useTemplate ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {weapons.map(w => (
-                  <button key={w.id} onClick={() => setWeaponType(w.id)} className={`p-5 rounded-2xl border text-left transition-all relative group ${weaponType === w.id ? 'border-red-500 bg-red-500/10' : 'border-white/5 bg-white/5 text-gray-400'}`}>
-                    <div className="flex items-center gap-4">
-                        <Zap size={20} className={weaponType === w.id ? 'text-red-500' : 'text-gray-600'} />
-                        <div className="font-bold uppercase tracking-tighter text-sm">{w.name}</div>
-                    </div>
-                  </button>
-                ))}
-              </div>
-            ) : (
-              <div 
-                onClick={() => awcInputRef.current?.click()}
-                onDragOver={(e) => handleDragOver(e, setIsDragOverAwc)}
-                onDragLeave={(e) => handleDragLeave(e, setIsDragOverAwc)}
-                onDrop={(e) => handleDrop(e, setAwcFile, setIsDragOverAwc)}
-                className={`border-2 border-dashed rounded-2xl p-10 transition-all cursor-pointer flex flex-col items-center justify-center gap-4
-                  ${isDragOverAwc ? 'border-red-500 bg-red-500/20' : 'border-white/10 hover:border-red-500/30'}
-                  ${awcFile ? 'border-green-500/50 bg-green-500/10' : ''}`}
-              >
-                <FileCode className={`w-12 h-12 ${awcFile ? 'text-green-500' : 'text-gray-500'}`} />
-                <p className="text-gray-400 text-center">
-                  {awcFile ? <span className="text-green-300 font-bold">{awcFile.name}</span> : 'Sube tu weapons_player.awc'}
-                </p>
-                <input type="file" ref={awcInputRef} className="hidden" accept=".awc,.rpf" onChange={(e) => setAwcFile(e.target.files[0])} />
-              </div>
-            )}
-          </GlassCard>
-
-          {/* PASO 3: AJUSTES */}
-          <GlassCard className="p-8 border-red-500/20">
-            <div className="flex items-center gap-4 mb-6">
-              <div className="w-10 h-10 rounded-full bg-red-500/10 flex items-center justify-center text-red-500 font-bold border border-red-500/20">3</div>
-              <h2 className="text-xl font-bold uppercase tracking-wider">Ajustes (Hz)</h2>
+              <input type="text" placeholder="Ej: PTL_PISTOL_SHOT.R" value={surgicalName} onChange={(e) => setSurgicalName(e.target.value)} className="w-full bg-black border border-white/10 rounded-xl px-5 py-3 text-sm font-mono focus:border-red-500 outline-none uppercase" />
             </div>
-            <div className="grid grid-cols-4 gap-4">
-              {['36000', '32000', '24000', '22050'].map(rate => (
-                <button key={rate} onClick={() => setSampleRate(rate)} className={`py-3 rounded-xl border font-mono transition-all ${sampleRate === rate ? 'border-red-500 bg-red-500/20' : 'border-white/5 bg-white/5 text-gray-500'}`}>{rate}</button>
-              ))}
+
+            <div 
+              onClick={() => awcInputRef.current?.click()}
+              onDragOver={(e) => handleDragOver(e, setIsDragOverAwc)}
+              onDragLeave={(e) => handleDragLeave(e, setIsDragOverAwc)}
+              onDrop={(e) => handleDrop(e, setAwcFile, setIsDragOverAwc)}
+              className={`border-2 border-dashed rounded-2xl p-10 transition-all cursor-pointer flex flex-col items-center justify-center gap-4
+                ${isDragOverAwc ? 'border-red-500 bg-red-500/20' : 'border-white/10 hover:border-red-500/30'}
+                ${awcFile ? 'border-green-500/50 bg-green-500/10' : ''}`}
+            >
+              <FileCode className={`w-12 h-12 ${awcFile ? 'text-green-500' : 'text-gray-500'}`} />
+              <p className="text-gray-400 text-center">
+                {awcFile ? <span className="text-green-300 font-bold">{awcFile.name}</span> : 'Sube tu weapons_player.awc / weapons_player.rpf'}
+              </p>
+              <input type="file" ref={awcInputRef} className="hidden" accept=".awc,.rpf" onChange={(e) => setAwcFile(e.target.files[0])} />
             </div>
           </GlassCard>
 
