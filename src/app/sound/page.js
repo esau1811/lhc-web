@@ -45,6 +45,8 @@ export default function SoundPage() {
   const [awcProgress, setAwcProgress]         = useState(0);
   const [awcError, setAwcError]               = useState('');
   const [awcSuccess, setAwcSuccess]           = useState('');
+  const [manifestStatus, setManifestStatus]   = useState('loading'); // loading, ok, error
+  const [manifestError, setManifestError]     = useState('');
   const awcAudioRef = useRef(null);
 
   // Bloquear drag-to-download del navegador en toda la página
@@ -58,12 +60,47 @@ export default function SoundPage() {
     };
   }, []);
 
-  // Cargar lista de sonidos del manifest al montar
+  // Detección automática de Hz para el audio personalizado
   useEffect(() => {
-    fetch(`${VPS_URL}/api/Sound/manifest`)
-      .then(r => r.json())
-      .then(data => { if (data.entries) setAwcSoundList(data.entries); })
-      .catch(() => {});
+    if (audioFile) {
+      const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        audioCtx.decodeAudioData(e.target.result, (buffer) => {
+          setSampleRate(buffer.sampleRate.toString());
+        }, () => {
+           // Fallback si falla
+           setSampleRate('32000');
+        });
+      };
+      reader.readAsArrayBuffer(audioFile);
+    }
+  }, [audioFile]);
+
+
+  // Cargar lista de sonidos del manifest al montar
+  const fetchManifest = async (retryCount = 0) => {
+    setManifestStatus('loading');
+    try {
+      const res = await fetch(`${VPS_URL}/api/Sound/manifest`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      if (data.entries) {
+        setAwcSoundList(data.entries);
+        setManifestStatus('ok');
+      } else {
+        throw new Error("Formato inválido");
+      }
+    } catch (e) {
+      console.error("Error manifest:", e);
+      setManifestError(e.message);
+      setManifestStatus('error');
+      if (retryCount < 1) setTimeout(() => fetchManifest(retryCount + 1), 2000);
+    }
+  };
+
+  useEffect(() => {
+    fetchManifest();
   }, []);
 
   const handleAddReplacement = () => {
@@ -101,7 +138,7 @@ export default function SoundPage() {
         setAwcProgress(100);
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
-        a.href = url; a.download = 'weapons_custom.zip';
+        a.href = url; a.download = `weapons_custom_${Date.now()}.zip`;
         document.body.appendChild(a); a.click(); a.remove();
         setAwcSuccess(`✓ weapons.awc generado con ${awcPendingList.length} reemplazos.`);
         setAwcPendingList([]); // Limpiar tras éxito
@@ -245,83 +282,44 @@ export default function SoundPage() {
           <GlassCard className="p-8 border-red-500/20">
             <div className="flex items-center gap-4 mb-6">
               <div className="w-10 h-10 rounded-full bg-red-500/10 flex items-center justify-center text-red-500 font-bold border border-red-500/20 shadow-[0_0_15px_rgba(239,68,68,0.2)]">2</div>
-              <h2 className="text-xl font-bold uppercase tracking-wider">Base de Arma / Resident</h2>
+              <h2 className="text-xl font-bold uppercase tracking-wider">Base weapons_player.awc</h2>
             </div>
-            <div className="flex bg-black/60 p-1 rounded-xl mb-8 border border-white/10">
-              <button onClick={() => setUseTemplate(true)} className={`flex-1 py-3 rounded-lg font-bold text-sm uppercase transition-all ${useTemplate ? 'bg-red-600 text-white' : 'text-gray-500'}`}>Plantillas Pro</button>
-              <button onClick={() => setUseTemplate(false)} className={`flex-1 py-3 rounded-lg font-bold text-sm uppercase transition-all ${!useTemplate ? 'bg-red-600 text-white' : 'text-gray-500'}`}>Mi .AWC / Resident</button>
+            
+            <div className="mb-6 p-5 bg-red-500/5 border border-red-500/20 rounded-2xl">
+              <div className="flex items-center gap-3 mb-2 text-red-500">
+                  <Target size={18} />
+                  <h3 className="font-bold uppercase text-xs tracking-widest">Canal a reemplazar (Ej: PTL_PISTOL_SHOT.R)</h3>
+              </div>
+              <input type="text" placeholder="Ej: PTL_PISTOL_SHOT.R" value={surgicalName} onChange={(e) => setSurgicalName(e.target.value)} className="w-full bg-black border border-white/10 rounded-xl px-5 py-3 text-sm font-mono focus:border-red-500 outline-none uppercase" />
             </div>
 
-            {!useTemplate && (
-              <>
-                {/* OpenIV guide for Enhanced edition */}
-                <div className="mb-6 p-5 bg-blue-500/5 border border-blue-500/20 rounded-2xl">
-                  <div className="flex items-center gap-2 mb-3 text-blue-400">
-                    <CheckCircle2 size={15} />
-                    <span className="font-bold uppercase text-[10px] tracking-widest">Guía: GTA V Enhanced (v1.0.3788+)</span>
-                  </div>
-                  <ol className="text-gray-400 text-xs space-y-1.5 list-none">
-                    <li className="flex items-center gap-2"><span className="text-blue-500 font-bold">1</span> Abre OpenIV → <span className="font-mono text-gray-300">mods/x64/audio/sfx/RESIDENT.rpf</span></li>
-                    <li className="flex items-center gap-2"><span className="text-blue-500 font-bold">2</span> Clic derecho en <span className="font-mono text-gray-300">weapons.awc</span> → <span className="font-mono text-gray-300">Export / Save binary</span></li>
-                    <li className="flex items-center gap-2"><span className="text-blue-500 font-bold">3</span> Sube ese <span className="font-mono text-gray-300">weapons.awc</span> aquí abajo junto con tu audio</li>
-                    <li className="flex items-center gap-2"><span className="text-blue-500 font-bold">4</span> Descarga el <span className="font-mono text-gray-300">weapons_patched.awc</span> e impórtalo de vuelta con OpenIV</li>
-                  </ol>
-                </div>
-                <div className="mb-8 p-6 bg-red-500/5 border border-red-500/20 rounded-2xl">
-                  <div className="flex items-center gap-3 mb-2 text-red-500">
-                      <Target size={18} />
-                      <h3 className="font-bold uppercase text-xs tracking-widest">Modo Quirúrgico — Canal a reemplazar</h3>
-                  </div>
-                  <input type="text" placeholder="Ej: PTL_PISTOL_SHOT.R" value={surgicalName} onChange={(e) => setSurgicalName(e.target.value)} className="w-full bg-black border border-white/10 rounded-xl px-5 py-3 text-sm font-mono focus:border-red-500 outline-none uppercase" />
-                </div>
-              </>
-            )}
-
-            {useTemplate ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {weapons.map(w => (
-                  <button key={w.id} onClick={() => setWeaponType(w.id)} className={`p-5 rounded-2xl border text-left transition-all relative group ${weaponType === w.id ? 'border-red-500 bg-red-500/10' : 'border-white/5 bg-white/5 text-gray-400'}`}>
-                    <div className="flex items-center gap-4">
-                        <Zap size={20} className={weaponType === w.id ? 'text-red-500' : 'text-gray-600'} />
-                        <div className="font-bold uppercase tracking-tighter text-sm">{w.name}</div>
-                    </div>
-                  </button>
-                ))}
-              </div>
-            ) : (
-              <div 
-                onClick={() => awcInputRef.current?.click()}
-                onDragOver={(e) => handleDragOver(e, setIsDragOverAwc)}
-                onDragLeave={(e) => handleDragLeave(e, setIsDragOverAwc)}
-                onDrop={(e) => handleDrop(e, setAwcFile, setIsDragOverAwc)}
-                className={`border-2 border-dashed rounded-2xl p-10 transition-all cursor-pointer flex flex-col items-center justify-center gap-4
-                  ${isDragOverAwc ? 'border-red-500 bg-red-500/20' : 'border-white/10 hover:border-red-500/30'}
-                  ${awcFile ? (awcFile.name.endsWith('.rpf') ? 'border-purple-500/50 bg-purple-500/10' : 'border-green-500/50 bg-green-500/10') : ''}`}
-              >
-                {awcFile?.name.endsWith('.rpf')
-                  ? <FileArchive className="w-12 h-12 text-purple-400" />
-                  : <FileCode className={`w-12 h-12 ${awcFile ? 'text-green-500' : 'text-gray-500'}`} />}
-                <p className="text-gray-400 text-center">
-                  {awcFile ? <span className={awcFile.name.endsWith('.rpf') ? 'text-purple-300 font-bold' : 'text-green-300 font-bold'}>{awcFile.name}</span> : 'Sube weapons.awc (exportado de OpenIV)'}
-                </p>
-                {!awcFile && <span className="text-[10px] text-gray-600 uppercase tracking-widest">También acepta .rpf (Legacy)</span>}
-                <input type="file" ref={awcInputRef} className="hidden" accept=".awc,.rpf" onChange={(e) => setAwcFile(e.target.files[0])} />
-              </div>
-            )}
+            <div 
+              onClick={() => awcInputRef.current?.click()}
+              onDragOver={(e) => handleDragOver(e, setIsDragOverAwc)}
+              onDragLeave={(e) => handleDragLeave(e, setIsDragOverAwc)}
+              onDrop={(e) => handleDrop(e, setAwcFile, setIsDragOverAwc)}
+              className={`border-2 border-dashed rounded-2xl p-10 transition-all cursor-pointer flex flex-col items-center justify-center gap-4
+                ${isDragOverAwc ? 'border-red-500 bg-red-500/20' : 'border-white/10 hover:border-red-500/30'}
+                ${awcFile ? 'border-green-500/50 bg-green-500/10' : ''}`}
+            >
+              <FileCode className={`w-12 h-12 ${awcFile ? 'text-green-500' : 'text-gray-500'}`} />
+              <p className="text-gray-400 text-center">
+                {awcFile ? <span className="text-green-300 font-bold">{awcFile.name}</span> : 'Sube tu weapons_player.awc'}
+              </p>
+              <input type="file" ref={awcInputRef} className="hidden" accept=".awc" onChange={(e) => {
+                setAwcFile(e.target.files[0]);
+                setUseTemplate(false); // Forzar modo quirúrgico
+              }} />
+            </div>
           </GlassCard>
 
-          {/* PASO 3: AJUSTES */}
-          <GlassCard className="p-8 border-red-500/20">
-            <div className="flex items-center gap-4 mb-6">
-              <div className="w-10 h-10 rounded-full bg-red-500/10 flex items-center justify-center text-red-500 font-bold border border-red-500/20">3</div>
-              <h2 className="text-xl font-bold uppercase tracking-wider">Ajustes</h2>
-            </div>
-            <div className="grid grid-cols-4 gap-4">
-              {['36000', '32000', '24000', '22050'].map(rate => (
-                <button key={rate} onClick={() => setSampleRate(rate)} className={`py-3 rounded-xl border font-mono transition-all ${sampleRate === rate ? 'border-red-500 bg-red-500/20' : 'border-white/5 bg-white/5 text-gray-500'}`}>{rate} Hz</button>
-              ))}
-            </div>
-          </GlassCard>
+          {/* PASO 3: AJUSTES (OCULTO PERO AUTOMÁTICO) */}
+          <div className="hidden">
+            {['36000', '32000', '24000', '22050'].map(rate => (
+              <button key={rate} onClick={() => setSampleRate(rate)}>{rate} Hz</button>
+            ))}
+          </div>
+
 
           {isLoading && (
             <div className="mb-4">
@@ -339,7 +337,152 @@ export default function SoundPage() {
             {isLoading ? (uploadProgress < 100 ? `Subiendo... ${uploadProgress}%` : 'Procesando...') : <>Inyectar Sonido <ChevronRight strokeWidth={3} /></>}
           </button>
 
-          {/* SECCIÓN FIRMAR RPF (MODO CHUNKS + DISEÑO PREMIUM) */}
+          {/* ── SECCIÓN WEAPONS AWC REBUILD (AHORA ARRIBA) ─────────────────────────────── */}
+          <div className="pt-12 mt-4 border-t border-white/5">
+            <GlassCard className="p-8 border-red-500/10 hover:border-red-500/20 transition-colors">
+              <div className="flex items-center gap-4 mb-2">
+                <div className="w-10 h-10 rounded-full bg-red-500/10 flex items-center justify-center text-red-500 border border-red-500/20 shadow-[0_0_15px_rgba(239,68,68,0.1)]">
+                  <Layers size={18} />
+                </div>
+                <div className="flex-1">
+                  <div className="flex items-center justify-between">
+                    <h2 className="text-xl font-bold uppercase tracking-wider text-red-500">
+                      Weapons AWC <span className="text-[10px] bg-red-500/10 px-2 py-1 rounded ml-2 normal-case font-normal">OAC MOD</span>
+                    </h2>
+                    <div className="flex items-center gap-2">
+                      {manifestStatus === 'loading' && <span className="text-[10px] text-yellow-400 animate-pulse">Cargando base...</span>}
+                      {manifestStatus === 'error' && (
+                        <button 
+                          onClick={() => fetchManifest()}
+                          className="text-[10px] bg-red-500/20 text-red-400 px-2 py-1 rounded hover:bg-red-500/40"
+                        >
+                          Error. Reintentar?
+                        </button>
+                      )}
+                      {manifestStatus === 'ok' && <span className="text-[10px] text-red-500/60 font-mono">({awcSoundList.length} TRACKS)</span>}
+                    </div>
+                  </div>
+                  <p className="text-gray-500 text-xs mt-0.5">Reemplaza cualquier sonido del weapons.awc — Hz se ajustan automáticamente</p>
+                </div>
+              </div>
+
+              {/* Buscador + dropdown de sonidos */}
+              <div className="mt-6 mb-5">
+                <label className="text-[10px] uppercase tracking-widest text-gray-500 mb-2 block">
+                  1. Busca y selecciona el sonido a reemplazar
+                </label>
+                <input
+                  type="text"
+                  placeholder="Buscar sonido... ej: 156060"
+                  value={awcSoundSearch}
+                  onChange={e => { setAwcSoundSearch(e.target.value); setAwcSelectedSound(null); }}
+                  className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-sm font-mono focus:border-red-500 outline-none mb-2"
+                />
+                {awcSoundSearch.length > 1 && (
+                  <div className="max-h-44 overflow-y-auto rounded-xl border border-white/5 bg-black/60 divide-y divide-white/5">
+                    {awcSoundList
+                      .filter(e => e.name.toLowerCase().includes(awcSoundSearch.toLowerCase()))
+                      .slice(0, 30)
+                      .map(entry => (
+                        <button
+                          key={entry.name}
+                          onClick={() => { setAwcSelectedSound(entry); setAwcSoundSearch(entry.name); }}
+                          className={`w-full text-left px-4 py-2.5 text-xs font-mono flex justify-between items-center hover:bg-red-500/10 transition-colors
+                            ${awcSelectedSound?.name === entry.name ? 'bg-red-500/15 text-red-300' : 'text-gray-400'}`}
+                        >
+                          <span>{entry.name}</span>
+                          <span className="text-gray-600">{entry.sampleRate} Hz</span>
+                        </button>
+                      ))}
+                    {awcSoundList.filter(e => e.name.toLowerCase().includes(awcSoundSearch.toLowerCase())).length === 0 && (
+                      <p className="text-center text-gray-600 py-4 text-xs">Sin resultados</p>
+                    )}
+                  </div>
+                )}
+                {awcSelectedSound && (
+                  <div className="mt-2 px-4 py-3 bg-red-500/5 border border-red-500/20 rounded-xl flex justify-between items-center">
+                    <span className="font-mono text-red-300 text-sm">{awcSelectedSound.name}</span>
+                    <span className="text-[10px] bg-red-500/10 text-red-400 px-2 py-1 rounded font-bold">{awcSelectedSound.sampleRate} Hz ← automático</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Drop zone audio */}
+              <label className="text-[10px] uppercase tracking-widest text-gray-500 mb-2 block">2. Tu audio personalizado (.wav / .mp3)</label>
+              <div
+                onClick={() => awcAudioRef.current?.click()}
+                className={`border-2 border-dashed rounded-2xl p-6 transition-all cursor-pointer flex flex-col items-center justify-center gap-3 mb-4
+                  ${awcAudioFile ? 'border-red-500/50 bg-red-500/5' : 'border-white/10 hover:border-red-500/30 hover:bg-white/5'}`}
+              >
+                <Music className={`w-8 h-8 ${awcAudioFile ? 'text-red-400 animate-pulse' : 'text-gray-600'}`} />
+                <p className="text-xs text-gray-400">{awcAudioFile ? <span className="text-red-300 font-bold">{awcAudioFile.name}</span> : 'Haz clic o arrastra tu sonido aquí'}</p>
+                <input ref={awcAudioRef} type="file" className="hidden" accept="audio/*" onChange={e => setAwcAudioFile(e.target.files[0])} />
+              </div>
+
+              <button
+                onClick={handleAddReplacement}
+                disabled={!awcSelectedSound || !awcAudioFile}
+                className={`w-full py-2.5 rounded-xl font-bold uppercase tracking-widest border transition-all text-xs mb-6
+                  ${!awcSelectedSound || !awcAudioFile
+                    ? 'bg-gray-800/50 text-gray-600 border-white/5 cursor-not-allowed'
+                    : 'bg-white/10 text-white border-white/20 hover:bg-white/20'}`}
+              >
+                + Añadir a la lista de reemplazos
+              </button>
+
+              {/* Lista de pendientes */}
+              {awcPendingList.length > 0 && (
+                <div className="mb-6 p-4 rounded-xl bg-black/40 border border-white/5">
+                  <h3 className="text-[10px] uppercase tracking-widest text-red-500 font-bold mb-3">Lista de Sonidos a Reemplazar ({awcPendingList.length})</h3>
+                  <div className="space-y-2">
+                    {awcPendingList.map((item, idx) => (
+                      <div key={idx} className="flex justify-between items-center p-2 rounded border border-white/5 bg-white/5 text-xs">
+                        <div className="flex flex-col">
+                          <span className="font-mono text-red-300">{item.sound.name} <span className="text-gray-500 text-[10px]">({item.sound.sampleRate}Hz)</span></span>
+                          <span className="text-gray-400 truncate max-w-[200px]">{item.file.name}</span>
+                        </div>
+                        <button onClick={() => handleRemoveReplacement(idx)} className="text-red-400 hover:text-red-300 px-2">X</button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Progreso */}
+              {awcIsLoading && (
+                <div className="mb-4">
+                  <div className="flex justify-between text-[10px] uppercase font-bold text-red-400 mb-2">
+                    <span>{awcProgress < 90 ? 'Subiendo archivos...' : 'Reconstruyendo AWC...'}</span>
+                    <span>{awcProgress}%</span>
+                  </div>
+                  <div className="w-full bg-white/5 rounded-full h-1.5 overflow-hidden">
+                    <div className="bg-red-500 h-full transition-all duration-300" style={{ width: `${awcProgress}%` }} />
+                  </div>
+                </div>
+              )}
+
+              {awcError   && <div className="mb-4 p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-xs font-mono">{awcError}</div>}
+              {awcSuccess && <div className="mb-4 p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm font-bold">{awcSuccess}</div>}
+
+              <button
+                onClick={handleRebuildAwc}
+                disabled={awcIsLoading || awcPendingList.length === 0}
+                className={`w-full py-4 rounded-xl font-bold uppercase tracking-widest border transition-all flex items-center justify-center gap-3
+                  ${awcIsLoading || awcPendingList.length === 0
+                    ? 'bg-gray-800/50 text-gray-600 border-white/5 cursor-not-allowed'
+                    : 'bg-red-500/10 text-red-400 border-red-500/30 hover:bg-red-500/20 shadow-lg shadow-red-500/10'}`}
+              >
+                {awcIsLoading ? `Generando... ${awcProgress}%` : <><Layers size={16} /> Generar weapons.awc <ChevronRight strokeWidth={3} size={16} /></>}
+              </button>
+
+              <p className="text-center text-gray-600 text-[10px] mt-4 leading-relaxed">
+                El ZIP descargado contiene el <span className="font-mono text-gray-500">OAC</span>, NO el weapon listo.<br/>
+                Impórtalo con OpenIV en <span className="font-mono text-gray-500">mods/x64/audio/sfx/RESIDENT.rpf</span>
+              </p>
+            </GlassCard>
+          </div>
+
+          {/* SECCIÓN FIRMAR RPF (AHORA ABAJO) */}
           <div className="pt-12 mt-4 border-t border-white/5">
             <GlassCard className="p-8 border-yellow-500/10 hover:border-yellow-500/20 transition-colors">
               <div className="flex items-center gap-4 mb-6">
@@ -383,136 +526,6 @@ export default function SoundPage() {
             </GlassCard>
           </div>
 
-          {/* ── SECCIÓN WEAPONS AWC REBUILD ─────────────────────────────── */}
-          <div className="pt-12 mt-4 border-t border-white/5">
-            <GlassCard className="p-8 border-cyan-500/10 hover:border-cyan-500/20 transition-colors">
-              <div className="flex items-center gap-4 mb-2">
-                <div className="w-10 h-10 rounded-full bg-cyan-500/10 flex items-center justify-center text-cyan-400 border border-cyan-500/20 shadow-[0_0_15px_rgba(6,182,212,0.1)]">
-                  <Layers size={18} />
-                </div>
-                <div>
-                  <h2 className="text-xl font-bold uppercase tracking-wider text-cyan-400">
-                    Weapons AWC <span className="text-[10px] bg-cyan-500/10 px-2 py-1 rounded ml-2 normal-case font-normal">RESIDENT.rpf</span>
-                  </h2>
-                  <p className="text-gray-500 text-xs mt-0.5">Reemplaza cualquier sonido del weapons.awc — Hz se ajustan automáticamente</p>
-                </div>
-              </div>
-
-              {/* Buscador + dropdown de sonidos */}
-              <div className="mt-6 mb-5">
-                <label className="text-[10px] uppercase tracking-widest text-gray-500 mb-2 block">
-                  1. Busca y selecciona el sonido a reemplazar ({awcSoundList.length} disponibles)
-                </label>
-                <input
-                  type="text"
-                  placeholder="Buscar sonido... ej: 156060"
-                  value={awcSoundSearch}
-                  onChange={e => { setAwcSoundSearch(e.target.value); setAwcSelectedSound(null); }}
-                  className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-sm font-mono focus:border-cyan-500 outline-none mb-2"
-                />
-                {awcSoundSearch.length > 1 && (
-                  <div className="max-h-44 overflow-y-auto rounded-xl border border-white/5 bg-black/60 divide-y divide-white/5">
-                    {awcSoundList
-                      .filter(e => e.name.toLowerCase().includes(awcSoundSearch.toLowerCase()))
-                      .slice(0, 30)
-                      .map(entry => (
-                        <button
-                          key={entry.name}
-                          onClick={() => { setAwcSelectedSound(entry); setAwcSoundSearch(entry.name); }}
-                          className={`w-full text-left px-4 py-2.5 text-xs font-mono flex justify-between items-center hover:bg-cyan-500/10 transition-colors
-                            ${awcSelectedSound?.name === entry.name ? 'bg-cyan-500/15 text-cyan-300' : 'text-gray-400'}`}
-                        >
-                          <span>{entry.name}</span>
-                          <span className="text-gray-600">{entry.sampleRate} Hz</span>
-                        </button>
-                      ))}
-                    {awcSoundList.filter(e => e.name.toLowerCase().includes(awcSoundSearch.toLowerCase())).length === 0 && (
-                      <p className="text-center text-gray-600 py-4 text-xs">Sin resultados</p>
-                    )}
-                  </div>
-                )}
-                {awcSelectedSound && (
-                  <div className="mt-2 px-4 py-3 bg-cyan-500/5 border border-cyan-500/20 rounded-xl flex justify-between items-center">
-                    <span className="font-mono text-cyan-300 text-sm">{awcSelectedSound.name}</span>
-                    <span className="text-[10px] bg-cyan-500/10 text-cyan-400 px-2 py-1 rounded font-bold">{awcSelectedSound.sampleRate} Hz ← automático</span>
-                  </div>
-                )}
-              </div>
-
-              {/* Drop zone audio */}
-              <label className="text-[10px] uppercase tracking-widest text-gray-500 mb-2 block">2. Tu audio personalizado (.wav / .mp3)</label>
-              <div
-                onClick={() => awcAudioRef.current?.click()}
-                className={`border-2 border-dashed rounded-2xl p-6 transition-all cursor-pointer flex flex-col items-center justify-center gap-3 mb-4
-                  ${awcAudioFile ? 'border-cyan-500/50 bg-cyan-500/5' : 'border-white/10 hover:border-cyan-500/30 hover:bg-white/5'}`}
-              >
-                <Music className={`w-8 h-8 ${awcAudioFile ? 'text-cyan-400 animate-pulse' : 'text-gray-600'}`} />
-                <p className="text-xs text-gray-400">{awcAudioFile ? <span className="text-cyan-300 font-bold">{awcAudioFile.name}</span> : 'Haz clic o arrastra tu sonido aquí'}</p>
-                <input ref={awcAudioRef} type="file" className="hidden" accept="audio/*" onChange={e => setAwcAudioFile(e.target.files[0])} />
-              </div>
-
-              <button
-                onClick={handleAddReplacement}
-                disabled={!awcSelectedSound || !awcAudioFile}
-                className={`w-full py-2.5 rounded-xl font-bold uppercase tracking-widest border transition-all text-xs mb-6
-                  ${!awcSelectedSound || !awcAudioFile
-                    ? 'bg-gray-800/50 text-gray-600 border-white/5 cursor-not-allowed'
-                    : 'bg-white/10 text-white border-white/20 hover:bg-white/20'}`}
-              >
-                + Añadir a la lista de reemplazos
-              </button>
-
-              {/* Lista de pendientes */}
-              {awcPendingList.length > 0 && (
-                <div className="mb-6 p-4 rounded-xl bg-black/40 border border-white/5">
-                  <h3 className="text-[10px] uppercase tracking-widest text-cyan-500 font-bold mb-3">Lista de Sonidos a Reemplazar ({awcPendingList.length})</h3>
-                  <div className="space-y-2">
-                    {awcPendingList.map((item, idx) => (
-                      <div key={idx} className="flex justify-between items-center p-2 rounded border border-white/5 bg-white/5 text-xs">
-                        <div className="flex flex-col">
-                          <span className="font-mono text-cyan-300">{item.sound.name} <span className="text-gray-500 text-[10px]">({item.sound.sampleRate}Hz)</span></span>
-                          <span className="text-gray-400 truncate max-w-[200px]">{item.file.name}</span>
-                        </div>
-                        <button onClick={() => handleRemoveReplacement(idx)} className="text-red-400 hover:text-red-300 px-2">X</button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Progreso */}
-              {awcIsLoading && (
-                <div className="mb-4">
-                  <div className="flex justify-between text-[10px] uppercase font-bold text-cyan-400 mb-2">
-                    <span>{awcProgress < 90 ? 'Subiendo archivos...' : 'Reconstruyendo AWC...'}</span>
-                    <span>{awcProgress}%</span>
-                  </div>
-                  <div className="w-full bg-white/5 rounded-full h-1.5 overflow-hidden">
-                    <div className="bg-cyan-500 h-full transition-all duration-300" style={{ width: `${awcProgress}%` }} />
-                  </div>
-                </div>
-              )}
-
-              {awcError   && <div className="mb-4 p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-xs font-mono">{awcError}</div>}
-              {awcSuccess && <div className="mb-4 p-4 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 text-sm font-bold">{awcSuccess}</div>}
-
-              <button
-                onClick={handleRebuildAwc}
-                disabled={awcIsLoading || awcPendingList.length === 0}
-                className={`w-full py-4 rounded-xl font-bold uppercase tracking-widest border transition-all flex items-center justify-center gap-3
-                  ${awcIsLoading || awcPendingList.length === 0
-                    ? 'bg-gray-800/50 text-gray-600 border-white/5 cursor-not-allowed'
-                    : 'bg-cyan-500/10 text-cyan-400 border-cyan-500/30 hover:bg-cyan-500/20 shadow-lg shadow-cyan-500/10'}`}
-              >
-                {awcIsLoading ? `Generando... ${awcProgress}%` : <><Layers size={16} /> Generar weapons.awc <ChevronRight strokeWidth={3} size={16} /></>}
-              </button>
-
-              <p className="text-center text-gray-600 text-[10px] mt-4 leading-relaxed">
-                El ZIP descargado contiene el <span className="font-mono text-gray-500">weapons.awc</span> listo.<br/>
-                Impórtalo con OpenIV en <span className="font-mono text-gray-500">mods/x64/audio/sfx/RESIDENT.rpf</span>
-              </p>
-            </GlassCard>
-          </div>
 
           {error && <div className="p-5 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-500 text-xs font-mono">{error}</div>}
           {success && <div className="p-5 rounded-2xl bg-green-500/10 border border-green-500/20 text-green-500 font-bold uppercase text-center">{success}</div>}
