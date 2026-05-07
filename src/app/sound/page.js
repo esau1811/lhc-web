@@ -202,9 +202,19 @@ export default function SoundPage() {
             setUploadProgress(percent);
           }
         };
-        xhr.onload = () => {
-          if (xhr.status >= 200 && xhr.status < 300) resolve(xhr.response);
-          else reject(new Error('Error en el servidor'));
+        xhr.onload = async () => {
+          if (xhr.status >= 200 && xhr.status < 300) {
+            resolve(xhr.response);
+          } else {
+            // Intentar leer el mensaje de error del servidor (JSON o Texto)
+            try {
+              const text = await new Response(xhr.response).text();
+              const json = JSON.parse(text);
+              reject(new Error(json.error || 'Error en el servidor'));
+            } catch (e) {
+              reject(new Error('Error en el servidor (' + xhr.status + ')'));
+            }
+          }
         };
         xhr.onerror = () => reject(new Error('Fallo de conexión'));
         xhr.responseType = 'blob';
