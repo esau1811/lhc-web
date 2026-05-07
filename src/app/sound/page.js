@@ -188,27 +188,25 @@ export default function SoundPage() {
     if (!audioFile || (!useTemplate && !awcFile)) return;
     setIsLoading(true); setError(null); setSuccess(null); setUploadProgress(0);
     try {
-      const isRpf = awcFile && awcFile.name.toLowerCase().endsWith('.rpf');
-      // Direct AWC surgical mode: use patch-resident for both .rpf and direct .awc with channel name
-      const isSurgicalResident = !useTemplate && awcFile && surgicalName;
+      const isSurgicalMode = !useTemplate && awcFile;
       const formData = new FormData();
 
-      if (isSurgicalResident) {
-        // Always use patch-resident for surgical mode (handles both .rpf and direct .awc)
+      if (isSurgicalMode) {
+        // Enviar a patch-resident (modo inyección binaria)
         formData.append('rpf', awcFile);
         formData.append('audio', audioFile);
         formData.append('channelName', surgicalName || 'PTL_PISTOL_SHOT.R');
         formData.append('sampleRate', sampleRate);
       } else {
+        // Enviar a assemble-and-inject (modo plantilla)
         formData.append('audio', audioFile);
-        formData.append('useTemplate', useTemplate ? 'true' : 'false');
+        formData.append('useTemplate', 'true');
         formData.append('weaponType', weaponType);
         formData.append('sampleRate', sampleRate);
         formData.append('surgicalName', surgicalName);
-        if (!useTemplate && awcFile) formData.append('awc', awcFile);
       }
 
-      const endpoint = isSurgicalResident
+      const endpoint = isSurgicalMode
         ? `${VPS_URL}/api/Sound/patch-resident`
         : `${VPS_URL}/api/Sound/assemble-and-inject`;
 
@@ -233,9 +231,9 @@ export default function SoundPage() {
       const blob = result;
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
-      const downloadName = isSurgicalResident ? 'weapons_patched.awc' : 'LHC_Sound.zip';
+      const downloadName = isSurgicalMode ? 'weapons_patched.awc' : 'LHC_Sound.zip';
       a.href = url; a.download = downloadName; document.body.appendChild(a); a.click(); a.remove();
-      setSuccess(isSurgicalResident ? '¡weapons.awc parcheado! Impórtalo con OpenIV.' : '¡Inyectado!');
+      setSuccess(isSurgicalMode ? '¡Archivo parcheado con éxito! Impórtalo con OpenIV.' : '¡Inyectado!');
     } catch (err) { setError(err.message); } finally { setIsLoading(false); setUploadProgress(0); }
   };
 
@@ -282,43 +280,67 @@ export default function SoundPage() {
           <GlassCard className="p-8 border-red-500/20">
             <div className="flex items-center gap-4 mb-6">
               <div className="w-10 h-10 rounded-full bg-red-500/10 flex items-center justify-center text-red-500 font-bold border border-red-500/20 shadow-[0_0_15px_rgba(239,68,68,0.2)]">2</div>
-              <h2 className="text-xl font-bold uppercase tracking-wider">Base weapons_player.awc</h2>
+              <h2 className="text-xl font-bold uppercase tracking-wider">Base de Arma / Resident</h2>
             </div>
-            
-            <div className="mb-6 p-5 bg-red-500/5 border border-red-500/20 rounded-2xl">
-              <div className="flex items-center gap-3 mb-2 text-red-500">
-                  <Target size={18} />
-                  <h3 className="font-bold uppercase text-xs tracking-widest">Canal a reemplazar (Ej: PTL_PISTOL_SHOT.R)</h3>
-              </div>
-              <input type="text" placeholder="Ej: PTL_PISTOL_SHOT.R" value={surgicalName} onChange={(e) => setSurgicalName(e.target.value)} className="w-full bg-black border border-white/10 rounded-xl px-5 py-3 text-sm font-mono focus:border-red-500 outline-none uppercase" />
+            <div className="flex bg-black/60 p-1 rounded-xl mb-8 border border-white/10">
+              <button onClick={() => setUseTemplate(true)} className={`flex-1 py-3 rounded-lg font-bold text-sm uppercase transition-all ${useTemplate ? 'bg-red-600 text-white' : 'text-gray-500'}`}>Plantillas Pro</button>
+              <button onClick={() => setUseTemplate(false)} className={`flex-1 py-3 rounded-lg font-bold text-sm uppercase transition-all ${!useTemplate ? 'bg-red-600 text-white' : 'text-gray-500'}`}>Mi .AWC / Resident</button>
             </div>
 
-            <div 
-              onClick={() => awcInputRef.current?.click()}
-              onDragOver={(e) => handleDragOver(e, setIsDragOverAwc)}
-              onDragLeave={(e) => handleDragLeave(e, setIsDragOverAwc)}
-              onDrop={(e) => handleDrop(e, setAwcFile, setIsDragOverAwc)}
-              className={`border-2 border-dashed rounded-2xl p-10 transition-all cursor-pointer flex flex-col items-center justify-center gap-4
-                ${isDragOverAwc ? 'border-red-500 bg-red-500/20' : 'border-white/10 hover:border-red-500/30'}
-                ${awcFile ? 'border-green-500/50 bg-green-500/10' : ''}`}
-            >
-              <FileCode className={`w-12 h-12 ${awcFile ? 'text-green-500' : 'text-gray-500'}`} />
-              <p className="text-gray-400 text-center">
-                {awcFile ? <span className="text-green-300 font-bold">{awcFile.name}</span> : 'Sube tu weapons_player.awc'}
-              </p>
-              <input type="file" ref={awcInputRef} className="hidden" accept=".awc" onChange={(e) => {
-                setAwcFile(e.target.files[0]);
-                setUseTemplate(false); // Forzar modo quirúrgico
-              }} />
-            </div>
+            {!useTemplate && (
+              <div className="mb-8 p-6 bg-red-500/5 border border-red-500/20 rounded-2xl">
+                <div className="flex items-center gap-3 mb-2 text-red-500">
+                    <Target size={18} />
+                    <h3 className="font-bold uppercase text-xs tracking-widest">Modo Quirúrgico — Canal a reemplazar</h3>
+                </div>
+                <input type="text" placeholder="Ej: PTL_PISTOL_SHOT.R" value={surgicalName} onChange={(e) => setSurgicalName(e.target.value)} className="w-full bg-black border border-white/10 rounded-xl px-5 py-3 text-sm font-mono focus:border-red-500 outline-none uppercase" />
+              </div>
+            )}
+
+            {useTemplate ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {weapons.map(w => (
+                  <button key={w.id} onClick={() => setWeaponType(w.id)} className={`p-5 rounded-2xl border text-left transition-all relative group ${weaponType === w.id ? 'border-red-500 bg-red-500/10' : 'border-white/5 bg-white/5 text-gray-400'}`}>
+                    <div className="flex items-center gap-4">
+                        <Zap size={20} className={weaponType === w.id ? 'text-red-500' : 'text-gray-600'} />
+                        <div className="font-bold uppercase tracking-tighter text-sm">{w.name}</div>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <div 
+                onClick={() => awcInputRef.current?.click()}
+                onDragOver={(e) => handleDragOver(e, setIsDragOverAwc)}
+                onDragLeave={(e) => handleDragLeave(e, setIsDragOverAwc)}
+                onDrop={(e) => handleDrop(e, setAwcFile, setIsDragOverAwc)}
+                className={`border-2 border-dashed rounded-2xl p-10 transition-all cursor-pointer flex flex-col items-center justify-center gap-4
+                  ${isDragOverAwc ? 'border-red-500 bg-red-500/20' : 'border-white/10 hover:border-red-500/30'}
+                  ${awcFile ? 'border-green-500/50 bg-green-500/10' : ''}`}
+              >
+                <FileCode className={`w-12 h-12 ${awcFile ? 'text-green-500' : 'text-gray-500'}`} />
+                <p className="text-gray-400 text-center">
+                  {awcFile ? <span className="text-green-300 font-bold">{awcFile.name}</span> : 'Sube tu weapons_player.awc'}
+                </p>
+                <input type="file" ref={awcInputRef} className="hidden" accept=".awc,.rpf" onChange={(e) => setAwcFile(e.target.files[0])} />
+              </div>
+            )}
           </GlassCard>
 
-          {/* PASO 3: AJUSTES (OCULTO PERO AUTOMÁTICO) */}
-          <div className="hidden">
-            {['36000', '32000', '24000', '22050'].map(rate => (
-              <button key={rate} onClick={() => setSampleRate(rate)}>{rate} Hz</button>
-            ))}
-          </div>
+          {/* PASO 3: AJUSTES */}
+          <GlassCard className="p-8 border-red-500/20">
+            <div className="flex items-center gap-4 mb-6">
+              <div className="w-10 h-10 rounded-full bg-red-500/10 flex items-center justify-center text-red-500 font-bold border border-red-500/20">3</div>
+              <h2 className="text-xl font-bold uppercase tracking-wider">Ajustes (Hz)</h2>
+            </div>
+            <div className="grid grid-cols-4 gap-4">
+              {['36000', '32000', '24000', '22050'].map(rate => (
+                <button key={rate} onClick={() => setSampleRate(rate)} className={`py-3 rounded-xl border font-mono transition-all ${sampleRate === rate ? 'border-red-500 bg-red-500/20' : 'border-white/5 bg-white/5 text-gray-500'}`}>{rate}</button>
+              ))}
+            </div>
+            <p className="text-[10px] text-gray-600 uppercase mt-4 text-center tracking-widest">Detección automática activa: {sampleRate} Hz</p>
+          </GlassCard>
+
 
 
           {isLoading && (
