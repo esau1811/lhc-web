@@ -178,16 +178,19 @@ export default function SoundPage() {
       formData.append('weaponType', weaponType);
       formData.append('sampleRate', sampleRate);
       formData.append('surgicalName', surgicalName);
-      if (!useTemplate && awcFile) formData.append('awc', awcFile);
 
-      const endpoint = !useTemplate && awcFile && awcFile.name.toLowerCase().endsWith('.rpf')
+      // Si NO usamos plantilla y hay un archivo, usamos SIEMPRE patch-resident (es el más robusto para archivos directos)
+      const useSurgicalEndpoint = !useTemplate && awcFile;
+      const endpoint = useSurgicalEndpoint
         ? `${VPS_URL}/api/Sound/patch-resident`
         : `${VPS_URL}/api/Sound/assemble-and-inject`;
 
-      // Si es RPF, el campo se llama 'rpf' en el servidor, si no, se llama 'awc' o solo 'audio'
-      if (endpoint.includes('patch-resident')) {
-          formData.delete('awc');
+      if (useSurgicalEndpoint) {
           formData.append('rpf', awcFile);
+          // Aseguramos que channelName esté presente (el servidor lo espera)
+          formData.append('channelName', surgicalName || 'PTL_PISTOL_SHOT.R');
+      } else {
+          if (!useTemplate && awcFile) formData.append('awc', awcFile);
       }
 
       const xhr = new XMLHttpRequest();
@@ -211,7 +214,7 @@ export default function SoundPage() {
       const blob = result;
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
-      const downloadName = !useTemplate && awcFile && awcFile.name.toLowerCase().endsWith('.rpf') ? 'weapons_patched.awc' : 'LHC_Sound.zip';
+      const downloadName = useSurgicalEndpoint ? 'weapons_patched.awc' : 'LHC_Sound.zip';
       a.href = url; a.download = downloadName; document.body.appendChild(a); a.click(); a.remove();
       setSuccess('¡Procesado con éxito!');
     } catch (err) { setError(err.message); } finally { setIsLoading(false); setUploadProgress(0); }
