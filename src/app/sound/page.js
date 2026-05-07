@@ -93,6 +93,8 @@ export default function SoundPage() {
     setAwcAudioFile(null);
     setAwcSelectedSound(null);
     setAwcSoundSearch('');
+    // Resetear el input DOM para que el navegador dispare onChange en el siguiente archivo
+    if (awcAudioRef.current) awcAudioRef.current.value = '';
   };
 
   const handleRemoveReplacement = (index) => {
@@ -147,21 +149,72 @@ export default function SoundPage() {
   const handleFixRPF = async () => {
     if (!rpfFile) return;
     setIsFixing(true); setError(null); setSuccess(null); setFixProgress(0);
+    
     try {
       const formData = new FormData();
       formData.append('rpf', rpfFile);
-      const response = await fetch(`${VPS_URL}/api/Sound/fix-rpf`, { method: 'POST', body: formData });
-      if (!response.ok) {
-        let errMsg = 'Error al firmar el RPF';
-        try { const j = await response.clone().json(); errMsg = j.error || errMsg; } catch {}
-        throw new Error(errMsg);
-      }
-      const blob = await response.blob();
+
+      // Simulación de progreso de firma una vez terminada la subida
+      const simulateProgress = () => {
+        let p = 0;
+        const interval = setInterval(() => {
+          p += Math.random() * 5;
+          if (p > 95) {
+            clearInterval(interval);
+            setFixProgress(95);
+          } else {
+            setFixProgress(Math.floor(p));
+          }
+        }, 800);
+        return interval;
+      };
+
+      const xhr = new XMLHttpRequest();
+      const progressInterval = { current: null };
+
+      const result = await new Promise((resolve, reject) => {
+        xhr.open('POST', `${VPS_URL}/api/Sound/fix-rpf`);
+        
+        xhr.upload.onprogress = (e) => {
+          if (e.lengthComputable) {
+            const percent = Math.round((e.loaded / e.total) * 90); // 90% es subida
+            setFixProgress(percent);
+            if (percent >= 90 && !progressInterval.current) {
+              progressInterval.current = simulateProgress();
+            }
+          }
+        };
+
+        xhr.onload = () => {
+          if (progressInterval.current) clearInterval(progressInterval.current);
+          if (xhr.status >= 200 && xhr.status < 300) {
+            resolve(xhr.response);
+          } else {
+            reject(new Error('Error al firmar el RPF'));
+          }
+        };
+
+        xhr.onerror = () => {
+          if (progressInterval.current) clearInterval(progressInterval.current);
+          reject(new Error('Fallo de conexión'));
+        };
+
+        xhr.responseType = 'blob';
+        xhr.send(formData);
+      });
+
+      setFixProgress(100);
+      const blob = result;
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url; a.download = rpfFile.name; document.body.appendChild(a); a.click(); a.remove();
       setSuccess('¡RPF Firmado con éxito!');
-    } catch (err) { setError(err.message); } finally { setIsFixing(false); }
+    } catch (err) { 
+      setError(err.message); 
+    } finally { 
+      setIsFixing(false); 
+      setFixProgress(0);
+    }
   };
 
 
