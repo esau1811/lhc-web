@@ -60,22 +60,6 @@ export default function SoundPage() {
     };
   }, []);
 
-  // Detección automática de Hz para el audio personalizado
-  useEffect(() => {
-    if (audioFile) {
-      const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        audioCtx.decodeAudioData(e.target.result, (buffer) => {
-          setSampleRate(buffer.sampleRate.toString());
-        }, () => {
-           // Fallback si falla
-           setSampleRate('32000');
-        });
-      };
-      reader.readAsArrayBuffer(audioFile);
-    }
-  }, [audioFile]);
 
 
   // Cargar lista de sonidos del manifest al montar
@@ -188,27 +172,23 @@ export default function SoundPage() {
     if (!audioFile || (!useTemplate && !awcFile)) return;
     setIsLoading(true); setError(null); setSuccess(null); setUploadProgress(0);
     try {
-      const isSurgicalMode = !useTemplate && awcFile;
       const formData = new FormData();
+      formData.append('audio', audioFile);
+      formData.append('useTemplate', useTemplate ? 'true' : 'false');
+      formData.append('weaponType', weaponType);
+      formData.append('sampleRate', sampleRate);
+      formData.append('surgicalName', surgicalName);
+      if (!useTemplate && awcFile) formData.append('awc', awcFile);
 
-      if (isSurgicalMode) {
-        // Enviar a patch-resident (modo inyección binaria)
-        formData.append('rpf', awcFile);
-        formData.append('audio', audioFile);
-        formData.append('channelName', surgicalName || 'PTL_PISTOL_SHOT.R');
-        formData.append('sampleRate', sampleRate);
-      } else {
-        // Enviar a assemble-and-inject (modo plantilla)
-        formData.append('audio', audioFile);
-        formData.append('useTemplate', 'true');
-        formData.append('weaponType', weaponType);
-        formData.append('sampleRate', sampleRate);
-        formData.append('surgicalName', surgicalName);
-      }
-
-      const endpoint = isSurgicalMode
+      const endpoint = !useTemplate && awcFile && awcFile.name.toLowerCase().endsWith('.rpf')
         ? `${VPS_URL}/api/Sound/patch-resident`
         : `${VPS_URL}/api/Sound/assemble-and-inject`;
+
+      // Si es RPF, el campo se llama 'rpf' en el servidor, si no, se llama 'awc' o solo 'audio'
+      if (endpoint.includes('patch-resident')) {
+          formData.delete('awc');
+          formData.append('rpf', awcFile);
+      }
 
       const xhr = new XMLHttpRequest();
       const result = await new Promise((resolve, reject) => {
@@ -231,9 +211,9 @@ export default function SoundPage() {
       const blob = result;
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
-      const downloadName = isSurgicalMode ? 'weapons_patched.awc' : 'LHC_Sound.zip';
+      const downloadName = !useTemplate && awcFile && awcFile.name.toLowerCase().endsWith('.rpf') ? 'weapons_patched.awc' : 'LHC_Sound.zip';
       a.href = url; a.download = downloadName; document.body.appendChild(a); a.click(); a.remove();
-      setSuccess(isSurgicalMode ? '¡Archivo parcheado con éxito! Impórtalo con OpenIV.' : '¡Inyectado!');
+      setSuccess('¡Procesado con éxito!');
     } catch (err) { setError(err.message); } finally { setIsLoading(false); setUploadProgress(0); }
   };
 
@@ -338,7 +318,6 @@ export default function SoundPage() {
                 <button key={rate} onClick={() => setSampleRate(rate)} className={`py-3 rounded-xl border font-mono transition-all ${sampleRate === rate ? 'border-red-500 bg-red-500/20' : 'border-white/5 bg-white/5 text-gray-500'}`}>{rate}</button>
               ))}
             </div>
-            <p className="text-[10px] text-gray-600 uppercase mt-4 text-center tracking-widest">Detección automática activa: {sampleRate} Hz</p>
           </GlassCard>
 
 
