@@ -172,26 +172,26 @@ export default function SoundPage() {
     if (!audioFile || (!useTemplate && !awcFile)) return;
     setIsLoading(true); setError(null); setSuccess(null); setUploadProgress(0);
     try {
+      const isRpf = awcFile && awcFile.name.toLowerCase().endsWith('.rpf');
       const formData = new FormData();
-      formData.append('audio', audioFile);
-      formData.append('useTemplate', useTemplate ? 'true' : 'false');
-      formData.append('weaponType', weaponType);
-      formData.append('sampleRate', sampleRate);
-      formData.append('surgicalName', surgicalName);
+      
+      if (!useTemplate && isRpf) {
+        formData.append('rpf', awcFile);
+        formData.append('audio', audioFile);
+        formData.append('channelName', surgicalName || 'PTL_PISTOL_SHOT.R');
+        formData.append('sampleRate', sampleRate);
+      } else {
+        formData.append('audio', audioFile);
+        formData.append('useTemplate', useTemplate ? 'true' : 'false');
+        formData.append('weaponType', weaponType);
+        formData.append('sampleRate', sampleRate);
+        formData.append('surgicalName', surgicalName);
+        if (!useTemplate && awcFile) formData.append('awc', awcFile);
+      }
 
-      // Si NO usamos plantilla y hay un archivo, usamos SIEMPRE patch-resident (es el más robusto para archivos directos)
-      const useSurgicalEndpoint = !useTemplate && awcFile;
-      const endpoint = useSurgicalEndpoint
+      const endpoint = (!useTemplate && isRpf) 
         ? `${VPS_URL}/api/Sound/patch-resident`
         : `${VPS_URL}/api/Sound/assemble-and-inject`;
-
-      if (useSurgicalEndpoint) {
-          formData.append('rpf', awcFile);
-          // Aseguramos que channelName esté presente (el servidor lo espera)
-          formData.append('channelName', surgicalName || 'PTL_PISTOL_SHOT.R');
-      } else {
-          if (!useTemplate && awcFile) formData.append('awc', awcFile);
-      }
 
       const xhr = new XMLHttpRequest();
       const result = await new Promise((resolve, reject) => {
@@ -214,7 +214,7 @@ export default function SoundPage() {
       const blob = result;
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
-      const downloadName = useSurgicalEndpoint ? 'weapons_patched.awc' : 'LHC_Sound.zip';
+      const downloadName = isRpf ? 'weapons_patched.rpf' : 'LHC_Sound.zip';
       a.href = url; a.download = downloadName; document.body.appendChild(a); a.click(); a.remove();
       setSuccess('¡Procesado con éxito!');
     } catch (err) { setError(err.message); } finally { setIsLoading(false); setUploadProgress(0); }
