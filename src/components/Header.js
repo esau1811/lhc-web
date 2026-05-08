@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation';
 import { useSession, signIn } from 'next-auth/react';
 import { motion } from 'framer-motion';
 import { Crown, Menu, X } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useLang } from '@/components/LangProvider';
 
 export default function Header() {
