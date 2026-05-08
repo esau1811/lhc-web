@@ -466,6 +466,17 @@ export default function SoundPage() {
                     ⚡ Reemplazar TODOS los canales
                   </button>
                 </div>
+                {/* Tasa editable por si el auto-detect falla */}
+                <p className="text-[10px] text-gray-600 mt-1 text-right">
+                  Tasa detectada: <button
+                    className="text-red-400 font-mono underline decoration-dotted"
+                    onClick={() => {
+                      const v = prompt('Sample rate (Hz):', detectedSampleRate);
+                      const n = parseInt(v, 10);
+                      if (n > 0) setDetectedSampleRate(n);
+                    }}
+                  >{detectedSampleRate} Hz ✎</button>
+                </p>
               </div>
             )}
           </GlassCard>
