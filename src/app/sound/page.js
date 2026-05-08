@@ -387,7 +387,7 @@ export default function SoundPage() {
           <GlassCard className="p-8 border-red-500/20">
             <div className="flex items-center gap-4 mb-6">
               <div className="w-10 h-10 rounded-full bg-red-500/10 flex items-center justify-center text-red-500 font-bold border border-red-500/20 shadow-[0_0_15px_rgba(239,68,68,0.2)]">2</div>
-              <h2 className="text-xl font-bold uppercase tracking-wider">Base de Arma / Resident</h2>
+              <h2 className="text-xl font-bold uppercase tracking-wider">Base de Arma</h2>
             </div>
 
             {/* Drop zone AWC */}
