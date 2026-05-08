@@ -41,7 +41,7 @@ export default function Header() {
 
   return (
     <>
-      <nav className="fixed top-0 left-0 right-0 z-50 px-6 py-6 bg-transparent">
+      <nav className="absolute top-0 left-0 right-0 z-50 px-6 py-6 bg-transparent">
         <div className="max-w-[1400px] mx-auto flex items-center justify-between">
           
           <div className="flex items-center gap-8">
