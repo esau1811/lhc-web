@@ -5,15 +5,16 @@ import { useSession } from 'next-auth/react';
 import Header from '@/components/Header';
 import GlassCard from '@/components/GlassCard';
 import { useLang } from '@/components/LangProvider';
+import ToolGate from '@/components/ToolGate';
 import { Music, FileCode, Zap, ChevronRight, CheckCircle2, LockKeyhole, FileArchive, Target, Layers } from 'lucide-react';
 
 const VPS_URL = 'https://187.33.157.103.nip.io';
 const CHUNK_SIZE = 5 * 1024 * 1024; // 5MB por trozo para burlar cualquier límite
 
 export default function SoundPage() {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const { t } = useLang();
-  
+
   const audioInputRef = useRef(null);
   const awcInputRef = useRef(null);
 
@@ -345,6 +346,14 @@ export default function SoundPage() {
       setSuccess('¡Procesado con éxito!');
     } catch (err) { setError(err.message); } finally { setIsLoading(false); setUploadProgress(0); }
   };
+
+  if (status === 'loading') return (
+    <div className="min-h-screen bg-[#050505] flex items-center justify-center">
+      <div className="w-10 h-10 border-4 border-red-500 border-t-transparent rounded-full animate-spin" />
+    </div>
+  );
+
+  if (!session) return <ToolGate toolName="LHCSound" />;
 
   return (
     <div className="min-h-screen bg-black text-white selection:bg-red-500/30">

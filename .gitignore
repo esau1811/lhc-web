@@ -36,3 +36,13 @@ next-env.d.ts
 scratch/
 !scratch/server_awc_v2.js
 !scratch/fix_and_deploy.js
+
+# large files and backups
+LHC.zip
+prueba/
+LHC_original/
+*.rpf
+*.zip
+*.txt
+deploy_*.js
+vps_*.js

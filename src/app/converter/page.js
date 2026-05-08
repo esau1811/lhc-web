@@ -11,7 +11,8 @@ import JSZip from 'jszip';
 import { extractFilenames, extractFromFilename } from '@/lib/rpfParser';
 import GlassCard from '@/components/GlassCard';
 import { motion } from 'framer-motion';
-import { Upload, FileText, ArrowRight, ShieldAlert, Download, Lock } from 'lucide-react';
+import { Upload, FileText, ArrowRight, ShieldAlert, Download } from 'lucide-react';
+import ToolGate from '@/components/ToolGate';
 
 export default function ConverterPage() {
   const { data: session, status } = useSession();
@@ -247,23 +248,7 @@ export default function ConverterPage() {
     );
   }
 
-  if (!session) {
-    return (
-      <div className="min-h-screen bg-[#050505]">
-        <Header />
-        <main className="max-w-7xl mx-auto px-6 pt-40 flex flex-col items-center text-center">
-          <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center mb-6">
-            <Lock className="text-zinc-600" size={32} />
-          </div>
-          <h2 className="text-4xl font-black mb-4 tracking-tight">ACCESO RESTRINGIDO</h2>
-          <p className="text-zinc-500 max-w-md mb-8">Debes iniciar sesión con Discord para utilizar el conversor de armas.</p>
-          <button onClick={() => signIn('discord')} className="btn-pill btn-red px-12">
-            Login con Discord
-          </button>
-        </main>
-      </div>
-    );
-  }
+  if (!session) return <ToolGate toolName="LHCConverter" />;
 
   return (
     <div className="min-h-screen">

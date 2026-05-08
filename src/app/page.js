@@ -119,8 +119,8 @@ export default function HomePage() {
       name: t('soundTitle'), 
       desc: t('soundDesc'), 
       icon: '/icon_sound.png', 
-      badge: t('maintenance') || 'MANTENIMIENTO', 
-      badgeColor: 'bg-yellow-500',
+      badge: t('premium'), 
+      badgeColor: 'bg-red-500',
       glowClass: 'nitro-glow',
       users: '3.1K',
       rating: '4.6',
@@ -423,24 +423,34 @@ export default function HomePage() {
             <GlassCard className="p-6" hideBorder>
               <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500 mb-6">{t('actividad_reciente')}</h4>
               <div className="space-y-6">
-                {recentActivity.map((act, i) => (
-                  <div key={i} className="flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center overflow-hidden">
-                      {act.isUser ? (
-                        <img src={act.image || "/logo.png"} className="w-full h-full object-cover" />
-                      ) : (
-                        <div className="p-2">
-                          <img src={act.icon} className="w-full h-full object-contain ai-icon-blend opacity-40" />
-                        </div>
-                      )}
+                {recentActivity.length === 0 ? (
+                  <div className="flex flex-col items-center py-8 text-center">
+                    <div className="w-12 h-12 bg-white/5 rounded-full flex items-center justify-center mb-3">
+                      <User size={20} className="text-zinc-600" />
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-[12px] font-black truncate">{act.name}</p>
-                      <p className="text-[10px] text-zinc-500 font-bold truncate">{act.action}</p>
-                    </div>
-                    <span className="text-[9px] text-zinc-600 font-bold whitespace-nowrap">{act.time}</span>
+                    <p className="text-[11px] font-bold text-zinc-600 uppercase tracking-wider">{t('no_activity') || 'Sé el primero'}</p>
+                    <p className="text-[10px] text-zinc-700 mt-1">{t('no_activity_sub') || 'Inicia sesión para aparecer aquí'}</p>
                   </div>
-                ))}
+                ) : (
+                  recentActivity.map((act, i) => (
+                    <div key={i} className="flex items-center gap-4">
+                      <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center overflow-hidden">
+                        {act.isUser ? (
+                          <img src={act.image || "/logo.png"} className="w-full h-full object-cover" />
+                        ) : (
+                          <div className="p-2">
+                            <img src={act.icon} className="w-full h-full object-contain ai-icon-blend opacity-40" />
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[12px] font-black truncate">{act.name}</p>
+                        <p className="text-[10px] text-zinc-500 font-bold truncate">{act.action}</p>
+                      </div>
+                      <span className="text-[9px] text-zinc-600 font-bold whitespace-nowrap">{act.time}</span>
+                    </div>
+                  ))
+                )}
               </div>
             </GlassCard>
 

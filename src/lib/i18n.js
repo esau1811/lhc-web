@@ -152,6 +152,18 @@ export const translations = {
     resOneClick: 'Change with one click',
     resStretchable: 'Stretchable for FiveM',
     getOnDiscord: 'Get the app on Discord',
+
+    // ToolGate
+    gate_title: 'RESTRICTED ACCESS',
+    gate_desc: 'To use {toolName} you must log in with Discord.',
+    gate_join: 'Join our Discord community to unlock all tools.',
+    gate_step1: 'Join the Discord server',
+    gate_step2: 'Log in with your account',
+    gate_join_btn: 'Join Discord',
+    gate_login_btn: 'Login with Discord',
+    gate_already: 'Already a member? Click "Login" directly.',
+    no_activity: 'Be the first',
+    no_activity_sub: 'Log in to appear here',
   },
   es: {
     donations: 'Donaciones',
@@ -289,6 +301,18 @@ export const translations = {
     resOneClick: 'Cambia con un clic',
     resStretchable: 'Ajustable para FiveM',
     getOnDiscord: 'Consigue la app en Discord',
+
+    // ToolGate
+    gate_title: 'ACCESO RESTRINGIDO',
+    gate_desc: 'Para usar {toolName} debes iniciar sesión con Discord.',
+    gate_join: 'Únete a nuestra comunidad en Discord para desbloquear todas las herramientas.',
+    gate_step1: 'Únete al servidor de Discord',
+    gate_step2: 'Inicia sesión con tu cuenta',
+    gate_join_btn: 'Unirte al Discord',
+    gate_login_btn: 'Iniciar sesión con Discord',
+    gate_already: '¿Ya eres miembro? Haz clic en "Iniciar sesión" directamente.',
+    no_activity: 'Sé el primero',
+    no_activity_sub: 'Inicia sesión para aparecer aquí',
   },
   it: {
     donations: 'Donazioni',
@@ -391,6 +415,18 @@ export const translations = {
     resOneClick: 'Cambia con un clic',
     resStretchable: 'Regolabile per FiveM',
     getOnDiscord: 'Ottieni l\'app su Discord',
+
+    // ToolGate
+    gate_title: 'ACCESSO LIMITATO',
+    gate_desc: 'Per utilizzare {toolName} devi accedere con Discord.',
+    gate_join: 'Unisciti alla nostra comunità Discord per sbloccare tutti gli strumenti.',
+    gate_step1: 'Unisciti al server Discord',
+    gate_step2: 'Accedi con il tuo account',
+    gate_join_btn: 'Unisciti a Discord',
+    gate_login_btn: 'Accedi con Discord',
+    gate_already: 'Già un membro? Clicca direttamente su "Accedi".',
+    no_activity: 'Sii il primo',
+    no_activity_sub: 'Accedi per apparire qui',
   },
   pt: {
     donations: 'Doações',
@@ -482,6 +518,18 @@ export const translations = {
     resOneClick: 'Mude com um clique',
     resStretchable: 'Ajustável para FiveM',
     getOnDiscord: 'Obtenha o app no Discord',
+
+    // ToolGate
+    gate_title: 'ACESSO RESTRITO',
+    gate_desc: 'Para usar {toolName} você deve fazer login com o Discord.',
+    gate_join: 'Junte-se à nossa comunidade no Discord para desbloquear todas as ferramentas.',
+    gate_step1: 'Junte-se ao servidor do Discord',
+    gate_step2: 'Faça login com sua conta',
+    gate_join_btn: 'Entrar no Discord',
+    gate_login_btn: 'Entrar com Discord',
+    gate_already: 'Já é um membro? Clique em "Entrar" diretamente.',
+    no_activity: 'Seja o primeiro',
+    no_activity_sub: 'Faça login para aparecer aqui',
   },
 };
 

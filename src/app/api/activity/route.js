@@ -15,17 +15,12 @@ function getRelativeTime(timestamp) {
   return `${Math.floor(hours/24)}d`;
 }
 
-const INITIAL_ACTIVITY = [
-  { name: 'Alex', action: 'Convirtió una skin de Glock', timestamp: Date.now() - 3600000 * 2.5, isUser: false, icon: '/icon_conv.png' },
-  { name: 'Santi', action: 'Compró Nitro Boost', timestamp: Date.now() - 3600000 * 4.2, isUser: false, icon: '/nitro_v2.png' },
-  { name: 'Marco', action: 'Usó el Optimizador', timestamp: Date.now() - 3600000 * 6.1, isUser: false, icon: '/opti_v2.png' },
-  { name: 'LHC Bot', action: 'Sistema operativo v35', timestamp: Date.now() - 3600000 * 8.4, isUser: false, icon: '/logo.png' }
-];
+const INITIAL_ACTIVITY = [];
 
 export async function GET() {
   try {
     const kvActivity = await kv.get(ACTIVITY_KEY);
-    const data = (kvActivity && kvActivity.length > 0) ? kvActivity : (global.recentActivity || INITIAL_ACTIVITY);
+    const data = (kvActivity && kvActivity.length > 0) ? kvActivity : INITIAL_ACTIVITY;
     
     // Update relative times
     const updatedData = data.map(act => ({
@@ -36,7 +31,7 @@ export async function GET() {
     return NextResponse.json(updatedData);
   } catch (e) {
     console.warn('KV failed');
-    const data = global.recentActivity || INITIAL_ACTIVITY;
+    const data = INITIAL_ACTIVITY;
     return NextResponse.json(data.map(act => ({
       ...act,
       time: getRelativeTime(act.timestamp || (Date.now() - 3600000))
@@ -60,9 +55,9 @@ export async function POST(req) {
     let currentActivity = [];
     try {
       const kvActivity = await kv.get(ACTIVITY_KEY);
-      currentActivity = (kvActivity && kvActivity.length > 0) ? kvActivity : (global.recentActivity || INITIAL_ACTIVITY);
+      currentActivity = (kvActivity && kvActivity.length > 0) ? kvActivity : INITIAL_ACTIVITY;
     } catch (e) {
-      currentActivity = global.recentActivity || INITIAL_ACTIVITY;
+      currentActivity = INITIAL_ACTIVITY;
     }
 
     // Filter out old entries for the same user to move them to top
@@ -72,7 +67,6 @@ export async function POST(req) {
       await kv.set(ACTIVITY_KEY, updatedActivity);
     } catch (e) { console.error('Failed to set KV'); }
     
-    global.recentActivity = updatedActivity;
     return NextResponse.json(updatedActivity);
   } catch (error) {
     return NextResponse.json({ error: 'Failed' }, { status: 500 });
