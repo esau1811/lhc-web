@@ -36,10 +36,11 @@ export default function SoundPage() {
   const [isDragOverAwc, setIsDragOverAwc] = useState(false);
 
   // Scan AWC
-  const [awcTracks, setAwcTracks] = useState(null);      // null = no escaneado, [] = vacío
+  const [awcTracks, setAwcTracks] = useState(null);
   const [awcScanLoading, setAwcScanLoading] = useState(false);
   const [awcScanError, setAwcScanError] = useState('');
-  const [surgicalTrack, setSurgicalTrack] = useState(null); // track seleccionado del scan
+  const [surgicalTrack, setSurgicalTrack] = useState(null);
+  const [detectedSampleRate, setDetectedSampleRate] = useState(32000);
 
   // ── WEAPONS AWC REBUILD ──────────────────────────────────────────────────
   const [awcSoundList, setAwcSoundList]       = useState([]);     // lista del manifest
@@ -233,6 +234,7 @@ export default function SoundPage() {
     setSurgicalTrack(null);
     setSurgicalName('');
     setAwcScanError('');
+    setDetectedSampleRate(32000);
     setAwcScanLoading(true);
     try {
       const fd = new FormData();
@@ -241,11 +243,42 @@ export default function SoundPage() {
       if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error(e.error || `HTTP ${res.status}`); }
       const data = await res.json();
       setAwcTracks(data.tracks || []);
+      if (data.detectedSampleRate) setDetectedSampleRate(data.detectedSampleRate);
     } catch (e) {
       setAwcScanError('No se pudo escanear el archivo: ' + e.message);
       setAwcTracks([]);
     } finally {
       setAwcScanLoading(false);
+    }
+  };
+
+  // Reemplazar TODOS los canales del AWC con el mismo audio
+  const handlePatchAll = async () => {
+    if (!audioFile || !awcFile) return;
+    setIsLoading(true); setError(null); setSuccess(null); setUploadProgress(0);
+    try {
+      const fd = new FormData();
+      fd.append('file', awcFile);
+      fd.append('audio', audioFile);
+      fd.append('sampleRate', String(detectedSampleRate));
+      const xhr = new XMLHttpRequest();
+      const blob = await new Promise((resolve, reject) => {
+        xhr.open('POST', `${VPS_URL}/api/Sound/patch-awc-all`);
+        xhr.upload.onprogress = (e) => { if (e.lengthComputable) setUploadProgress(Math.round(e.loaded/e.total*80)); };
+        xhr.onload = () => xhr.status < 300 ? resolve(xhr.response) : reject(new Error('Error servidor ' + xhr.status));
+        xhr.onerror = () => reject(new Error('Fallo de conexión'));
+        xhr.responseType = 'blob';
+        xhr.send(fd);
+      });
+      setUploadProgress(100);
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = awcFile.name; document.body.appendChild(a); a.click(); a.remove();
+      setSuccess(`✓ Todos los canales reemplazados a ${detectedSampleRate}Hz`);
+    } catch(e) {
+      setError('Error al reemplazar todos los canales: ' + e.message);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -420,6 +453,19 @@ export default function SoundPage() {
                     <button onClick={() => { setSurgicalTrack(null); setSurgicalName(''); }} className="text-gray-500 hover:text-red-400">✕</button>
                   </div>
                 )}
+                {/* Sample rate detectado + botón Replace All */}
+                <div className="mt-4 flex items-center justify-between gap-3">
+                  <span className="text-[10px] text-gray-500 font-mono">
+                    Tasa detectada: <strong className="text-red-400">{detectedSampleRate} Hz</strong>
+                  </span>
+                  <button
+                    onClick={handlePatchAll}
+                    disabled={!audioFile || !awcFile || isLoading}
+                    className="px-4 py-2 bg-red-600 hover:bg-red-500 disabled:opacity-40 disabled:cursor-not-allowed text-white text-[11px] font-bold uppercase tracking-widest rounded-xl transition-all"
+                  >
+                    ⚡ Reemplazar TODOS los canales
+                  </button>
+                </div>
               </div>
             )}
           </GlassCard>
