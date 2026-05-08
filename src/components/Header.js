@@ -14,6 +14,16 @@ export default function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { lang, changeLang, t } = useLang();
 
+  // Fix: Disable body scroll when menu is open
+  useEffect(() => {
+    if (isMobileMenuOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => { document.body.style.overflow = 'unset'; };
+  }, [isMobileMenuOpen]);
+
   const navLinks = [
     { name: t('nav_inicio'), path: '/' },
     { name: t('nav_herramientas'), path: '/#tools' },
@@ -31,12 +41,12 @@ export default function Header() {
 
   return (
     <>
-      <nav className="absolute top-0 left-0 right-0 z-50 px-6 py-6">
+      <nav className="fixed top-0 left-0 right-0 z-50 px-6 py-6 bg-transparent">
         <div className="max-w-[1400px] mx-auto flex items-center justify-between">
           
           <div className="flex items-center gap-8">
             <Link href="/" className="flex items-center gap-2">
-              <img src="/logo.png" alt="LHC" className="h-12 w-auto" />
+              <img src="/logo.png" alt="LHC" className="h-10 md:h-12 w-auto" />
             </Link>
 
             {/* Language Selector Desktop */}
@@ -91,7 +101,7 @@ export default function Header() {
             ) : (
               <button 
                 onClick={() => signIn('discord')}
-                className="hidden md:block bg-indigo-600 hover:bg-indigo-500 px-6 py-2 rounded-lg text-[11px] font-black transition-all"
+                className="hidden md:block bg-indigo-600 hover:bg-indigo-500 px-6 py-2 rounded-lg text-[11px] font-black transition-all text-white"
               >
                 {t('login_btn')}
               </button>
@@ -113,25 +123,25 @@ export default function Header() {
         <motion.div 
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="fixed inset-0 z-[40] bg-black/95 backdrop-blur-xl lg:hidden flex flex-col p-8 pt-32 gap-6"
+          className="fixed inset-0 z-[40] bg-black/98 backdrop-blur-2xl lg:hidden flex flex-col p-6 pt-24 gap-4 overflow-y-auto"
         >
           {navLinks.map(link => (
             <Link 
               key={link.name} 
               href={link.path}
               onClick={() => setIsMobileMenuOpen(false)}
-              className={`text-2xl font-black uppercase tracking-tighter ${
+              className={`text-xl font-black uppercase tracking-tighter py-1 ${
                 pathname === link.path ? 'text-red-500' : 'text-zinc-500'
               }`}
             >
               {link.name}
             </Link>
           ))}
-          <div className="h-[1px] bg-white/10 my-4"></div>
+          <div className="h-[1px] bg-white/5 my-2"></div>
           
-          <div className="flex flex-col gap-4">
-            <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Idioma / Language</span>
-            <div className="flex items-center gap-4">
+          <div className="flex flex-col gap-3">
+            <span className="text-[10px] font-black uppercase tracking-widest text-zinc-600">Idioma / Language</span>
+            <div className="flex items-center gap-3">
               {languages.map((l) => (
                 <button
                   key={l.id}
@@ -139,10 +149,10 @@ export default function Header() {
                     changeLang(l.id);
                     setIsMobileMenuOpen(false);
                   }}
-                  className={`w-12 h-12 rounded-full flex items-center justify-center transition-all overflow-hidden border-2 ${
+                  className={`w-10 h-10 rounded-full flex items-center justify-center transition-all overflow-hidden border-2 ${
                     lang === l.id 
-                    ? 'border-red-500 scale-110' 
-                    : 'border-white/10 grayscale opacity-50'
+                    ? 'border-red-500 scale-105' 
+                    : 'border-white/5 grayscale opacity-40'
                   }`}
                 >
                   <img src={l.flag} alt={l.id} className="w-full h-full object-cover" />
@@ -151,24 +161,26 @@ export default function Header() {
             </div>
           </div>
 
-          <div className="h-[1px] bg-white/10 my-4"></div>
+          <div className="h-[1px] bg-white/5 my-2"></div>
           
-          <Link 
-            href="/premium?tab=WEB" 
-            onClick={() => setIsMobileMenuOpen(false)}
-            className="flex items-center justify-between bg-red-500 text-black p-4 rounded-2xl font-black uppercase text-sm"
-          >
-            {t('hazte_premium')} <Crown size={18} />
-          </Link>
-          <button 
-            onClick={() => {
-              signIn('discord');
-              setIsMobileMenuOpen(false);
-            }}
-            className="bg-[#5865F2] text-white p-4 rounded-2xl font-black uppercase text-sm"
-          >
-            {t('login')}
-          </button>
+          <div className="flex flex-col gap-3 mt-auto pb-10">
+            <Link 
+              href="/premium?tab=WEB" 
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="flex items-center justify-between bg-red-600/10 border border-red-600/30 text-red-500 p-4 rounded-xl font-black uppercase text-xs"
+            >
+              {t('hazte_premium')} <Crown size={16} />
+            </Link>
+            <button 
+              onClick={() => {
+                signIn('discord');
+                setIsMobileMenuOpen(false);
+              }}
+              className="bg-[#5865F2] text-white p-4 rounded-xl font-black uppercase text-xs shadow-lg shadow-indigo-500/20"
+            >
+              {t('login_btn') || 'Iniciar sesión'}
+            </button>
+          </div>
         </motion.div>
       )}
     </>
