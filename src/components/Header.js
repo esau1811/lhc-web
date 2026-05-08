@@ -1,4 +1,4 @@
-'use client';
+'use client'; // Re-deploy trigger
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
