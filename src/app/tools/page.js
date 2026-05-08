@@ -2,7 +2,7 @@
 
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
-import { LayoutGrid, Zap, ShoppingBag, User, Crown, Rocket, Star, ArrowRight, Shield, Settings, Activity, Target } from 'lucide-react';
+import { Crown, Rocket, Star, ArrowRight, User, Settings, Activity, Target, Zap } from 'lucide-react';
 import Link from 'next/link';
 import GlassCard from '@/components/GlassCard';
 import { motion } from 'framer-motion';
@@ -42,7 +42,7 @@ export default function ToolsPage() {
       id: 'train',
       category: 'Entrenamiento',
       name: 'LHCTrainer', 
-      desc: t('trainerDesc') || 'Herramientas de entrenamiento. Mejora tus habilidades.', 
+      desc: t('trainerDesc'), 
       icon: '/icon_train.png', 
       badge: t('premium'), 
       badgeColor: 'bg-red-500',
@@ -51,26 +51,6 @@ export default function ToolsPage() {
       rating: '4.7',
       link: '/trainer'
     },
-    { 
-      id: 'resolution',
-      category: 'Optimización',
-      name: 'LHCResolution', 
-      desc: t('resolutionDesc') || 'Optimiza tu experiencia visual. Perfiles para cada sistema.', 
-      icon: '/icon_conv.png', 
-      badge: t('premium'), 
-      badgeColor: 'bg-red-500',
-      glowClass: 'boost-glow',
-      users: '2.4K',
-      rating: '4.9',
-      link: '/resolution'
-    },
-  ];
-
-  const categories = [
-    { id: 'all', name: t('cat_todas'), icon: LayoutGrid },
-    { id: 'multimedia', name: 'Multimedia', icon: Activity },
-    { id: 'train', name: 'Entrenamiento', icon: Target },
-    { id: 'opti', name: t('cat_opti'), icon: Zap },
   ];
 
   return (
@@ -88,7 +68,7 @@ export default function ToolsPage() {
             className="inline-flex items-center gap-2 bg-red-500/10 border border-red-500/20 px-4 py-1.5 rounded-full text-[10px] font-black text-red-500 uppercase tracking-widest mb-6"
           >
             <Settings size={12} className="animate-spin-slow" />
-            {t('tools') || 'Ecosistema LHC'}
+            {t('tools_eco')}
           </motion.div>
           
           <motion.h1 
@@ -98,20 +78,20 @@ export default function ToolsPage() {
             className="text-5xl md:text-8xl font-black mb-8 tracking-tighter uppercase leading-[0.9]"
           >
             {t('nav_herramientas')} <br />
-            <span className="text-red-500">PROFESIONALES</span>
+            <span className="text-red-500">{t('tools_professional')}</span>
           </motion.h1>
           <p className="text-zinc-400 max-w-2xl mx-auto text-sm md:text-lg font-medium leading-relaxed">
-            Explora nuestro conjunto de herramientas de alto rendimiento diseñadas para llevar FiveM al siguiente nivel. Precisión, velocidad y personalización total.
+            {t('tools_desc_page')}
           </p>
         </div>
 
         {/* Stats Summary */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-20">
           {[
-            { label: 'Herramientas', val: '04' },
-            { label: 'Usuarios Activos', val: '+12K' },
-            { label: 'Actualizaciones', val: 'Semanales' },
-            { label: 'Uptime', val: '99.9%' }
+            { label: t('nav_herramientas'), val: '03' },
+            { label: t('active_users'), val: '+12K' },
+            { label: t('updates'), val: t('weekly') },
+            { label: t('uptime'), val: '99.9%' }
           ].map((stat, i) => (
             <GlassCard key={i} className="p-6 text-center border-white/5">
               <div className="text-2xl font-black text-white mb-1">{stat.val}</div>
@@ -120,8 +100,8 @@ export default function ToolsPage() {
           ))}
         </div>
 
-        {/* Tools Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
+        {/* Tools Grid - lg:grid-cols-3 makes them same size as premium/home cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {allTools.map((tool, idx) => (
             <motion.div
               key={tool.id}
@@ -130,47 +110,44 @@ export default function ToolsPage() {
               transition={{ delay: 0.2 + (idx * 0.1) }}
             >
               <Link href={tool.link}>
-                <GlassCard className="p-8 group cursor-pointer hover:border-white/10 transition-all h-full relative overflow-hidden flex flex-col md:flex-row gap-8 items-center md:items-start">
+                <GlassCard className="p-6 group cursor-pointer hover:border-white/10 transition-all h-full relative overflow-hidden flex flex-col">
                   {/* Glow Effect on Hover */}
                   <div className={`absolute top-0 right-0 w-32 h-32 blur-[60px] opacity-0 group-hover:opacity-20 transition-opacity rounded-full -mr-16 -mt-16 ${tool.glowClass === 'green-glow' ? 'bg-green-500' : 'bg-red-500'}`}></div>
 
-                  <div className={`w-24 h-24 shrink-0 rounded-3xl bg-white/5 p-5 flex items-center justify-center transition-all duration-500 group-hover:scale-110 group-hover:rotate-3 border border-white/5 ${tool.glowClass}`}>
-                    <img src={tool.icon} alt={tool.name} className="w-full h-full object-contain ai-icon-blend" />
+                  <div className="flex justify-between items-start mb-6">
+                    <div className={`w-14 h-14 shrink-0 rounded-2xl bg-white/5 p-3.5 flex items-center justify-center transition-all duration-500 group-hover:scale-110 group-hover:rotate-3 border border-white/5 ${tool.glowClass}`}>
+                      <img src={tool.icon} alt={tool.name} className="w-full h-full object-contain ai-icon-blend" />
+                    </div>
+                    <div className={`${tool.badgeColor} text-black text-[8px] font-black px-3 py-1.5 rounded-lg uppercase tracking-wider shadow-lg`}>
+                      {tool.badge}
+                    </div>
                   </div>
 
-                  <div className="flex-1 text-center md:text-left">
-                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
-                      <div>
-                        <span className="text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-1 block">{tool.category}</span>
-                        <h3 className="text-3xl font-black group-hover:text-red-500 transition-colors leading-none">{tool.name}</h3>
-                      </div>
-                      <div className={`${tool.badgeColor} text-black text-[10px] font-black px-4 py-2 rounded-xl uppercase tracking-wider self-center md:self-start shadow-lg`}>
-                        {tool.badge}
-                      </div>
-                    </div>
-
-                    <p className="text-zinc-400 text-sm leading-relaxed font-medium mb-8">
+                  <div className="flex-1 mb-8">
+                    <span className="text-[9px] font-black text-zinc-500 uppercase tracking-widest mb-1 block">{tool.category}</span>
+                    <h3 className="text-2xl font-black group-hover:text-red-500 transition-colors leading-none mb-3">{tool.name}</h3>
+                    <p className="text-zinc-400 text-xs leading-relaxed font-medium line-clamp-2">
                       {tool.desc}
                     </p>
+                  </div>
 
-                    <div className="flex items-center justify-between pt-6 border-t border-white/5">
-                      <div className="flex items-center gap-6">
-                        <div className="flex flex-col">
-                          <span className="text-sm font-black text-white">{tool.users}</span>
-                          <span className="text-[9px] text-zinc-500 font-bold uppercase tracking-tighter">Usuarios</span>
-                        </div>
-                        <div className="flex flex-col">
-                          <div className="flex items-center gap-1">
-                            <span className="text-sm font-black text-white">{tool.rating}</span>
-                            <Star size={10} className="fill-red-500 text-red-500" />
-                          </div>
-                          <span className="text-[9px] text-zinc-500 font-bold uppercase tracking-tighter">Rating</span>
-                        </div>
+                  <div className="flex items-center justify-between pt-5 border-t border-white/5">
+                    <div className="flex items-center gap-4">
+                      <div className="flex flex-col">
+                        <span className="text-xs font-black text-white">{tool.users}</span>
+                        <span className="text-[8px] text-zinc-500 font-bold uppercase tracking-tighter">{t('usuarios')}</span>
                       </div>
-                      
-                      <div className="flex items-center gap-2 text-xs font-black text-white uppercase group-hover:text-red-500 transition-colors">
-                        Abrir <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
+                      <div className="flex flex-col">
+                        <div className="flex items-center gap-1">
+                          <span className="text-xs font-black text-white">{tool.rating}</span>
+                          <Star size={8} className="fill-red-500 text-red-500" />
+                        </div>
+                        <span className="text-[8px] text-zinc-500 font-bold uppercase tracking-tighter">Rating</span>
                       </div>
+                    </div>
+                    
+                    <div className="flex items-center gap-2 text-[10px] font-black text-white uppercase group-hover:text-red-500 transition-colors">
+                      {t('open')} <ArrowRight size={12} className="group-hover:translate-x-1 transition-transform" />
                     </div>
                   </div>
                 </GlassCard>
