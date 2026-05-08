@@ -86,10 +86,9 @@ export default function ToolsPage() {
         </div>
 
         {/* Stats Summary */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-20">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-20">
           {[
             { label: t('nav_herramientas'), val: '03' },
-            { label: t('active_users'), val: '+12K' },
             { label: t('updates'), val: t('weekly') },
             { label: t('uptime'), val: '99.9%' }
           ].map((stat, i) => (
@@ -100,7 +99,7 @@ export default function ToolsPage() {
           ))}
         </div>
 
-        {/* Tools Grid - lg:grid-cols-3 makes them same size as premium/home cards */}
+        {/* Tools Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {allTools.map((tool, idx) => (
             <motion.div

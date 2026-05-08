@@ -287,7 +287,7 @@ export default function HomePage() {
                 <Zap size={20} className="text-red-500" />
                 <h3 className="text-xl font-black uppercase tracking-tight">{activeCategory === 'Todas' ? t('herramientas_destacadas') : t(`cat_${activeCategory === 'Optimización' ? 'opti' : activeCategory === 'Tienda' ? 'tienda' : 'comunidad'}`)}</h3>
               </div>
-              <Link href={activeCategory === 'Todas' ? '/tools' : '/premium'} className="text-xs font-bold text-zinc-500 hover:text-white flex items-center gap-1 transition-colors">
+              <Link href="/tools" className="text-xs font-bold text-zinc-500 hover:text-white flex items-center gap-1 transition-colors">
                 {t('ver_todas')} <ChevronRight size={14} />
               </Link>
             </div>
