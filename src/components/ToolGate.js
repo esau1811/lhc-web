@@ -38,26 +38,10 @@ export default function ToolGate({ toolName = 'esta herramienta' }) {
           <h1 className="text-3xl font-black uppercase tracking-tight mb-3">
             {t('gate_title') || 'ACCESO RESTRINGIDO'}
           </h1>
-          <p className="text-zinc-500 mb-2 font-medium">
-            {t('gate_desc') || `Para usar ${toolName} debes iniciar sesión con Discord`}
-            {` — ${toolName}`}.
-          </p>
-          <p className="text-zinc-600 text-sm mb-10">
-            {t('gate_join') || 'Únete a nuestra comunidad en Discord para desbloquear todas las herramientas.'}
+          <p className="text-zinc-500 mb-8 font-medium">
+            {(t('gate_desc') || 'Para usar {toolName} debes iniciar sesión con Discord.').replace('{toolName}', toolName)}
           </p>
 
-          {/* Steps */}
-          <div className="grid grid-cols-2 gap-3 mb-10 text-left">
-            {[
-              { num: '1', text: t('gate_step1') || 'Únete al servidor de Discord' },
-              { num: '2', text: t('gate_step2') || 'Inicia sesión con tu cuenta' },
-            ].map(s => (
-              <div key={s.num} className="bg-white/5 border border-white/10 rounded-2xl p-4 flex items-start gap-3">
-                <span className="w-6 h-6 bg-red-500/20 text-red-400 rounded-full flex items-center justify-center text-xs font-black flex-shrink-0">{s.num}</span>
-                <p className="text-xs font-bold text-zinc-400">{s.text}</p>
-              </div>
-            ))}
-          </div>
 
           {/* CTAs */}
           <div className="flex flex-col gap-3">

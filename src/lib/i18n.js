@@ -155,7 +155,7 @@ export const translations = {
 
     // ToolGate
     gate_title: 'RESTRICTED ACCESS',
-    gate_desc: 'To use {toolName} you must log in with Discord.',
+    gate_desc: 'To access {toolName} you must join our Discord and log in.',
     gate_join: 'Join our Discord community to unlock all tools.',
     gate_step1: 'Join the Discord server',
     gate_step2: 'Log in with your account',
@@ -304,7 +304,7 @@ export const translations = {
 
     // ToolGate
     gate_title: 'ACCESO RESTRINGIDO',
-    gate_desc: 'Para usar {toolName} debes iniciar sesión con Discord.',
+    gate_desc: 'Para acceder a {toolName} debes unirte a nuestro Discord e iniciar sesión.',
     gate_join: 'Únete a nuestra comunidad en Discord para desbloquear todas las herramientas.',
     gate_step1: 'Únete al servidor de Discord',
     gate_step2: 'Inicia sesión con tu cuenta',
@@ -418,7 +418,7 @@ export const translations = {
 
     // ToolGate
     gate_title: 'ACCESSO LIMITATO',
-    gate_desc: 'Per utilizzare {toolName} devi accedere con Discord.',
+    gate_desc: 'Per accedere a {toolName} devi unirti al nostro Discord e accedere.',
     gate_join: 'Unisciti alla nostra comunità Discord per sbloccare tutti gli strumenti.',
     gate_step1: 'Unisciti al server Discord',
     gate_step2: 'Accedi con il tuo account',
@@ -521,7 +521,7 @@ export const translations = {
 
     // ToolGate
     gate_title: 'ACESSO RESTRITO',
-    gate_desc: 'Para usar {toolName} você deve fazer login com o Discord.',
+    gate_desc: 'Para acessar o {toolName} você deve entrar no nosso Discord e fazer login.',
     gate_join: 'Junte-se à nossa comunidade no Discord para desbloquear todas as ferramentas.',
     gate_step1: 'Junte-se ao servidor do Discord',
     gate_step2: 'Faça login com sua conta',
