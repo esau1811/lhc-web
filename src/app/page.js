@@ -169,7 +169,7 @@ export default function HomePage() {
                 {t('hero_desc')}
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
-                <Link href="/converter" className="btn-pill btn-red px-8 py-4 text-xs md:text-sm font-black flex items-center justify-center gap-2">
+                <Link href="/tools" className="btn-pill btn-red px-8 py-4 text-xs md:text-sm font-black flex items-center justify-center gap-2">
                   <Rocket size={18} /> {t('explorar_herramientas')}
                 </Link>
                 <Link href="/premium?tab=WEB" className="btn-pill bg-white/5 border border-white/10 hover:bg-white/10 px-8 py-4 text-xs md:text-sm font-black flex items-center justify-center gap-2">
@@ -287,7 +287,7 @@ export default function HomePage() {
                 <Zap size={20} className="text-red-500" />
                 <h3 className="text-xl font-black uppercase tracking-tight">{activeCategory === 'Todas' ? t('herramientas_destacadas') : t(`cat_${activeCategory === 'Optimización' ? 'opti' : activeCategory === 'Tienda' ? 'tienda' : 'comunidad'}`)}</h3>
               </div>
-              <Link href={activeCategory === 'Todas' ? '/converter' : '/premium'} className="text-xs font-bold text-zinc-500 hover:text-white flex items-center gap-1 transition-colors">
+              <Link href={activeCategory === 'Todas' ? '/tools' : '/premium'} className="text-xs font-bold text-zinc-500 hover:text-white flex items-center gap-1 transition-colors">
                 {t('ver_todas')} <ChevronRight size={14} />
               </Link>
             </div>

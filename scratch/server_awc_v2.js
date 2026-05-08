@@ -583,17 +583,33 @@ function patchAWC(awcDataRaw, audioData) {
 }
 
 // ── Audio converter via ffmpeg ───────────────────────────────────────────────────
-function prepareAudio(audioBuf, sampleRate = '32000', format = 'pcm') {
+async function prepareAudio(audioBuf, sampleRate = '32000', format = 'pcm') {
     console.log(`[prepareAudio] rate=${sampleRate} format=${format}`);
-    return new Promise((resolve, reject) => {
-        const id   = `${Date.now()}_${(Math.random() * 9999) | 0}`;
-        const inF  = path.join(os.tmpdir(), `ain_${id}`);
-        const outF = path.join(os.tmpdir(), `aout_${id}.raw`);
-        fs.writeFileSync(inF, audioBuf);
+    
+    const id   = `${Date.now()}_${(Math.random() * 9999) | 0}`;
+    const inF  = path.join(os.tmpdir(), `ain_${id}`);
+    const outF = path.join(os.tmpdir(), `aout_${id}.raw`);
+    fs.writeFileSync(inF, audioBuf);
 
+    let finalRate = sampleRate;
+    if (sampleRate === 'auto') {
+        try {
+            const probeCmd = `ffprobe -v error -select_streams a:0 -show_entries stream=sample_rate -of default=noprint_wrappers=1:nokey=1 "${inF}"`;
+            const stdout = await new Promise((resolve, reject) => {
+                exec(probeCmd, (err, stdout) => err ? reject(err) : resolve(stdout));
+            });
+            finalRate = parseInt(stdout.trim(), 10) || 32000;
+            console.log(`[prepareAudio] Auto-detected Hz: ${finalRate}`);
+        } catch (e) {
+            console.error(`[prepareAudio] Error detecting Hz, falling back to 32000: ${e.message}`);
+            finalRate = 32000;
+        }
+    }
+
+    return new Promise((resolve, reject) => {
         if (format === 'adpcm') {
             const wavF = outF + '.wav';
-            exec(`ffmpeg -y -i "${inF}" -acodec adpcm_ima_wav -ar ${sampleRate} -ac 1 "${wavF}"`, (err) => {
+            exec(`ffmpeg -y -i "${inF}" -acodec adpcm_ima_wav -ar ${finalRate} -ac 1 "${wavF}"`, (err) => {
                 try { fs.unlinkSync(inF); } catch {}
                 if (err) return reject(new Error(`ffmpeg error: ${err.message}`));
                 try {
@@ -606,7 +622,7 @@ function prepareAudio(audioBuf, sampleRate = '32000', format = 'pcm') {
                 } catch (e) { reject(e); }
             });
         } else {
-            exec(`ffmpeg -y -i "${inF}" -f s16le -acodec pcm_s16le -ar ${sampleRate} -ac 1 "${outF}"`, (err) => {
+            exec(`ffmpeg -y -i "${inF}" -f s16le -acodec pcm_s16le -ar ${finalRate} -ac 1 "${outF}"`, (err) => {
                 try { fs.unlinkSync(inF); } catch {}
                 if (err) return reject(new Error(`ffmpeg error: ${err.message}`));
                 try {

@@ -1,0 +1,2582 @@
+{
+  "SHT_PUMP_OPEN": {
+    "fileName": "SHT_PUMP_OPEN.wav",
+    "sampleRate": 32000,
+    "channels": 1
+  },
+  "SHT_PUMP_ACTION_VER2_PRTA": {
+    "fileName": "SHT_PUMP_ACTION_VER2_PRTA.wav",
+    "sampleRate": 32003,
+    "channels": 1
+  },
+  "MGN_50BMG_HANDLING_3": {
+    "fileName": "MGN_50BMG_HANDLING_3.wav",
+    "sampleRate": 28005,
+    "channels": 1
+  },
+  "MGN_AK47_PLYR_VERB_LAV_02.L": {
+    "fileName": "MGN_AK47_PLYR_VERB_LAV_02.L.wav",
+    "sampleRate": 36004,
+    "channels": 1
+  },
+  "GLUG_6": {
+    "fileName": "GLUG_6.wav",
+    "sampleRate": 24001,
+    "channels": 1
+  },
+  "MGN_AK47_MID_MIC1_COLOR1_01": {
+    "fileName": "MGN_AK47_MID_MIC1_COLOR1_01.wav",
+    "sampleRate": 28004,
+    "channels": 1
+  },
+  "BPW_SHARPS45_MID_COLORED_08": {
+    "fileName": "BPW_SHARPS45_MID_COLORED_08.wav",
+    "sampleRate": 20000,
+    "channels": 1
+  },
+  "MOLOTOV_SLOSH_STOP_1": {
+    "fileName": "MOLOTOV_SLOSH_STOP_1.wav",
+    "sampleRate": 32000,
+    "channels": 1
+  },
+  "SMG_SMG_PLYR_PUNCH_04": {
+    "fileName": "SMG_SMG_PLYR_PUNCH_04.wav",
+    "sampleRate": 42004,
+    "channels": 1
+  },
+  "HGUN_MECH_OVERLAY_A_2": {
+    "fileName": "HGUN_MECH_OVERLAY_A_2.wav",
+    "sampleRate": 32000,
+    "channels": 1
+  },
+  "BUBBLE_LOOP_01": {
+    "fileName": "BUBBLE_LOOP_01.wav",
+    "sampleRate": 24000,
+    "channels": 1
+  },
+  "ABSEIL_GEAR_RATTLE_02_A": {
+    "fileName": "ABSEIL_GEAR_RATTLE_02_A.wav",
+    "sampleRate": 32000,
+    "channels": 1
+  },
+  "FUEL_CAN_WALK_3": {
+    "fileName": "FUEL_CAN_WALK_3.wav",
+    "sampleRate": 32000,
+    "channels": 1
+  },
+  "BULLETBY_SVK_02": {
+    "fileName": "BULLETBY_SVK_02.wav",
+    "sampleRate": 32001,
+    "channels": 1
+  },
+  "SMG_ASSAULT_CLIPIN_PRT1": {
+    "fileName": "SMG_ASSAULT_CLIPIN_PRT1.wav",
+    "sampleRate": 32002,
+    "channels": 1
+  },
+  "LAZER_02": {
+    "fileName": "LAZER_02.wav",
+    "sampleRate": 44100,
+    "channels": 1
+  },
+  "POURING_FUEL_A": {
+    "fileName": "POURING_FUEL_A.wav",
+    "sampleRate": 32000,
+    "channels": 1
+  },
+  "RFL_INTERIOR_86MS_4.R": {
+    "fileName": "RFL_INTERIOR_86MS_4.R.wav",
+    "sampleRate": 28008,
+    "channels": 1
+  },
+  "SPLOOSH_5": {
+    "fileName": "SPLOOSH_5.wav",
+    "sampleRate": 32000,
+    "channels": 1
+  },
+  "MGN_AK47_PLYR_VERB_END.R": {
+    "fileName": "MGN_AK47_PLYR_VERB_END.R.wav",
+    "sampleRate": 36000,
+    "channels": 1
+  },
+  "SLOW_MO_WEAPON_ANIM_15": {
+    "fileName": "SLOW_MO_WEAPON_ANIM_15.wav",
+    "sampleRate": 44100,
+    "channels": 1
+  },
+  "SMG_DRY_FIRE_01": {
+    "fileName": "SMG_DRY_FIRE_01.wav",
+    "sampleRate": 36003,
+    "channels": 1
+  },
+  "METAL_SHELL_SLOWMO_B05": {
+    "fileName": "METAL_SHELL_SLOWMO_B05.wav",
+    "sampleRate": 28005,
+    "channels": 1
+  },
+  "FIRE_EXTING_END": {
+    "fileName": "FIRE_EXTING_END.wav",
+    "sampleRate": 32000,
+    "channels": 1
+  },
+  "LAZER_MED_04": {
+    "fileName": "LAZER_MED_04.wav",
+    "sampleRate": 44100,
+    "channels": 1
+  },
+  "MOLATOV_HOLSTER_REPLACE_01": {
+    "fileName": "MOLATOV_HOLSTER_REPLACE_01.wav",
+    "sampleRate": 32000,
+    "channels": 1
+  },
+  "LAZER_06": {
+    "fileName": "LAZER_06.wav",
+    "sampleRate": 44100,
+    "channels": 1
+  },
+  "MGN_AK47_PLYR_VERB_00_FIRST.L": {
+    "fileName": "MGN_AK47_PLYR_VERB_00_FIRST.L.wav",
+    "sampleRate": 36004,
+    "channels": 1
+  },
+  "SVK_SHELL_SWTNR_B": {
+    "fileName": "SVK_SHELL_SWTNR_B.wav",
+    "sampleRate": 28002,
+    "channels": 1
+  },
+  "BULLETBY_SVK_01": {
+    "fileName": "BULLETBY_SVK_01.wav",
+    "sampleRate": 32001,
+    "channels": 1
+  },
+  "PLASTIC_SHELL_SLOWMO_B05": {
+    "fileName": "PLASTIC_SHELL_SLOWMO_B05.wav",
+    "sampleRate": 28000,
+    "channels": 1
+  },
+  "MGN_50BMG_MID_COLOR1_03": {
+    "fileName": "MGN_50BMG_MID_COLOR1_03.wav",
+    "sampleRate": 27999,
+    "channels": 1
+  },
+  "FUEL_CAN_STOP_1": {
+    "fileName": "FUEL_CAN_STOP_1.wav",
+    "sampleRate": 32000,
+    "channels": 1
+  },
+  "PLASTIC_SHELL_SLOWMO_A05": {
+    "fileName": "PLASTIC_SHELL_SLOWMO_A05.wav",
+    "sampleRate": 28000,
+    "channels": 1
+  },
+  "SHT_PUMP_VER2.R": {
+    "fileName": "SHT_PUMP_VER2.R.wav",
+    "sampleRate": 32000,
+    "channels": 1
+  },
+  "LMG_COMBAT_LAV_03": {
+    "fileName": "LMG_COMBAT_LAV_03.wav",
+    "sampleRate": 32003,
+    "channels": 1
+  },
+  "SVK_50CAL_SHELL_05_B": {
+    "fileName": "SVK_50CAL_SHELL_05_B.wav",
+    "sampleRate": 28006,
+    "channels": 1
+  },
+  "SVK_50CAL_SHELL_02_B": {
+    "fileName": "SVK_50CAL_SHELL_02_B.wav",
+    "sampleRate": 28002,
+    "channels": 1
+  },
+  "MOLOTOV_SLOSH_3": {
+    "fileName": "MOLOTOV_SLOSH_3.wav",
+    "sampleRate": 32004,
+    "channels": 1
+  },
+  "MGN_50BMG_BELT_6": {
+    "fileName": "MGN_50BMG_BELT_6.wav",
+    "sampleRate": 28003,
+    "channels": 1
+  },
+  "SLOW_MO_SHOT_09_RIGHT": {
+    "fileName": "SLOW_MO_SHOT_09_RIGHT.wav",
+    "sampleRate": 44100,
+    "channels": 1
+  },
+  "SLOW_MO_SHOT_02A_LEFT": {
+    "fileName": "SLOW_MO_SHOT_02A_LEFT.wav",
+    "sampleRate": 44100,
+    "channels": 1
+  },
+  "UZI_REPORT_A_L": {
+    "fileName": "UZI_REPORT_A_L.wav",
+    "sampleRate": 20000,
+    "channels": 1
+  },
+  "SMG_ASSAULT_CHAMBER_PRT1": {
+    "fileName": "SMG_ASSAULT_CHAMBER_PRT1.wav",
+    "sampleRate": 32005,
+    "channels": 1
+  },
+  "MOLATOV_THROW_WHOOSH_01": {
+    "fileName": "MOLATOV_THROW_WHOOSH_01.wav",
+    "sampleRate": 32000,
+    "channels": 1
+  },
+  "MGN_AK47_PLYR_VERC_LAV_04.L": {
+    "fileName": "MGN_AK47_PLYR_VERC_LAV_04.L.wav",
+    "sampleRate": 36007,
+    "channels": 1
+  },
+  "MGN_AK47_PLYR_VERC_01.L": {
+    "fileName": "MGN_AK47_PLYR_VERC_01.L.wav",
+    "sampleRate": 36007,
+    "channels": 1
+  },
+  "MGN_M4_SAFETY": {
+    "fileName": "MGN_M4_SAFETY.wav",
+    "sampleRate": 32003,
+    "channels": 1
+  },
+  "BPW_SHARPS45_MID_COLORED_06": {
+    "fileName": "BPW_SHARPS45_MID_COLORED_06.wav",
+    "sampleRate": 20000,
+    "channels": 1
+  },
+  "BULLETBY_SVK_12": {
+    "fileName": "BULLETBY_SVK_12.wav",
+    "sampleRate": 32001,
+    "channels": 1
+  },
+  "SVK_50CAL_SHELL_04_A": {
+    "fileName": "SVK_50CAL_SHELL_04_A.wav",
+    "sampleRate": 28006,
+    "channels": 1
+  },
+  "SLOW_MO_SHOT_09_LEFT": {
+    "fileName": "SLOW_MO_SHOT_09_LEFT.wav",
+    "sampleRate": 44100,
+    "channels": 1
+  },
+  "SLOW_MO_SHOT_15_R": {
+    "fileName": "SLOW_MO_SHOT_15_R.wav",
+    "sampleRate": 44100,
+    "channels": 1
+  },
+  "SNPR_M82_THUD_PUNCHY_A": {
+    "fileName": "SNPR_M82_THUD_PUNCHY_A.wav",
+    "sampleRate": 32000,
+    "channels": 1
+  },
+  "LMG_COMBAT_DIST_04.R": {
+    "fileName": "LMG_COMBAT_DIST_04.R.wav",
+    "sampleRate": 32003,
+    "channels": 1
+  },
+  "PLASTIC_SHELL_SLOWMO_B02": {
+    "fileName": "PLASTIC_SHELL_SLOWMO_B02.wav",
+    "sampleRate": 28003,
+    "channels": 1
+  },
+  "SHT_PUMP_INSERTCART_B_PRT2": {
+    "fileName": "SHT_PUMP_INSERTCART_B_PRT2.wav",
+    "sampleRate": 32003,
+    "channels": 1
+  },
+  "LAZER_LRG_01": {
+    "fileName": "LAZER_LRG_01.wav",
+    "sampleRate": 44100,
+    "channels": 1
+  },
+  "SLOW_MO_SHOT_08A_LEFT": {
+    "fileName": "SLOW_MO_SHOT_08A_LEFT.wav",
+    "sampleRate": 44100,
+    "channels": 1
+  },
+  "PISTOL_IMPACT_04": {
+    "fileName": "PISTOL_IMPACT_04.wav",
+    "sampleRate": 24004,
+    "channels": 1
+  },
+  "SLOW_MO_WEAPON_ANIM_01": {
+    "fileName": "SLOW_MO_WEAPON_ANIM_01.wav",
+    "sampleRate": 44100,
+    "channels": 1
+  },
+  "MGN_SCARL_PLYR_VER1_01.L": {
+    "fileName": "MGN_SCARL_PLYR_VER1_01.L.wav",
+    "sampleRate": 36003,
+    "channels": 1
+  },
+  "LMG_ASSAULT_NPC_RPRT": {
+    "fileName": "LMG_ASSAULT_NPC_RPRT.wav",
+    "sampleRate": 20000,
+    "channels": 1
+  },
+  "SMG_SILENCED_PLYR_WIDE_01.L": {
+    "fileName": "SMG_SILENCED_PLYR_WIDE_01.L.wav",
+    "sampleRate": 36004,
+    "channels": 1
+  },
+  "MGN_AK47_OFF2_SVK_03": {
+    "fileName": "MGN_AK47_OFF2_SVK_03.wav",
+    "sampleRate": 27999,
+    "channels": 1
+  },
+  "RFL_INTERIOR_86MS_FIRST.L": {
+    "fileName": "RFL_INTERIOR_86MS_FIRST.L.wav",
+    "sampleRate": 28008,
+    "channels": 1
+  },
+  "SMG_IMPACT_04": {
+    "fileName": "SMG_IMPACT_04.wav",
+    "sampleRate": 24001,
+    "channels": 1
+  },
+  "SLOW_MO_SHOT_01_RIGHT": {
+    "fileName": "SLOW_MO_SHOT_01_RIGHT.wav",
+    "sampleRate": 44100,
+    "channels": 1
+  },
+  "SHT_MID_VERB_NPC_1": {
+    "fileName": "SHT_MID_VERB_NPC_1.wav",
+    "sampleRate": 20001,
+    "channels": 1
+  },
+  "ABSEIL_LEATHER_CREAK_01": {
+    "fileName": "ABSEIL_LEATHER_CREAK_01.wav",
+    "sampleRate": 32000,
+    "channels": 1
+  },
+  "PARACHUTE_FLAP_LOOP_A": {
+    "fileName": "PARACHUTE_FLAP_LOOP_A.wav",
+    "sampleRate": 30000,
+    "channels": 1
+  },
+  "FUEL_CAN_PICKUP_1": {
+    "fileName": "FUEL_CAN_PICKUP_1.wav",
+    "sampleRate": 32002,
+    "channels": 1
+  },
+  "SPL_MINIGUN_LP_OFF.L": {
+    "fileName": "SPL_MINIGUN_LP_OFF.L.wav",
+    "sampleRate": 36000,
+    "channels": 1
+  },
+  "SHT_M26_ACTION_PRT1_VERB": {
+    "fileName": "SHT_M26_ACTION_PRT1_VERB.wav",
+    "sampleRate": 32001,
+    "channels": 1
+  },
+  "AK_IMPACT_08": {
+    "fileName": "AK_IMPACT_08.wav",
+    "sampleRate": 24001,
+    "channels": 1
+  },
+  "ABSEIL_GEAR_THUD_02": {
+    "fileName": "ABSEIL_GEAR_THUD_02.wav",
+    "sampleRate": 32000,
+    "channels": 1
+  },
+  "GLUG_4": {
+    "fileName": "GLUG_4.wav",
+    "sampleRate": 24000,
+    "channels": 1
+  },
+  "RFL_INTERIOR_86MS_3.R": {
+    "fileName": "RFL_INTERIOR_86MS_3.R.wav",
+    "sampleRate": 28003,
+    "channels": 1
+  },
+  "SMG_SMG_PLYR_WIDE_03.L": {
+    "fileName": "SMG_SMG_PLYR_WIDE_03.L.wav",
+    "sampleRate": 42004,
+    "channels": 1
+  },
+  "FIRE_EXTING_START": {
+    "fileName": "FIRE_EXTING_START.wav",
+    "sampleRate": 32001,
+    "channels": 1
+  },
+  "RAILGUN_RECHARGE_START": {
+    "fileName": "RAILGUN_RECHARGE_START.wav",
+    "sampleRate": 36000,
+    "channels": 1
+  },
+  "SHT_FAR_COLORED_NPC_1": {
+    "fileName": "SHT_FAR_COLORED_NPC_1.wav",
+    "sampleRate": 20001,
+    "channels": 1
+  },
+  "SVK_SHELL_PLASTIC_04_B": {
+    "fileName": "SVK_SHELL_PLASTIC_04_B.wav",
+    "sampleRate": 28006,
+    "channels": 1
+  },
+  "PARACHUTE_OPEN_03": {
+    "fileName": "PARACHUTE_OPEN_03.wav",
+    "sampleRate": 28000,
+    "channels": 1
+  },
+  "MGN_AK47_OFF2_SVK_01": {
+    "fileName": "MGN_AK47_OFF2_SVK_01.wav",
+    "sampleRate": 27999,
+    "channels": 1
+  },
+  "SMG_SILENCED_PLYR_WIDE_04.L": {
+    "fileName": "SMG_SILENCED_PLYR_WIDE_04.L.wav",
+    "sampleRate": 36004,
+    "channels": 1
+  },
+  "BULLET_BY_SLOW_MO_OUT_05": {
+    "fileName": "BULLET_BY_SLOW_MO_OUT_05.wav",
+    "sampleRate": 44100,
+    "channels": 1
+  },
+  "SVK_SHELL_PLASTIC_02_B": {
+    "fileName": "SVK_SHELL_PLASTIC_02_B.wav",
+    "sampleRate": 28001,
+    "channels": 1
+  },
+  "ROCKET_GRENADE_FIRE_R": {
+    "fileName": "ROCKET_GRENADE_FIRE_R.wav",
+    "sampleRate": 32000,
+    "channels": 1
+  },
+  "RFL_SCAR_SAFETY": {
+    "fileName": "RFL_SCAR_SAFETY.wav",
+    "sampleRate": 32003,
+    "channels": 1
+  },
+  "PARACHUTE_OPEN_01": {
+    "fileName": "PARACHUTE_OPEN_01.wav",
+    "sampleRate": 30000,
+    "channels": 1
+  },
+  "MGN_SCARL_PLYR_VER1_00_FIRST.L": {
+    "fileName": "MGN_SCARL_PLYR_VER1_00_FIRST.L.wav",
+    "sampleRate": 36003,
+    "channels": 1
+  },
+  "SPL_TANK_FIRE_NPC_02": {
+    "fileName": "SPL_TANK_FIRE_NPC_02.wav",
+    "sampleRate": 32000,
+    "channels": 1
+  },
+  "SMG_SILENCED_PLYR_RPRT.L": {
+    "fileName": "SMG_SILENCED_PLYR_RPRT.L.wav",
+    "sampleRate": 22000,
+    "channels": 1
+  },
+  "MGN_50BMG_HANDLING_2": {
+    "fileName": "MGN_50BMG_HANDLING_2.wav",
+    "sampleRate": 28026,
+    "channels": 1
+  },
+  "SLOW_MO_WEAPON_ANIM_10": {
+    "fileName": "SLOW_MO_WEAPON_ANIM_10.wav",
+    "sampleRate": 44100,
+    "channels": 1
+  },
+  "GLUG_1": {
+    "fileName": "GLUG_1.wav",
+    "sampleRate": 24001,
+    "channels": 1
+  },
+  "PARACHUTE_FLAP_LOOP_B": {
+    "fileName": "PARACHUTE_FLAP_LOOP_B.wav",
+    "sampleRate": 30000,
+    "channels": 1
+  },
+  "SLOW_MO_SHOT_02A_RIGHT": {
+    "fileName": "SLOW_MO_SHOT_02A_RIGHT.wav",
+    "sampleRate": 44100,
+    "channels": 1
+  },
+  "METAL_SHELL_SLOWMO_B03": {
+    "fileName": "METAL_SHELL_SLOWMO_B03.wav",
+    "sampleRate": 28002,
+    "channels": 1
+  },
+  "SLOW_MO_WEAPON_ANIM_08": {
+    "fileName": "SLOW_MO_WEAPON_ANIM_08.wav",
+    "sampleRate": 44100,
+    "channels": 1
+  },
+  "GLUG_8": {
+    "fileName": "GLUG_8.wav",
+    "sampleRate": 24002,
+    "channels": 1
+  },
+  "METAL_SHELL_SLOWMO_A03": {
+    "fileName": "METAL_SHELL_SLOWMO_A03.wav",
+    "sampleRate": 28003,
+    "channels": 1
+  },
+  "RFL_SCAR_CHAMBER_PRT1": {
+    "fileName": "RFL_SCAR_CHAMBER_PRT1.wav",
+    "sampleRate": 32002,
+    "channels": 1
+  },
+  "MGN_AK47_OFF3_SVK_03": {
+    "fileName": "MGN_AK47_OFF3_SVK_03.wav",
+    "sampleRate": 28002,
+    "channels": 1
+  },
+  "SLOW_MO_WEAPON_ANIM_06": {
+    "fileName": "SLOW_MO_WEAPON_ANIM_06.wav",
+    "sampleRate": 44100,
+    "channels": 1
+  },
+  "MGN_AK47_PLYR_VERB_END.L": {
+    "fileName": "MGN_AK47_PLYR_VERB_END.L.wav",
+    "sampleRate": 36000,
+    "channels": 1
+  },
+  "MGN_SCARL_PLYR_VER1_LAV_04": {
+    "fileName": "MGN_SCARL_PLYR_VER1_LAV_04.wav",
+    "sampleRate": 36003,
+    "channels": 1
+  },
+  "BULLETBY_SVK_05": {
+    "fileName": "BULLETBY_SVK_05.wav",
+    "sampleRate": 32002,
+    "channels": 1
+  },
+  "GUN_DSTNT_SWTNR_SHOTGUN_B2": {
+    "fileName": "GUN_DSTNT_SWTNR_SHOTGUN_B2.wav",
+    "sampleRate": 32000,
+    "channels": 1
+  },
+  "RFL_INTERIOR_86MS_1.L": {
+    "fileName": "RFL_INTERIOR_86MS_1.L.wav",
+    "sampleRate": 28003,
+    "channels": 1
+  },
+  "SHT_PUMP_ACTION_VER1_PRTA": {
+    "fileName": "SHT_PUMP_ACTION_VER1_PRTA.wav",
+    "sampleRate": 32001,
+    "channels": 1
+  },
+  "RAILGUN_BRIGHT.R": {
+    "fileName": "RAILGUN_BRIGHT.R.wav",
+    "sampleRate": 36000,
+    "channels": 1
+  },
+  "SHOTGUN_2_IMPACT_02": {
+    "fileName": "SHOTGUN_2_IMPACT_02.wav",
+    "sampleRate": 24008,
+    "channels": 1
+  },
+  "SHT_PUMP_INSERTCART_A_PRT1": {
+    "fileName": "SHT_PUMP_INSERTCART_A_PRT1.wav",
+    "sampleRate": 32006,
+    "channels": 1
+  },
+  "SMG_SILENCED_PLYR_WIDE_02.L": {
+    "fileName": "SMG_SILENCED_PLYR_WIDE_02.L.wav",
+    "sampleRate": 36004,
+    "channels": 1
+  },
+  "ABSEIL_GEAR_RATTLE_01_B": {
+    "fileName": "ABSEIL_GEAR_RATTLE_01_B.wav",
+    "sampleRate": 32000,
+    "channels": 1
+  },
+  "RFL_INTERIOR_86MS_END.L": {
+    "fileName": "RFL_INTERIOR_86MS_END.L.wav",
+    "sampleRate": 28000,
+    "channels": 1
+  },
+  "MOLOTOV_SLOSH_1": {
+    "fileName": "MOLOTOV_SLOSH_1.wav",
+    "sampleRate": 32001,
+    "channels": 1
+  },
+  "RFL_INTERIOR_86MS_2.R": {
+    "fileName": "RFL_INTERIOR_86MS_2.R.wav",
+    "sampleRate": 28003,
+    "channels": 1
+  },
+  "GTA5_SNP_BOLT_CLOSE_1": {
+    "fileName": "GTA5_SNP_BOLT_CLOSE_1.wav",
+    "sampleRate": 32001,
+    "channels": 1
+  },
+  "SPLOOSH_2": {
+    "fileName": "SPLOOSH_2.wav",
+    "sampleRate": 32001,
+    "channels": 1
+  },
+  "REVOLVER_DRY_FIRE_02B": {
+    "fileName": "REVOLVER_DRY_FIRE_02B.wav",
+    "sampleRate": 36013,
+    "channels": 1
+  },
+  "AK_IMPACT_06": {
+    "fileName": "AK_IMPACT_06.wav",
+    "sampleRate": 24006,
+    "channels": 1
+  },
+  "SNP_HEAVY_VERBVER2.L": {
+    "fileName": "SNP_HEAVY_VERBVER2.L.wav",
+    "sampleRate": 36000,
+    "channels": 1
+  },
+  "MGN_UZI9MM_CLIPOUT": {
+    "fileName": "MGN_UZI9MM_CLIPOUT.wav",
+    "sampleRate": 32003,
+    "channels": 1
+  },
+  "MGN_SCARL_PLYR_VER1_LAV_01": {
+    "fileName": "MGN_SCARL_PLYR_VER1_LAV_01.wav",
+    "sampleRate": 36003,
+    "channels": 1
+  },
+  "HGUN_SWTNR_URS_BEEF_R": {
+    "fileName": "HGUN_SWTNR_URS_BEEF_R.wav",
+    "sampleRate": 32001,
+    "channels": 1
+  },
+  "PISTOL_IMPACT_06": {
+    "fileName": "PISTOL_IMPACT_06.wav",
+    "sampleRate": 24003,
+    "channels": 1
+  },
+  "LAZER_01": {
+    "fileName": "LAZER_01.wav",
+    "sampleRate": 44100,
+    "channels": 1
+  },
+  "GUN_DSTNT_SWTNR_SNPR_3": {
+    "fileName": "GUN_DSTNT_SWTNR_SNPR_3.wav",
+    "sampleRate": 32000,
+    "channels": 1
+  },
+  "SPL_RPG_DIST_LP2": {
+    "fileName": "SPL_RPG_DIST_LP2.wav",
+    "sampleRate": 32001,
+    "channels": 1
+  },
+  "LMG_COMBAT_LAV_02": {
+    "fileName": "LMG_COMBAT_LAV_02.wav",
+    "sampleRate": 32003,
+    "channels": 1
+  },
+  "BULLET_BY_SLOW_MO_OUT_04": {
+    "fileName": "BULLET_BY_SLOW_MO_OUT_04.wav",
+    "sampleRate": 44100,
+    "channels": 1
+  },
+  "MGN_SCARL_PLYR_VER1_04.L": {
+    "fileName": "MGN_SCARL_PLYR_VER1_04.L.wav",
+    "sampleRate": 36003,
+    "channels": 1
+  },
+  "MGN_AK47_CHAMBER_PRT2_VERA": {
+    "fileName": "MGN_AK47_CHAMBER_PRT2_VERA.wav",
+    "sampleRate": 32000,
+    "channels": 1
+  },
+  "SVK_SHELL_PLASTIC_01_C": {
+    "fileName": "SVK_SHELL_PLASTIC_01_C.wav",
+    "sampleRate": 28006,
+    "channels": 1
+  },
+  "PTL_DESERTEAGLE_CLIPOUT_PRT_2": {
+    "fileName": "PTL_DESERTEAGLE_CLIPOUT_PRT_2.wav",
+    "sampleRate": 32004,
+    "channels": 1
+  },
+  "SHT_ASSAULT_INDOOR_VER2_LEFT": {
+    "fileName": "SHT_ASSAULT_INDOOR_VER2_LEFT.wav",
+    "sampleRate": 28000,
+    "channels": 1
+  },
+  "PISTOL_IMPACT_01": {
+    "fileName": "PISTOL_IMPACT_01.wav",
+    "sampleRate": 24035,
+    "channels": 1
+  },
+  "GUN_DSTNT_FAR_50CAL_2": {
+    "fileName": "GUN_DSTNT_FAR_50CAL_2.wav",
+    "sampleRate": 32000,
+    "channels": 1
+  },
+  "SLOW_MO_SHOT_18_R": {
+    "fileName": "SLOW_MO_SHOT_18_R.wav",
+    "sampleRate": 44100,
+    "channels": 1
+  },
+  "SMG_ASSAULT_CHAMBER_PRT2_VERA": {
+    "fileName": "SMG_ASSAULT_CHAMBER_PRT2_VERA.wav",
+    "sampleRate": 32005,
+    "channels": 1
+  },
+  "SLOW_MO_WEAPON_ANIM_12": {
+    "fileName": "SLOW_MO_WEAPON_ANIM_12.wav",
+    "sampleRate": 44100,
+    "channels": 1
+  },
+  "MGN_M4_CLIPIN_PRT_1": {
+    "fileName": "MGN_M4_CLIPIN_PRT_1.wav",
+    "sampleRate": 32000,
+    "channels": 1
+  },
+  "SMG_SUB_SWEETNER_3": {
+    "fileName": "SMG_SUB_SWEETNER_3.wav",
+    "sampleRate": 3004,
+    "channels": 1
+  },
+  "SVK_SHELL_WOOD_BIG_1_B": {
+    "fileName": "SVK_SHELL_WOOD_BIG_1_B.wav",
+    "sampleRate": 28002,
+    "channels": 1
+  },
+  "MGN_M4_CHAMBER_PRT1": {
+    "fileName": "MGN_M4_CHAMBER_PRT1.wav",
+    "sampleRate": 32000,
+    "channels": 1
+  },
+  "BULLETBY_SVK_06": {
+    "fileName": "BULLETBY_SVK_06.wav",
+    "sampleRate": 32001,
+    "channels": 1
+  },
+  "GTA5_SILENCED_EQ_04.L": {
+    "fileName": "GTA5_SILENCED_EQ_04.L.wav",
+    "sampleRate": 36003,
+    "channels": 1
+  },
+  "FUEL_CAN_RUN_1": {
+    "fileName": "FUEL_CAN_RUN_1.wav",
+    "sampleRate": 32000,
+    "channels": 1
+  },
+  "RFL_BOLT_INSERTBULLET_2": {
+    "fileName": "RFL_BOLT_INSERTBULLET_2.wav",
+    "sampleRate": 32001,
+    "channels": 1
+  },
+  "SHT_FAR_COLORED_NPC_2": {
+    "fileName": "SHT_FAR_COLORED_NPC_2.wav",
+    "sampleRate": 20001,
+    "channels": 1
+  },
+  "SVK_SHELL_PLASTIC_01_D": {
+    "fileName": "SVK_SHELL_PLASTIC_01_D.wav",
+    "sampleRate": 28006,
+    "channels": 1
+  },
+  "SLOW_MO_SHOT_08A_RIGHT": {
+    "fileName": "SLOW_MO_SHOT_08A_RIGHT.wav",
+    "sampleRate": 44100,
+    "channels": 1
+  },
+  "LMG_SUB_SWEETNER_3": {
+    "fileName": "LMG_SUB_SWEETNER_3.wav",
+    "sampleRate": 3007,
+    "channels": 1
+  },
+  "METAL_SHELL_SLOWMO_B02": {
+    "fileName": "METAL_SHELL_SLOWMO_B02.wav",
+    "sampleRate": 28002,
+    "channels": 1
+  },
+  "PLASTIC_SHELL_SLOWMO_A02": {
+    "fileName": "PLASTIC_SHELL_SLOWMO_A02.wav",
+    "sampleRate": 28000,
+    "channels": 1
+  },
+  "SMG_IMPACT_12": {
+    "fileName": "SMG_IMPACT_12.wav",
+    "sampleRate": 24004,
+    "channels": 1
+  },
+  "PTL_PISTOL_MID_1": {
+    "fileName": "PTL_PISTOL_MID_1.wav",
+    "sampleRate": 28003,
+    "channels": 1
+  },
+  "MGN_AK47_MID_MIC1_COLOR1_04": {
+    "fileName": "MGN_AK47_MID_MIC1_COLOR1_04.wav",
+    "sampleRate": 28004,
+    "channels": 1
+  },
+  "AK_IMPACT_05": {
+    "fileName": "AK_IMPACT_05.wav",
+    "sampleRate": 24001,
+    "channels": 1
+  },
+  "MGN_AK47_OFF3_SVK_01": {
+    "fileName": "MGN_AK47_OFF3_SVK_01.wav",
+    "sampleRate": 28002,
+    "channels": 1
+  },
+  "MGN_AK47_OFF2_SVK_04": {
+    "fileName": "MGN_AK47_OFF2_SVK_04.wav",
+    "sampleRate": 27999,
+    "channels": 1
+  },
+  "BULLET_BY_SLOW_MO_IN_01": {
+    "fileName": "BULLET_BY_SLOW_MO_IN_01.wav",
+    "sampleRate": 44100,
+    "channels": 1
+  },
+  "PLASTIC_SHELL_SLOWMO_B01": {
+    "fileName": "PLASTIC_SHELL_SLOWMO_B01.wav",
+    "sampleRate": 28002,
+    "channels": 1
+  },
+  "BULLETBY_SVK_07": {
+    "fileName": "BULLETBY_SVK_07.wav",
+    "sampleRate": 32002,
+    "channels": 1
+  },
+  "PLASTIC_SHELL_SLOWMO_A04": {
+    "fileName": "PLASTIC_SHELL_SLOWMO_A04.wav",
+    "sampleRate": 28002,
+    "channels": 1
+  },
+  "SHOTGUN_DRY_FIRE_01": {
+    "fileName": "SHOTGUN_DRY_FIRE_01.wav",
+    "sampleRate": 36004,
+    "channels": 1
+  },
+  "SLOW_MO_SHOT_13_R": {
+    "fileName": "SLOW_MO_SHOT_13_R.wav",
+    "sampleRate": 44100,
+    "channels": 1
+  },
+  "MGN_M4_CLIPIN_PRT_3": {
+    "fileName": "MGN_M4_CLIPIN_PRT_3.wav",
+    "sampleRate": 32009,
+    "channels": 1
+  },
+  "SVK_SHELL_WOOD_BIG_3_C": {
+    "fileName": "SVK_SHELL_WOOD_BIG_3_C.wav",
+    "sampleRate": 28001,
+    "channels": 1
+  },
+  "BULLET_BY_SLOW_MO_IN_05": {
+    "fileName": "BULLET_BY_SLOW_MO_IN_05.wav",
+    "sampleRate": 44100,
+    "channels": 1
+  },
+  "SLOW_MO_SHOT_HUGE_01_RIGHT": {
+    "fileName": "SLOW_MO_SHOT_HUGE_01_RIGHT.wav",
+    "sampleRate": 44100,
+    "channels": 1
+  },
+  "SPLOOSH_4": {
+    "fileName": "SPLOOSH_4.wav",
+    "sampleRate": 32000,
+    "channels": 1
+  },
+  "LMG_COMBAT_DIST_02.R": {
+    "fileName": "LMG_COMBAT_DIST_02.R.wav",
+    "sampleRate": 32003,
+    "channels": 1
+  },
+  "PTL_PISTOL_FAR_2": {
+    "fileName": "PTL_PISTOL_FAR_2.wav",
+    "sampleRate": 28003,
+    "channels": 1
+  },
+  "SHT_PUMP_INSERTCART_A_PRT2": {
+    "fileName": "SHT_PUMP_INSERTCART_A_PRT2.wav",
+    "sampleRate": 32000,
+    "channels": 1
+  },
+  "PISTOL_SUB_SWEETNER": {
+    "fileName": "PISTOL_SUB_SWEETNER.wav",
+    "sampleRate": 3001,
+    "channels": 1
+  },
+  "LMG_COMBAT_RPRT.R": {
+    "fileName": "LMG_COMBAT_RPRT.R.wav",
+    "sampleRate": 20000,
+    "channels": 1
+  },
+  "SHOTGUN_2_IMPACT_09": {
+    "fileName": "SHOTGUN_2_IMPACT_09.wav",
+    "sampleRate": 24010,
+    "channels": 1
+  },
+  "MGN_SCARL_MID_MIC3_COLOR1_00_FIRST": {
+    "fileName": "MGN_SCARL_MID_MIC3_COLOR1_00_FIRST.wav",
+    "sampleRate": 28003,
+    "channels": 1
+  },
+  "PTL_DESERTEAGLE_CHAMBER_PRT2_VERB": {
+    "fileName": "PTL_DESERTEAGLE_CHAMBER_PRT2_VERB.wav",
+    "sampleRate": 32002,
+    "channels": 1
+  },
+  "RAILGUN_BOOM.R": {
+    "fileName": "RAILGUN_BOOM.R.wav",
+    "sampleRate": 36000,
+    "channels": 1
+  },
+  "LMG_FOLEY_SWTNR_BIG_2": {
+    "fileName": "LMG_FOLEY_SWTNR_BIG_2.wav",
+    "sampleRate": 28003,
+    "channels": 1
+  },
+  "MGN_SCARL_PLYR_VER1_LAV_03": {
+    "fileName": "MGN_SCARL_PLYR_VER1_LAV_03.wav",
+    "sampleRate": 36003,
+    "channels": 1
+  },
+  "GUN_DSTNT_SWTNR_SNPR_1": {
+    "fileName": "GUN_DSTNT_SWTNR_SNPR_1.wav",
+    "sampleRate": 32000,
+    "channels": 1
+  },
+  "LMG_COMBAT_LAV_04": {
+    "fileName": "LMG_COMBAT_LAV_04.wav",
+    "sampleRate": 32003,
+    "channels": 1
+  },
+  "BULLET_BY_SLOW_MO_OUT_02": {
+    "fileName": "BULLET_BY_SLOW_MO_OUT_02.wav",
+    "sampleRate": 44100,
+    "channels": 1
+  },
+  "MGN_50BMG_HANDLING_6": {
+    "fileName": "MGN_50BMG_HANDLING_6.wav",
+    "sampleRate": 28003,
+    "channels": 1
+  },
+  "GTA5_DRYFIRE_VER2": {
+    "fileName": "GTA5_DRYFIRE_VER2.wav",
+    "sampleRate": 36001,
+    "channels": 1
+  },
+  "SLOW_MO_SHOT_13_L": {
+    "fileName": "SLOW_MO_SHOT_13_L.wav",
+    "sampleRate": 44100,
+    "channels": 1
+  },
+  "MGN_AK47_OFF3_SVK_04": {
+    "fileName": "MGN_AK47_OFF3_SVK_04.wav",
+    "sampleRate": 28002,
+    "channels": 1
+  },
+  "FIRE_EXTING_LP2": {
+    "fileName": "FIRE_EXTING_LP2.wav",
+    "sampleRate": 32001,
+    "channels": 1
+  },
+  "SHTGN_MOSS_CHINK": {
+    "fileName": "SHTGN_MOSS_CHINK.wav",
+    "sampleRate": 32003,
+    "channels": 1
+  },
+  "MGN_SCARL_MID_MIC3_COLOR1_01": {
+    "fileName": "MGN_SCARL_MID_MIC3_COLOR1_01.wav",
+    "sampleRate": 28003,
+    "channels": 1
+  },
+  "MGN_AK47_OFF4_SVK_04": {
+    "fileName": "MGN_AK47_OFF4_SVK_04.wav",
+    "sampleRate": 27999,
+    "channels": 1
+  },
+  "RIFLE_DRY_FIRE_01": {
+    "fileName": "RIFLE_DRY_FIRE_01.wav",
+    "sampleRate": 36005,
+    "channels": 1
+  },
+  "SLOW_MO_SHOT_17_R": {
+    "fileName": "SLOW_MO_SHOT_17_R.wav",
+    "sampleRate": 44100,
+    "channels": 1
+  },
+  "SVK_50CAL_SHELL_04_D": {
+    "fileName": "SVK_50CAL_SHELL_04_D.wav",
+    "sampleRate": 28006,
+    "channels": 1
+  },
+  "MGN_SCARL_FAR_MIC2_COLOR1_02": {
+    "fileName": "MGN_SCARL_FAR_MIC2_COLOR1_02.wav",
+    "sampleRate": 28003,
+    "channels": 1
+  },
+  "BULLETBY_SVK_14": {
+    "fileName": "BULLETBY_SVK_14.wav",
+    "sampleRate": 32000,
+    "channels": 1
+  },
+  "SMG_SMG_PLYR_PUNCH_02": {
+    "fileName": "SMG_SMG_PLYR_PUNCH_02.wav",
+    "sampleRate": 42004,
+    "channels": 1
+  },
+  "SLOW_MO_SHOT_16_L": {
+    "fileName": "SLOW_MO_SHOT_16_L.wav",
+    "sampleRate": 44100,
+    "channels": 1
+  },
+  "SVK_SHELL_PLASTIC_03_C": {
+    "fileName": "SVK_SHELL_PLASTIC_03_C.wav",
+    "sampleRate": 28000,
+    "channels": 1
+  },
+  "SLOW_MO_WEAPON_ANIM_14": {
+    "fileName": "SLOW_MO_WEAPON_ANIM_14.wav",
+    "sampleRate": 44100,
+    "channels": 1
+  },
+  "LMG_SUB_SWEETNER_2": {
+    "fileName": "LMG_SUB_SWEETNER_2.wav",
+    "sampleRate": 3001,
+    "channels": 1
+  },
+  "MGN_AK47_OFF2_SVK_02": {
+    "fileName": "MGN_AK47_OFF2_SVK_02.wav",
+    "sampleRate": 27999,
+    "channels": 1
+  },
+  "PLASTIC_SHELL_SLOWMO_A03": {
+    "fileName": "PLASTIC_SHELL_SLOWMO_A03.wav",
+    "sampleRate": 28001,
+    "channels": 1
+  },
+  "SNP_MID_1_EQ": {
+    "fileName": "SNP_MID_1_EQ.wav",
+    "sampleRate": 28001,
+    "channels": 1
+  },
+  "BPW_SHARPS45_MID_COLORED_05": {
+    "fileName": "BPW_SHARPS45_MID_COLORED_05.wav",
+    "sampleRate": 20000,
+    "channels": 1
+  },
+  "MGN_AK47_OFF4_SVK_02": {
+    "fileName": "MGN_AK47_OFF4_SVK_02.wav",
+    "sampleRate": 27999,
+    "channels": 1
+  },
+  "SHOTGUN_2_IMPACT_06": {
+    "fileName": "SHOTGUN_2_IMPACT_06.wav",
+    "sampleRate": 24005,
+    "channels": 1
+  },
+  "RFL_BOLT_INSERTBULLET_FINISH": {
+    "fileName": "RFL_BOLT_INSERTBULLET_FINISH.wav",
+    "sampleRate": 32003,
+    "channels": 1
+  },
+  "MGN_50BMG_BELT_4": {
+    "fileName": "MGN_50BMG_BELT_4.wav",
+    "sampleRate": 28000,
+    "channels": 1
+  },
+  "BUBBLE_LOOP_02": {
+    "fileName": "BUBBLE_LOOP_02.wav",
+    "sampleRate": 24000,
+    "channels": 1
+  },
+  "BULLETBY_SVK_10": {
+    "fileName": "BULLETBY_SVK_10.wav",
+    "sampleRate": 32001,
+    "channels": 1
+  },
+  "FUEL_CAN_WALK_2": {
+    "fileName": "FUEL_CAN_WALK_2.wav",
+    "sampleRate": 32000,
+    "channels": 1
+  },
+  "FUEL_CAN_RUN_4": {
+    "fileName": "FUEL_CAN_RUN_4.wav",
+    "sampleRate": 32001,
+    "channels": 1
+  },
+  "SVK_SHELL_WOOD_BIG_2_B": {
+    "fileName": "SVK_SHELL_WOOD_BIG_2_B.wav",
+    "sampleRate": 28007,
+    "channels": 1
+  },
+  "RAILGUN_CHARGE_01": {
+    "fileName": "RAILGUN_CHARGE_01.wav",
+    "sampleRate": 36000,
+    "channels": 1
+  },
+  "MGN_AK47_PLYR_VERC_04.L": {
+    "fileName": "MGN_AK47_PLYR_VERC_04.L.wav",
+    "sampleRate": 36007,
+    "channels": 1
+  },
+  "MOLATOV_FUSE_IGNITE_01": {
+    "fileName": "MOLATOV_FUSE_IGNITE_01.wav",
+    "sampleRate": 32000,
+    "channels": 1
+  },
+  "PTL_HK45C_CHAMBER_PRT1": {
+    "fileName": "PTL_HK45C_CHAMBER_PRT1.wav",
+    "sampleRate": 32008,
+    "channels": 1
+  },
+  "PTL_PISTOL_SHOT.R": {
+    "fileName": "PTL_PISTOL_SHOT.R.wav",
+    "sampleRate": 32000,
+    "channels": 1
+  },
+  "PISTOL_IMPACT_11": {
+    "fileName": "PISTOL_IMPACT_11.wav",
+    "sampleRate": 24010,
+    "channels": 1
+  },
+  "RPG_ROCKET_INSERT_VERA_EQ": {
+    "fileName": "RPG_ROCKET_INSERT_VERA_EQ.wav",
+    "sampleRate": 32002,
+    "channels": 1
+  },
+  "SPLOOSH_6": {
+    "fileName": "SPLOOSH_6.wav",
+    "sampleRate": 32001,
+    "channels": 1
+  },
+  "PTL_DESERTEAGLE_CLIPOUT_PRT_1": {
+    "fileName": "PTL_DESERTEAGLE_CLIPOUT_PRT_1.wav",
+    "sampleRate": 32001,
+    "channels": 1
+  },
+  "SHT_ASSAULT_INDOOR_VER2_RIGHT": {
+    "fileName": "SHT_ASSAULT_INDOOR_VER2_RIGHT.wav",
+    "sampleRate": 28000,
+    "channels": 1
+  },
+  "GTA5_SHT_SUPPRESSED_SHOT.L": {
+    "fileName": "GTA5_SHT_SUPPRESSED_SHOT.L.wav",
+    "sampleRate": 32000,
+    "channels": 1
+  },
+  "RFL_SCAR_CLIPIN_END": {
+    "fileName": "RFL_SCAR_CLIPIN_END.wav",
+    "sampleRate": 32029,
+    "channels": 1
+  },
+  "SVK_HEAT_REPORT_SERIESC_1": {
+    "fileName": "SVK_HEAT_REPORT_SERIESC_1.wav",
+    "sampleRate": 20000,
+    "channels": 1
+  },
+  "SMG_IMPACT_14": {
+    "fileName": "SMG_IMPACT_14.wav",
+    "sampleRate": 24008,
+    "channels": 1
+  },
+  "LAZER_05": {
+    "fileName": "LAZER_05.wav",
+    "sampleRate": 44100,
+    "channels": 1
+  },
+  "BULLETBY_SVK_09": {
+    "fileName": "BULLETBY_SVK_09.wav",
+    "sampleRate": 32001,
+    "channels": 1
+  },
+  "METAL_SHELL_SLOWMO_A04": {
+    "fileName": "METAL_SHELL_SLOWMO_A04.wav",
+    "sampleRate": 28002,
+    "channels": 1
+  },
+  "GLUG_5": {
+    "fileName": "GLUG_5.wav",
+    "sampleRate": 24003,
+    "channels": 1
+  },
+  "SMG_SMG_PLYR_PUNCH_01": {
+    "fileName": "SMG_SMG_PLYR_PUNCH_01.wav",
+    "sampleRate": 42004,
+    "channels": 1
+  },
+  "FUEL_CAN_WALK_5": {
+    "fileName": "FUEL_CAN_WALK_5.wav",
+    "sampleRate": 32002,
+    "channels": 1
+  },
+  "PISTOL_IMPACT_09": {
+    "fileName": "PISTOL_IMPACT_09.wav",
+    "sampleRate": 24014,
+    "channels": 1
+  },
+  "SHT_PUMP_CLOSE": {
+    "fileName": "SHT_PUMP_CLOSE.wav",
+    "sampleRate": 32002,
+    "channels": 1
+  },
+  "MGN_50BMG_MID_COLOR1_04": {
+    "fileName": "MGN_50BMG_MID_COLOR1_04.wav",
+    "sampleRate": 27999,
+    "channels": 1
+  },
+  "BULLET_BY_SLOW_MO_IN_03": {
+    "fileName": "BULLET_BY_SLOW_MO_IN_03.wav",
+    "sampleRate": 44100,
+    "channels": 1
+  },
+  "SPL_RAILGUN2.L": {
+    "fileName": "SPL_RAILGUN2.L.wav",
+    "sampleRate": 36000,
+    "channels": 1
+  },
+  "PLASTIC_SHELL_SLOWMO_B04": {
+    "fileName": "PLASTIC_SHELL_SLOWMO_B04.wav",
+    "sampleRate": 28001,
+    "channels": 1
+  },
+  "PTL_INDOOR_2_RIGHT": {
+    "fileName": "PTL_INDOOR_2_RIGHT.wav",
+    "sampleRate": 28000,
+    "channels": 1
+  },
+  "MOLOTOV_SLOSH_4": {
+    "fileName": "MOLOTOV_SLOSH_4.wav",
+    "sampleRate": 32001,
+    "channels": 1
+  },
+  "AK_IMPACT_03": {
+    "fileName": "AK_IMPACT_03.wav",
+    "sampleRate": 24007,
+    "channels": 1
+  },
+  "SMG_IMPACT_01": {
+    "fileName": "SMG_IMPACT_01.wav",
+    "sampleRate": 24001,
+    "channels": 1
+  },
+  "GTA5_SHT_DRYFIRE_COPY": {
+    "fileName": "GTA5_SHT_DRYFIRE_COPY.wav",
+    "sampleRate": 36012,
+    "channels": 1
+  },
+  "SVK_3006_SHELL_03_C": {
+    "fileName": "SVK_3006_SHELL_03_C.wav",
+    "sampleRate": 28001,
+    "channels": 1
+  },
+  "EXHALE": {
+    "fileName": "EXHALE.wav",
+    "sampleRate": 24000,
+    "channels": 1
+  },
+  "UZI_REPORT_A_R": {
+    "fileName": "UZI_REPORT_A_R.wav",
+    "sampleRate": 20000,
+    "channels": 1
+  },
+  "GTA5_SNP_BOLT_OPEN_2": {
+    "fileName": "GTA5_SNP_BOLT_OPEN_2.wav",
+    "sampleRate": 32000,
+    "channels": 1
+  },
+  "RAILGUN_TONAL.R": {
+    "fileName": "RAILGUN_TONAL.R.wav",
+    "sampleRate": 36000,
+    "channels": 1
+  },
+  "SLOW_MO_WEAPON_ANIM_04": {
+    "fileName": "SLOW_MO_WEAPON_ANIM_04.wav",
+    "sampleRate": 44100,
+    "channels": 1
+  },
+  "LAZER_HUG_02": {
+    "fileName": "LAZER_HUG_02.wav",
+    "sampleRate": 44100,
+    "channels": 1
+  },
+  "SMG_SMG_PLYR_WIDE_04.L": {
+    "fileName": "SMG_SMG_PLYR_WIDE_04.L.wav",
+    "sampleRate": 42004,
+    "channels": 1
+  },
+  "RAILGUN_RECHARGE_END": {
+    "fileName": "RAILGUN_RECHARGE_END.wav",
+    "sampleRate": 36000,
+    "channels": 1
+  },
+  "SLOW_MO_SHOT_03_RIGHT": {
+    "fileName": "SLOW_MO_SHOT_03_RIGHT.wav",
+    "sampleRate": 44100,
+    "channels": 1
+  },
+  "MGN_50BMG_HANDLING_4": {
+    "fileName": "MGN_50BMG_HANDLING_4.wav",
+    "sampleRate": 28019,
+    "channels": 1
+  },
+  "SVK_HEAT_REPORT_SERIESD_2": {
+    "fileName": "SVK_HEAT_REPORT_SERIESD_2.wav",
+    "sampleRate": 20000,
+    "channels": 1
+  },
+  "SNP_MID_2_EQ": {
+    "fileName": "SNP_MID_2_EQ.wav",
+    "sampleRate": 28001,
+    "channels": 1
+  },
+  "GTA5_GUN_STUN1": {
+    "fileName": "GTA5_GUN_STUN1.wav",
+    "sampleRate": 32000,
+    "channels": 1
+  },
+  "SVK_SHELL_WOOD_BIG_2_A": {
+    "fileName": "SVK_SHELL_WOOD_BIG_2_A.wav",
+    "sampleRate": 28002,
+    "channels": 1
+  },
+  "MGN_AK47_PLYR_VERC_02.L": {
+    "fileName": "MGN_AK47_PLYR_VERC_02.L.wav",
+    "sampleRate": 36001,
+    "channels": 1
+  },
+  "FUEL_CAN_DROP_1": {
+    "fileName": "FUEL_CAN_DROP_1.wav",
+    "sampleRate": 32002,
+    "channels": 1
+  },
+  "SLOW_MO_SHOT_14_L": {
+    "fileName": "SLOW_MO_SHOT_14_L.wav",
+    "sampleRate": 44100,
+    "channels": 1
+  },
+  "RFL_INTERIOR_86MS_4.L": {
+    "fileName": "RFL_INTERIOR_86MS_4.L.wav",
+    "sampleRate": 28008,
+    "channels": 1
+  },
+  "MOLATOV_THROW_SLOSH_01": {
+    "fileName": "MOLATOV_THROW_SLOSH_01.wav",
+    "sampleRate": 32000,
+    "channels": 1
+  },
+  "MGN_SCARL_PLYR_VER1_02.L": {
+    "fileName": "MGN_SCARL_PLYR_VER1_02.L.wav",
+    "sampleRate": 36003,
+    "channels": 1
+  },
+  "GTA5_SILENCED_EQ_05.L": {
+    "fileName": "GTA5_SILENCED_EQ_05.L.wav",
+    "sampleRate": 36006,
+    "channels": 1
+  },
+  "LMG_FOLEY_HANDLING_1": {
+    "fileName": "LMG_FOLEY_HANDLING_1.wav",
+    "sampleRate": 28002,
+    "channels": 1
+  },
+  "LAZER_LRG_02": {
+    "fileName": "LAZER_LRG_02.wav",
+    "sampleRate": 44100,
+    "channels": 1
+  },
+  "LMG_COMBAT_DIST_03.R": {
+    "fileName": "LMG_COMBAT_DIST_03.R.wav",
+    "sampleRate": 32003,
+    "channels": 1
+  },
+  "SHT_PUMP_INSERTCART_B_PRT1": {
+    "fileName": "SHT_PUMP_INSERTCART_B_PRT1.wav",
+    "sampleRate": 32002,
+    "channels": 1
+  },
+  "GLUG_3": {
+    "fileName": "GLUG_3.wav",
+    "sampleRate": 24003,
+    "channels": 1
+  },
+  "RFL_ASSAULT_NPC_RPRT": {
+    "fileName": "RFL_ASSAULT_NPC_RPRT.wav",
+    "sampleRate": 20000,
+    "channels": 1
+  },
+  "SMG_IMPACT_03": {
+    "fileName": "SMG_IMPACT_03.wav",
+    "sampleRate": 24000,
+    "channels": 1
+  },
+  "LAZER_MED_01": {
+    "fileName": "LAZER_MED_01.wav",
+    "sampleRate": 44100,
+    "channels": 1
+  },
+  "SLOW_MO_SHOT_10_R": {
+    "fileName": "SLOW_MO_SHOT_10_R.wav",
+    "sampleRate": 44100,
+    "channels": 1
+  },
+  "AK_IMPACT_10": {
+    "fileName": "AK_IMPACT_10.wav",
+    "sampleRate": 24005,
+    "channels": 1
+  },
+  "SNPR_M82_CHINK": {
+    "fileName": "SNPR_M82_CHINK.wav",
+    "sampleRate": 32003,
+    "channels": 1
+  },
+  "AK_IMPACT_09": {
+    "fileName": "AK_IMPACT_09.wav",
+    "sampleRate": 24000,
+    "channels": 1
+  },
+  "POURING_FUEL_B": {
+    "fileName": "POURING_FUEL_B.wav",
+    "sampleRate": 32000,
+    "channels": 1
+  },
+  "BULLET_BY_SLOW_MO_OUT_06": {
+    "fileName": "BULLET_BY_SLOW_MO_OUT_06.wav",
+    "sampleRate": 44100,
+    "channels": 1
+  },
+  "SNP_MID_BIG_2": {
+    "fileName": "SNP_MID_BIG_2.wav",
+    "sampleRate": 28001,
+    "channels": 1
+  },
+  "BULLETBY_SVK_03": {
+    "fileName": "BULLETBY_SVK_03.wav",
+    "sampleRate": 32001,
+    "channels": 1
+  },
+  "MGN_SCARL_FAR_MIC2_COLOR1_00_FIRST": {
+    "fileName": "MGN_SCARL_FAR_MIC2_COLOR1_00_FIRST.wav",
+    "sampleRate": 28003,
+    "channels": 1
+  },
+  "SPL_RPG_DIST_LP1": {
+    "fileName": "SPL_RPG_DIST_LP1.wav",
+    "sampleRate": 32000,
+    "channels": 1
+  },
+  "SMG_SILENCED_PLYR_WIDE_05.L": {
+    "fileName": "SMG_SILENCED_PLYR_WIDE_05.L.wav",
+    "sampleRate": 36004,
+    "channels": 1
+  },
+  "SMG_SMG_PLYR_PUNCH_00_FIRST": {
+    "fileName": "SMG_SMG_PLYR_PUNCH_00_FIRST.wav",
+    "sampleRate": 42004,
+    "channels": 1
+  },
+  "SLOW_MO_SHOT_03_LEFT": {
+    "fileName": "SLOW_MO_SHOT_03_LEFT.wav",
+    "sampleRate": 44100,
+    "channels": 1
+  },
+  "METAL_SHELL_SLOWMO_A01": {
+    "fileName": "METAL_SHELL_SLOWMO_A01.wav",
+    "sampleRate": 28002,
+    "channels": 1
+  },
+  "FUEL_CAN_WALK_4": {
+    "fileName": "FUEL_CAN_WALK_4.wav",
+    "sampleRate": 32000,
+    "channels": 1
+  },
+  "SPL_TANK_FIRE_NPC_01": {
+    "fileName": "SPL_TANK_FIRE_NPC_01.wav",
+    "sampleRate": 32000,
+    "channels": 1
+  },
+  "BULLETBY_SVK_04": {
+    "fileName": "BULLETBY_SVK_04.wav",
+    "sampleRate": 32001,
+    "channels": 1
+  },
+  "METAL_SHELL_SLOWMO_A06": {
+    "fileName": "METAL_SHELL_SLOWMO_A06.wav",
+    "sampleRate": 28001,
+    "channels": 1
+  },
+  "SVK_50CAL_SHELL_03_C": {
+    "fileName": "SVK_50CAL_SHELL_03_C.wav",
+    "sampleRate": 28001,
+    "channels": 1
+  },
+  "LAZER_03": {
+    "fileName": "LAZER_03.wav",
+    "sampleRate": 44100,
+    "channels": 1
+  },
+  "SLOW_MO_WEAPON_ANIM_07": {
+    "fileName": "SLOW_MO_WEAPON_ANIM_07.wav",
+    "sampleRate": 44100,
+    "channels": 1
+  },
+  "MGN_AK47_PLYR_VERB_LAV_01.L": {
+    "fileName": "MGN_AK47_PLYR_VERB_LAV_01.L.wav",
+    "sampleRate": 36004,
+    "channels": 1
+  },
+  "GTA5_SHT_SUPPRESSED_GAS.L": {
+    "fileName": "GTA5_SHT_SUPPRESSED_GAS.L.wav",
+    "sampleRate": 32001,
+    "channels": 1
+  },
+  "MGN_50BMG_MID_COLOR1_02": {
+    "fileName": "MGN_50BMG_MID_COLOR1_02.wav",
+    "sampleRate": 27999,
+    "channels": 1
+  },
+  "SLOW_MO_SHOT_06_LEFT": {
+    "fileName": "SLOW_MO_SHOT_06_LEFT.wav",
+    "sampleRate": 44100,
+    "channels": 1
+  },
+  "METAL_SHELL_SLOWMO_B06": {
+    "fileName": "METAL_SHELL_SLOWMO_B06.wav",
+    "sampleRate": 28000,
+    "channels": 1
+  },
+  "SMG_SMG_PLYR_PUNCH_03": {
+    "fileName": "SMG_SMG_PLYR_PUNCH_03.wav",
+    "sampleRate": 42004,
+    "channels": 1
+  },
+  "SLOW_MO_SHOT_06_RIGHT": {
+    "fileName": "SLOW_MO_SHOT_06_RIGHT.wav",
+    "sampleRate": 44100,
+    "channels": 1
+  },
+  "MOLOTOV_SLOSH_2": {
+    "fileName": "MOLOTOV_SLOSH_2.wav",
+    "sampleRate": 32000,
+    "channels": 1
+  },
+  "MGN_SCARL_PLYR_VER1_RPRT.L": {
+    "fileName": "MGN_SCARL_PLYR_VER1_RPRT.L.wav",
+    "sampleRate": 28000,
+    "channels": 1
+  },
+  "MGN_AK47_OFF3_SVK_02": {
+    "fileName": "MGN_AK47_OFF3_SVK_02.wav",
+    "sampleRate": 28002,
+    "channels": 1
+  },
+  "MGN_SCARL_PLYR_VER1_LAV_00_FIRST": {
+    "fileName": "MGN_SCARL_PLYR_VER1_LAV_00_FIRST.wav",
+    "sampleRate": 36003,
+    "channels": 1
+  },
+  "RFL_INTERIOR_86MS_2.L": {
+    "fileName": "RFL_INTERIOR_86MS_2.L.wav",
+    "sampleRate": 28003,
+    "channels": 1
+  },
+  "SVK_50CAL_SHELL_07_A": {
+    "fileName": "SVK_50CAL_SHELL_07_A.wav",
+    "sampleRate": 28004,
+    "channels": 1
+  },
+  "MGN_SCARL_FAR_MIC2_COLOR1_01": {
+    "fileName": "MGN_SCARL_FAR_MIC2_COLOR1_01.wav",
+    "sampleRate": 28003,
+    "channels": 1
+  },
+  "SHT_PUMP_ACTION_VER1_PRTB": {
+    "fileName": "SHT_PUMP_ACTION_VER1_PRTB.wav",
+    "sampleRate": 32000,
+    "channels": 1
+  },
+  "MGN_SCARL_PLYR_VER1_05.L": {
+    "fileName": "MGN_SCARL_PLYR_VER1_05.L.wav",
+    "sampleRate": 36003,
+    "channels": 1
+  },
+  "GTA5_SILENCED_EQ_01.L": {
+    "fileName": "GTA5_SILENCED_EQ_01.L.wav",
+    "sampleRate": 36003,
+    "channels": 1
+  },
+  "SVK_SHELL_WOOD_BIG_1_C": {
+    "fileName": "SVK_SHELL_WOOD_BIG_1_C.wav",
+    "sampleRate": 28002,
+    "channels": 1
+  },
+  "MGN_50BMG_BELT_7": {
+    "fileName": "MGN_50BMG_BELT_7.wav",
+    "sampleRate": 28001,
+    "channels": 1
+  },
+  "SPL_GRENADE_THUNK": {
+    "fileName": "SPL_GRENADE_THUNK.wav",
+    "sampleRate": 36000,
+    "channels": 1
+  },
+  "MGN_AK47_PLYR_VERB_01.L": {
+    "fileName": "MGN_AK47_PLYR_VERB_01.L.wav",
+    "sampleRate": 36004,
+    "channels": 1
+  },
+  "SLOW_MO_SHOT_12_L": {
+    "fileName": "SLOW_MO_SHOT_12_L.wav",
+    "sampleRate": 44100,
+    "channels": 1
+  },
+  "LMG_FOLEY_HANDLING_2": {
+    "fileName": "LMG_FOLEY_HANDLING_2.wav",
+    "sampleRate": 28006,
+    "channels": 1
+  },
+  "CHARGE": {
+    "fileName": "CHARGE.wav",
+    "sampleRate": 32000,
+    "channels": 1
+  },
+  "FUEL_CAN_STOP_2": {
+    "fileName": "FUEL_CAN_STOP_2.wav",
+    "sampleRate": 32000,
+    "channels": 1
+  },
+  "SLOW_MO_SHOT_15_L": {
+    "fileName": "SLOW_MO_SHOT_15_L.wav",
+    "sampleRate": 44100,
+    "channels": 1
+  },
+  "SLOW_MO_WEAPON_ANIM_09": {
+    "fileName": "SLOW_MO_WEAPON_ANIM_09.wav",
+    "sampleRate": 44100,
+    "channels": 1
+  },
+  "AK_IMPACT_04": {
+    "fileName": "AK_IMPACT_04.wav",
+    "sampleRate": 24003,
+    "channels": 1
+  },
+  "METAL_SHELL_SLOWMO_B07": {
+    "fileName": "METAL_SHELL_SLOWMO_B07.wav",
+    "sampleRate": 28004,
+    "channels": 1
+  },
+  "RFL_INTERIOR_86MS_3.L": {
+    "fileName": "RFL_INTERIOR_86MS_3.L.wav",
+    "sampleRate": 28003,
+    "channels": 1
+  },
+  "MGN_AK47_FAR_MIC1_COLOR1_01": {
+    "fileName": "MGN_AK47_FAR_MIC1_COLOR1_01.wav",
+    "sampleRate": 28004,
+    "channels": 1
+  },
+  "RPG_DRY_FIRE_01": {
+    "fileName": "RPG_DRY_FIRE_01.wav",
+    "sampleRate": 36009,
+    "channels": 1
+  },
+  "MGN_50BMG_MID_COLOR1_01": {
+    "fileName": "MGN_50BMG_MID_COLOR1_01.wav",
+    "sampleRate": 27999,
+    "channels": 1
+  },
+  "MOLATOV_HOLSTER_DRAW_01": {
+    "fileName": "MOLATOV_HOLSTER_DRAW_01.wav",
+    "sampleRate": 32000,
+    "channels": 1
+  },
+  "LAZER_LRG_03": {
+    "fileName": "LAZER_LRG_03.wav",
+    "sampleRate": 44100,
+    "channels": 1
+  },
+  "SLOW_MO_WEAPON_ANIM_02": {
+    "fileName": "SLOW_MO_WEAPON_ANIM_02.wav",
+    "sampleRate": 44100,
+    "channels": 1
+  },
+  "SHUTTER_RELEASE": {
+    "fileName": "SHUTTER_RELEASE.wav",
+    "sampleRate": 32002,
+    "channels": 1
+  },
+  "PLASTIC_SHELL_SLOWMO_B03": {
+    "fileName": "PLASTIC_SHELL_SLOWMO_B03.wav",
+    "sampleRate": 28003,
+    "channels": 1
+  },
+  "ABSEIL_GEAR_THUD_03": {
+    "fileName": "ABSEIL_GEAR_THUD_03.wav",
+    "sampleRate": 32000,
+    "channels": 1
+  },
+  "SMG_SMG_PLYR_WIDE_00_FIRST.L": {
+    "fileName": "SMG_SMG_PLYR_WIDE_00_FIRST.L.wav",
+    "sampleRate": 42004,
+    "channels": 1
+  },
+  "LMG_COMBAT_DIST_01.R": {
+    "fileName": "LMG_COMBAT_DIST_01.R.wav",
+    "sampleRate": 32003,
+    "channels": 1
+  },
+  "ABSEIL_LEATHER_CREAK_02": {
+    "fileName": "ABSEIL_LEATHER_CREAK_02.wav",
+    "sampleRate": 32000,
+    "channels": 1
+  },
+  "AK_IMPACT_07": {
+    "fileName": "AK_IMPACT_07.wav",
+    "sampleRate": 24000,
+    "channels": 1
+  },
+  "SLOW_MO_SHOT_04A_RIGHT": {
+    "fileName": "SLOW_MO_SHOT_04A_RIGHT.wav",
+    "sampleRate": 44100,
+    "channels": 1
+  },
+  "SPL_RAILGUN.L": {
+    "fileName": "SPL_RAILGUN.L.wav",
+    "sampleRate": 36000,
+    "channels": 1
+  },
+  "MGN_AK47_FAR_MIC4_RPRT_02": {
+    "fileName": "MGN_AK47_FAR_MIC4_RPRT_02.wav",
+    "sampleRate": 20000,
+    "channels": 1
+  },
+  "METAL_SHELL_SLOWMO_B04": {
+    "fileName": "METAL_SHELL_SLOWMO_B04.wav",
+    "sampleRate": 28002,
+    "channels": 1
+  },
+  "PISTOL_DRY_FIRE_01": {
+    "fileName": "PISTOL_DRY_FIRE_01.wav",
+    "sampleRate": 36008,
+    "channels": 1
+  },
+  "LAZER_HUG_01": {
+    "fileName": "LAZER_HUG_01.wav",
+    "sampleRate": 44100,
+    "channels": 1
+  },
+  "PARACHUTE_OPEN_02": {
+    "fileName": "PARACHUTE_OPEN_02.wav",
+    "sampleRate": 30000,
+    "channels": 1
+  },
+  "FIRE_EXTING_LP3": {
+    "fileName": "FIRE_EXTING_LP3.wav",
+    "sampleRate": 32000,
+    "channels": 1
+  },
+  "GLUG_9": {
+    "fileName": "GLUG_9.wav",
+    "sampleRate": 24002,
+    "channels": 1
+  },
+  "RFL_INTERIOR_86MS_END.R": {
+    "fileName": "RFL_INTERIOR_86MS_END.R.wav",
+    "sampleRate": 28000,
+    "channels": 1
+  },
+  "SMG_SMG_PLYR_PUNCH_05": {
+    "fileName": "SMG_SMG_PLYR_PUNCH_05.wav",
+    "sampleRate": 42004,
+    "channels": 1
+  },
+  "SPL_TANK_FIRE_NPC_03": {
+    "fileName": "SPL_TANK_FIRE_NPC_03.wav",
+    "sampleRate": 32000,
+    "channels": 1
+  },
+  "SMG_ASSAULT_CHAMBER_PRT2_VERB": {
+    "fileName": "SMG_ASSAULT_CHAMBER_PRT2_VERB.wav",
+    "sampleRate": 32000,
+    "channels": 1
+  },
+  "MGN_AK47_CHAMBER_PRT2_VERB": {
+    "fileName": "MGN_AK47_CHAMBER_PRT2_VERB.wav",
+    "sampleRate": 32004,
+    "channels": 1
+  },
+  "SVK_50CAL_SHELL_03_A": {
+    "fileName": "SVK_50CAL_SHELL_03_A.wav",
+    "sampleRate": 28004,
+    "channels": 1
+  },
+  "SLOW_MO_WEAPON_ANIM_16": {
+    "fileName": "SLOW_MO_WEAPON_ANIM_16.wav",
+    "sampleRate": 44100,
+    "channels": 1
+  },
+  "GUN_DSTNT_FAR_50CAL_1": {
+    "fileName": "GUN_DSTNT_FAR_50CAL_1.wav",
+    "sampleRate": 32000,
+    "channels": 1
+  },
+  "SVK_SHELL_WOOD_BIG_3_A": {
+    "fileName": "SVK_SHELL_WOOD_BIG_3_A.wav",
+    "sampleRate": 28004,
+    "channels": 1
+  },
+  "LAZER_MED_03": {
+    "fileName": "LAZER_MED_03.wav",
+    "sampleRate": 44100,
+    "channels": 1
+  },
+  "SHT_M26_ACTION_PRT2_VERA": {
+    "fileName": "SHT_M26_ACTION_PRT2_VERA.wav",
+    "sampleRate": 32004,
+    "channels": 1
+  },
+  "SNPR_M82_SHOT_B_L": {
+    "fileName": "SNPR_M82_SHOT_B_L.wav",
+    "sampleRate": 32000,
+    "channels": 1
+  },
+  "RFL_SCAR_CHAMBER_PRT2": {
+    "fileName": "RFL_SCAR_CHAMBER_PRT2.wav",
+    "sampleRate": 32003,
+    "channels": 1
+  },
+  "GLUG_2": {
+    "fileName": "GLUG_2.wav",
+    "sampleRate": 24000,
+    "channels": 1
+  },
+  "MGN_AK47_PLYR_VERC_03.L": {
+    "fileName": "MGN_AK47_PLYR_VERC_03.L.wav",
+    "sampleRate": 36007,
+    "channels": 1
+  },
+  "SLOW_MO_WEAPON_ANIM_05": {
+    "fileName": "SLOW_MO_WEAPON_ANIM_05.wav",
+    "sampleRate": 44100,
+    "channels": 1
+  },
+  "INHALE": {
+    "fileName": "INHALE.wav",
+    "sampleRate": 24000,
+    "channels": 1
+  },
+  "GUN_DSTNT_SWTNR_SHOTGUN_B1": {
+    "fileName": "GUN_DSTNT_SWTNR_SHOTGUN_B1.wav",
+    "sampleRate": 32000,
+    "channels": 1
+  },
+  "METAL_SHELL_SLOWMO_B01": {
+    "fileName": "METAL_SHELL_SLOWMO_B01.wav",
+    "sampleRate": 28003,
+    "channels": 1
+  },
+  "IMPULSE_48K": {
+    "fileName": "IMPULSE_48K.wav",
+    "sampleRate": 48000,
+    "channels": 1
+  },
+  "MOLOTOV_BREAK_01": {
+    "fileName": "MOLOTOV_BREAK_01.wav",
+    "sampleRate": 32000,
+    "channels": 1
+  },
+  "BULLET_BY_SLOW_MO_IN_02": {
+    "fileName": "BULLET_BY_SLOW_MO_IN_02.wav",
+    "sampleRate": 44100,
+    "channels": 1
+  },
+  "SHOTGUN_2_IMPACT_01": {
+    "fileName": "SHOTGUN_2_IMPACT_01.wav",
+    "sampleRate": 24013,
+    "channels": 1
+  },
+  "GRENADE_LAUNCHER_DRY_FIRE_01": {
+    "fileName": "GRENADE_LAUNCHER_DRY_FIRE_01.wav",
+    "sampleRate": 36001,
+    "channels": 1
+  },
+  "SVK_50CAL_SHELL_05_C": {
+    "fileName": "SVK_50CAL_SHELL_05_C.wav",
+    "sampleRate": 28002,
+    "channels": 1
+  },
+  "RFL_SCAR_CLIPIN": {
+    "fileName": "RFL_SCAR_CLIPIN.wav",
+    "sampleRate": 32003,
+    "channels": 1
+  },
+  "FIRE_EXTING_LP1": {
+    "fileName": "FIRE_EXTING_LP1.wav",
+    "sampleRate": 32001,
+    "channels": 1
+  },
+  "AK_IMPACT_02": {
+    "fileName": "AK_IMPACT_02.wav",
+    "sampleRate": 24001,
+    "channels": 1
+  },
+  "RFL_INTERIOR_86MS_FIRST.R": {
+    "fileName": "RFL_INTERIOR_86MS_FIRST.R.wav",
+    "sampleRate": 28008,
+    "channels": 1
+  },
+  "BULLET_BY_SLOW_MO_IN_06": {
+    "fileName": "BULLET_BY_SLOW_MO_IN_06.wav",
+    "sampleRate": 44100,
+    "channels": 1
+  },
+  "LMG_SUB_SWEETNER_1": {
+    "fileName": "LMG_SUB_SWEETNER_1.wav",
+    "sampleRate": 3004,
+    "channels": 1
+  },
+  "LMG_FOLEY_HANDLING_4": {
+    "fileName": "LMG_FOLEY_HANDLING_4.wav",
+    "sampleRate": 28003,
+    "channels": 1
+  },
+  "MGN_AK47_FAR_MIC1_COLOR1_03": {
+    "fileName": "MGN_AK47_FAR_MIC1_COLOR1_03.wav",
+    "sampleRate": 28004,
+    "channels": 1
+  },
+  "MGN_AK47_PLYR_VERB_LAV_00_FIRST.L": {
+    "fileName": "MGN_AK47_PLYR_VERB_LAV_00_FIRST.L.wav",
+    "sampleRate": 36004,
+    "channels": 1
+  },
+  "SVK_GRENADE_LNCHR_C.L": {
+    "fileName": "SVK_GRENADE_LNCHR_C.L.wav",
+    "sampleRate": 28000,
+    "channels": 1
+  },
+  "AK_IMPACT_01": {
+    "fileName": "AK_IMPACT_01.wav",
+    "sampleRate": 24000,
+    "channels": 1
+  },
+  "MGN_AK47_MID_MIC1_COLOR1_03": {
+    "fileName": "MGN_AK47_MID_MIC1_COLOR1_03.wav",
+    "sampleRate": 28004,
+    "channels": 1
+  },
+  "PTL_DESERTEAGLE_CHAMBER_PRT2_VERA": {
+    "fileName": "PTL_DESERTEAGLE_CHAMBER_PRT2_VERA.wav",
+    "sampleRate": 32003,
+    "channels": 1
+  },
+  "SVK_SHELL_WOOD_BIG_3_B": {
+    "fileName": "SVK_SHELL_WOOD_BIG_3_B.wav",
+    "sampleRate": 28004,
+    "channels": 1
+  },
+  "SVK_SHELL_SWTNR_D": {
+    "fileName": "SVK_SHELL_SWTNR_D.wav",
+    "sampleRate": 28001,
+    "channels": 1
+  },
+  "SPLOOSH_1": {
+    "fileName": "SPLOOSH_1.wav",
+    "sampleRate": 32000,
+    "channels": 1
+  },
+  "SLOW_MO_WEAPON_ANIM_11": {
+    "fileName": "SLOW_MO_WEAPON_ANIM_11.wav",
+    "sampleRate": 44100,
+    "channels": 1
+  },
+  "SMG_SMG_PLYR_WIDE_05.L": {
+    "fileName": "SMG_SMG_PLYR_WIDE_05.L.wav",
+    "sampleRate": 42004,
+    "channels": 1
+  },
+  "SHT_MID_VERB_NPC_2": {
+    "fileName": "SHT_MID_VERB_NPC_2.wav",
+    "sampleRate": 20001,
+    "channels": 1
+  },
+  "MGN_AK47_PLYR_VERC_LAV_02.L": {
+    "fileName": "MGN_AK47_PLYR_VERC_LAV_02.L.wav",
+    "sampleRate": 36001,
+    "channels": 1
+  },
+  "MGN_SCARL_PLYR_VER1_LAV_02": {
+    "fileName": "MGN_SCARL_PLYR_VER1_LAV_02.wav",
+    "sampleRate": 36003,
+    "channels": 1
+  },
+  "METAL_SHELL_SLOWMO_A02": {
+    "fileName": "METAL_SHELL_SLOWMO_A02.wav",
+    "sampleRate": 28000,
+    "channels": 1
+  },
+  "ABSEIL_GEAR_THUD_01": {
+    "fileName": "ABSEIL_GEAR_THUD_01.wav",
+    "sampleRate": 32000,
+    "channels": 1
+  },
+  "SLOW_MO_SHOT_14_R": {
+    "fileName": "SLOW_MO_SHOT_14_R.wav",
+    "sampleRate": 44100,
+    "channels": 1
+  },
+  "ABSEIL_GEAR_RATTLE_01_C": {
+    "fileName": "ABSEIL_GEAR_RATTLE_01_C.wav",
+    "sampleRate": 32000,
+    "channels": 1
+  },
+  "SLOW_MO_SHOT_12_R": {
+    "fileName": "SLOW_MO_SHOT_12_R.wav",
+    "sampleRate": 44100,
+    "channels": 1
+  },
+  "PARACHUTE_SWEETENER": {
+    "fileName": "PARACHUTE_SWEETENER.wav",
+    "sampleRate": 30000,
+    "channels": 1
+  },
+  "SMG_SMG_PLYR_WIDE_02.L": {
+    "fileName": "SMG_SMG_PLYR_WIDE_02.L.wav",
+    "sampleRate": 42004,
+    "channels": 1
+  },
+  "MGN_M4_CLIPOUT": {
+    "fileName": "MGN_M4_CLIPOUT.wav",
+    "sampleRate": 32008,
+    "channels": 1
+  },
+  "BULLETBY_SVK_13": {
+    "fileName": "BULLETBY_SVK_13.wav",
+    "sampleRate": 32001,
+    "channels": 1
+  },
+  "SPL_MINIGUN_LP.L": {
+    "fileName": "SPL_MINIGUN_LP.L.wav",
+    "sampleRate": 36000,
+    "channels": 1
+  },
+  "PISTOL_IMPACT_02": {
+    "fileName": "PISTOL_IMPACT_02.wav",
+    "sampleRate": 24009,
+    "channels": 1
+  },
+  "SLOW_MO_SHOT_17_L": {
+    "fileName": "SLOW_MO_SHOT_17_L.wav",
+    "sampleRate": 44100,
+    "channels": 1
+  },
+  "BULLET_BY_SLOW_MO_OUT_03": {
+    "fileName": "BULLET_BY_SLOW_MO_OUT_03.wav",
+    "sampleRate": 44100,
+    "channels": 1
+  },
+  "SMG_IMPACT_06": {
+    "fileName": "SMG_IMPACT_06.wav",
+    "sampleRate": 24004,
+    "channels": 1
+  },
+  "GUN_DSTNT_SWTNR_SNPR_2": {
+    "fileName": "GUN_DSTNT_SWTNR_SNPR_2.wav",
+    "sampleRate": 32000,
+    "channels": 1
+  },
+  "SPL_RPG_DIST_PLAYER.L": {
+    "fileName": "SPL_RPG_DIST_PLAYER.L.wav",
+    "sampleRate": 32000,
+    "channels": 1
+  },
+  "LMG_COMBAT_LAV_01": {
+    "fileName": "LMG_COMBAT_LAV_01.wav",
+    "sampleRate": 32003,
+    "channels": 1
+  },
+  "SLOW_MO_SHOT_HUGE_01_LEFT": {
+    "fileName": "SLOW_MO_SHOT_HUGE_01_LEFT.wav",
+    "sampleRate": 44100,
+    "channels": 1
+  },
+  "SVK_SHELL_PLASTIC_01_B": {
+    "fileName": "SVK_SHELL_PLASTIC_01_B.wav",
+    "sampleRate": 28007,
+    "channels": 1
+  },
+  "MGN_AK47_FAR_MIC1_COLOR1_05": {
+    "fileName": "MGN_AK47_FAR_MIC1_COLOR1_05.wav",
+    "sampleRate": 28004,
+    "channels": 1
+  },
+  "SLOW_MO_SHOT_18_L": {
+    "fileName": "SLOW_MO_SHOT_18_L.wav",
+    "sampleRate": 44100,
+    "channels": 1
+  },
+  "RAILGUN_CLICKS": {
+    "fileName": "RAILGUN_CLICKS.wav",
+    "sampleRate": 36000,
+    "channels": 1
+  },
+  "MGN_SCARL_FAR_MIC2_COLOR1_03": {
+    "fileName": "MGN_SCARL_FAR_MIC2_COLOR1_03.wav",
+    "sampleRate": 28003,
+    "channels": 1
+  },
+  "MGN_SCARL_MID_MIC3_COLOR1_03": {
+    "fileName": "MGN_SCARL_MID_MIC3_COLOR1_03.wav",
+    "sampleRate": 28003,
+    "channels": 1
+  },
+  "MGN_AK47_PLYR_VERC_LAV_01.L": {
+    "fileName": "MGN_AK47_PLYR_VERC_LAV_01.L.wav",
+    "sampleRate": 36007,
+    "channels": 1
+  },
+  "MGN_SCARL_MID_MIC3_COLOR1_02": {
+    "fileName": "MGN_SCARL_MID_MIC3_COLOR1_02.wav",
+    "sampleRate": 28003,
+    "channels": 1
+  },
+  "MGN_M4_CLIPIN_PRT_2": {
+    "fileName": "MGN_M4_CLIPIN_PRT_2.wav",
+    "sampleRate": 32000,
+    "channels": 1
+  },
+  "MGN_AK47_OFF4_SVK_03": {
+    "fileName": "MGN_AK47_OFF4_SVK_03.wav",
+    "sampleRate": 27999,
+    "channels": 1
+  },
+  "GTA5_SILENCED_EQ_02.L": {
+    "fileName": "GTA5_SILENCED_EQ_02.L.wav",
+    "sampleRate": 36003,
+    "channels": 1
+  },
+  "AK_IMPACT_11": {
+    "fileName": "AK_IMPACT_11.wav",
+    "sampleRate": 24000,
+    "channels": 1
+  },
+  "MGN_50BMG_BELT_3": {
+    "fileName": "MGN_50BMG_BELT_3.wav",
+    "sampleRate": 28006,
+    "channels": 1
+  },
+  "SVK_303_SHELL_03_C": {
+    "fileName": "SVK_303_SHELL_03_C.wav",
+    "sampleRate": 28003,
+    "channels": 1
+  },
+  "SHOTGUN_2_IMPACT_15": {
+    "fileName": "SHOTGUN_2_IMPACT_15.wav",
+    "sampleRate": 24008,
+    "channels": 1
+  },
+  "SNP_MID_BIG_1": {
+    "fileName": "SNP_MID_BIG_1.wav",
+    "sampleRate": 28001,
+    "channels": 1
+  },
+  "SLOW_MO_SHOT_04A_LEFT": {
+    "fileName": "SLOW_MO_SHOT_04A_LEFT.wav",
+    "sampleRate": 44100,
+    "channels": 1
+  },
+  "BULLETBY_SVK_15": {
+    "fileName": "BULLETBY_SVK_15.wav",
+    "sampleRate": 32001,
+    "channels": 1
+  },
+  "SLOW_MO_SHOT_11_L": {
+    "fileName": "SLOW_MO_SHOT_11_L.wav",
+    "sampleRate": 44100,
+    "channels": 1
+  },
+  "SMG_SUB_SWEETNER_2": {
+    "fileName": "SMG_SUB_SWEETNER_2.wav",
+    "sampleRate": 3002,
+    "channels": 1
+  },
+  "SLOW_MO_SHOT_16_R": {
+    "fileName": "SLOW_MO_SHOT_16_R.wav",
+    "sampleRate": 44100,
+    "channels": 1
+  },
+  "SLOW_MO_SHOT_01_LEFT": {
+    "fileName": "SLOW_MO_SHOT_01_LEFT.wav",
+    "sampleRate": 44100,
+    "channels": 1
+  },
+  "MGN_AK47_FAR_MIC1_COLOR1_04": {
+    "fileName": "MGN_AK47_FAR_MIC1_COLOR1_04.wav",
+    "sampleRate": 28004,
+    "channels": 1
+  },
+  "MGN_M4_CHAMBER_PRT2": {
+    "fileName": "MGN_M4_CHAMBER_PRT2.wav",
+    "sampleRate": 32007,
+    "channels": 1
+  },
+  "BULLETBY_SVK_08": {
+    "fileName": "BULLETBY_SVK_08.wav",
+    "sampleRate": 32001,
+    "channels": 1
+  },
+  "SMG_SMG_PLYR_WIDE_01.L": {
+    "fileName": "SMG_SMG_PLYR_WIDE_01.L.wav",
+    "sampleRate": 42004,
+    "channels": 1
+  },
+  "FUEL_CAN_WALK_1": {
+    "fileName": "FUEL_CAN_WALK_1.wav",
+    "sampleRate": 32000,
+    "channels": 1
+  },
+  "ROCKET_GRENADE_FIRE_L": {
+    "fileName": "ROCKET_GRENADE_FIRE_L.wav",
+    "sampleRate": 32000,
+    "channels": 1
+  },
+  "FUEL_CAN_RUN_3": {
+    "fileName": "FUEL_CAN_RUN_3.wav",
+    "sampleRate": 32001,
+    "channels": 1
+  },
+  "GLUG_7": {
+    "fileName": "GLUG_7.wav",
+    "sampleRate": 24001,
+    "channels": 1
+  },
+  "PTL_M1911_CLIPIN": {
+    "fileName": "PTL_M1911_CLIPIN.wav",
+    "sampleRate": 32004,
+    "channels": 1
+  },
+  "FUEL_CAN_RUN_2": {
+    "fileName": "FUEL_CAN_RUN_2.wav",
+    "sampleRate": 32001,
+    "channels": 1
+  },
+  "GUN_DSTNT_FAR_50CAL_3": {
+    "fileName": "GUN_DSTNT_FAR_50CAL_3.wav",
+    "sampleRate": 32000,
+    "channels": 1
+  },
+  "SMG_IMPACT_08": {
+    "fileName": "SMG_IMPACT_08.wav",
+    "sampleRate": 24007,
+    "channels": 1
+  },
+  "LAZER_MED_02": {
+    "fileName": "LAZER_MED_02.wav",
+    "sampleRate": 44100,
+    "channels": 1
+  },
+  "PTL_PISTOL_MID_2": {
+    "fileName": "PTL_PISTOL_MID_2.wav",
+    "sampleRate": 28003,
+    "channels": 1
+  },
+  "ABSEIL_GEAR_RATTLE_02_C": {
+    "fileName": "ABSEIL_GEAR_RATTLE_02_C.wav",
+    "sampleRate": 32000,
+    "channels": 1
+  },
+  "MP5_SAFETY_01": {
+    "fileName": "MP5_SAFETY_01.wav",
+    "sampleRate": 32022,
+    "channels": 1
+  },
+  "SLOW_MO_SHOT_10_L": {
+    "fileName": "SLOW_MO_SHOT_10_L.wav",
+    "sampleRate": 44100,
+    "channels": 1
+  },
+  "MGN_SCARL_FAR_MIC2_COLOR1_04": {
+    "fileName": "MGN_SCARL_FAR_MIC2_COLOR1_04.wav",
+    "sampleRate": 28003,
+    "channels": 1
+  },
+  "PISTOL_IMPACT_08": {
+    "fileName": "PISTOL_IMPACT_08.wav",
+    "sampleRate": 24007,
+    "channels": 1
+  },
+  "MGN_AK47_PLYR_VERC_LAV_03.L": {
+    "fileName": "MGN_AK47_PLYR_VERC_LAV_03.L.wav",
+    "sampleRate": 36007,
+    "channels": 1
+  },
+  "MGN_AK47_PLYR_VERB_LAV_04.L": {
+    "fileName": "MGN_AK47_PLYR_VERB_LAV_04.L.wav",
+    "sampleRate": 36004,
+    "channels": 1
+  },
+  "SHOTGUN_2_IMPACT_03": {
+    "fileName": "SHOTGUN_2_IMPACT_03.wav",
+    "sampleRate": 24010,
+    "channels": 1
+  },
+  "RFL_INTERIOR_86MS_1.R": {
+    "fileName": "RFL_INTERIOR_86MS_1.R.wav",
+    "sampleRate": 28003,
+    "channels": 1
+  },
+  "MGN_AK47_CHAMBER_PRT1": {
+    "fileName": "MGN_AK47_CHAMBER_PRT1.wav",
+    "sampleRate": 32000,
+    "channels": 1
+  },
+  "IMPULSE_44K1": {
+    "fileName": "IMPULSE_44K1.wav",
+    "sampleRate": 44100,
+    "channels": 1
+  },
+  "PLASTIC_SHELL_SLOWMO_A01": {
+    "fileName": "PLASTIC_SHELL_SLOWMO_A01.wav",
+    "sampleRate": 28001,
+    "channels": 1
+  },
+  "SLOW_MO_SHOT_07_RIGHT": {
+    "fileName": "SLOW_MO_SHOT_07_RIGHT.wav",
+    "sampleRate": 44100,
+    "channels": 1
+  },
+  "LAZER_04": {
+    "fileName": "LAZER_04.wav",
+    "sampleRate": 44100,
+    "channels": 1
+  },
+  "SMG_SILENCED_PLYR_WIDE_03.L": {
+    "fileName": "SMG_SILENCED_PLYR_WIDE_03.L.wav",
+    "sampleRate": 36004,
+    "channels": 1
+  },
+  "SVK_SHELL_WOOD_BIG_1_A": {
+    "fileName": "SVK_SHELL_WOOD_BIG_1_A.wav",
+    "sampleRate": 28000,
+    "channels": 1
+  },
+  "MGN_AK47_PLYR_VERB_04.L": {
+    "fileName": "MGN_AK47_PLYR_VERB_04.L.wav",
+    "sampleRate": 36004,
+    "channels": 1
+  },
+  "SPLOOSH_3": {
+    "fileName": "SPLOOSH_3.wav",
+    "sampleRate": 32001,
+    "channels": 1
+  },
+  "SHT_FAR_COLORED_NPC_3": {
+    "fileName": "SHT_FAR_COLORED_NPC_3.wav",
+    "sampleRate": 20001,
+    "channels": 1
+  },
+  "SMG_IMPACT_15": {
+    "fileName": "SMG_IMPACT_15.wav",
+    "sampleRate": 24010,
+    "channels": 1
+  },
+  "SHT_ASSAULT_VER2.R": {
+    "fileName": "SHT_ASSAULT_VER2.R.wav",
+    "sampleRate": 32000,
+    "channels": 1
+  },
+  "SVK_HEAT_REPORT_SERIESC_2": {
+    "fileName": "SVK_HEAT_REPORT_SERIESC_2.wav",
+    "sampleRate": 20000,
+    "channels": 1
+  },
+  "MGN_AK47_PLYR_VERB_03.L": {
+    "fileName": "MGN_AK47_PLYR_VERB_03.L.wav",
+    "sampleRate": 36004,
+    "channels": 1
+  },
+  "SNPR_M82_SHOT_A_L": {
+    "fileName": "SNPR_M82_SHOT_A_L.wav",
+    "sampleRate": 32000,
+    "channels": 1
+  },
+  "PTL_INDOOR_2_LEFT": {
+    "fileName": "PTL_INDOOR_2_LEFT.wav",
+    "sampleRate": 28000,
+    "channels": 1
+  },
+  "PTL_PISTOL_FAR_1": {
+    "fileName": "PTL_PISTOL_FAR_1.wav",
+    "sampleRate": 28003,
+    "channels": 1
+  },
+  "BULLET_BY_SLOW_MO_IN_04": {
+    "fileName": "BULLET_BY_SLOW_MO_IN_04.wav",
+    "sampleRate": 44100,
+    "channels": 1
+  },
+  "GTA5_SNP_BOLT_CLOSE_2": {
+    "fileName": "GTA5_SNP_BOLT_CLOSE_2.wav",
+    "sampleRate": 32002,
+    "channels": 1
+  },
+  "SVK_SHELL_PLASTIC_06_B": {
+    "fileName": "SVK_SHELL_PLASTIC_06_B.wav",
+    "sampleRate": 28003,
+    "channels": 1
+  },
+  "MGN_AK47_PLYR_VERB_LAV_03.L": {
+    "fileName": "MGN_AK47_PLYR_VERB_LAV_03.L.wav",
+    "sampleRate": 36004,
+    "channels": 1
+  },
+  "SVK_SHELL_WOOD_BIG_2_C": {
+    "fileName": "SVK_SHELL_WOOD_BIG_2_C.wav",
+    "sampleRate": 28006,
+    "channels": 1
+  },
+  "METAL_SHELL_SLOWMO_A05": {
+    "fileName": "METAL_SHELL_SLOWMO_A05.wav",
+    "sampleRate": 28001,
+    "channels": 1
+  },
+  "PTL_COMBAT_SHOT_VER3.R": {
+    "fileName": "PTL_COMBAT_SHOT_VER3.R.wav",
+    "sampleRate": 32000,
+    "channels": 1
+  },
+  "BULLET_BY_SLOW_MO_OUT_01": {
+    "fileName": "BULLET_BY_SLOW_MO_OUT_01.wav",
+    "sampleRate": 44100,
+    "channels": 1
+  },
+  "BULLET_BY_UNDER_WATER": {
+    "fileName": "BULLET_BY_UNDER_WATER.wav",
+    "sampleRate": 32000,
+    "channels": 1
+  },
+  "SMG_SUB_SWEETNER_1": {
+    "fileName": "SMG_SUB_SWEETNER_1.wav",
+    "sampleRate": 3002,
+    "channels": 1
+  },
+  "GTA5_SNP_BOLT_OPEN_1": {
+    "fileName": "GTA5_SNP_BOLT_OPEN_1.wav",
+    "sampleRate": 32002,
+    "channels": 1
+  },
+  "SLOW_MO_SHOT_07_LEFT": {
+    "fileName": "SLOW_MO_SHOT_07_LEFT.wav",
+    "sampleRate": 44100,
+    "channels": 1
+  },
+  "MOLATOV_THROW_SLOSH_02": {
+    "fileName": "MOLATOV_THROW_SLOSH_02.wav",
+    "sampleRate": 32001,
+    "channels": 1
+  },
+  "MGN_50BMG_HANDLING_7": {
+    "fileName": "MGN_50BMG_HANDLING_7.wav",
+    "sampleRate": 28004,
+    "channels": 1
+  },
+  "GUN_DSTNT_SWTNR_SHOTGUN_B3": {
+    "fileName": "GUN_DSTNT_SWTNR_SHOTGUN_B3.wav",
+    "sampleRate": 32000,
+    "channels": 1
+  },
+  "PTL_DESERTEAGLE_CHAMBER_PRT1": {
+    "fileName": "PTL_DESERTEAGLE_CHAMBER_PRT1.wav",
+    "sampleRate": 32000,
+    "channels": 1
+  },
+  "SHT_BULLPUP_VER2.R": {
+    "fileName": "SHT_BULLPUP_VER2.R.wav",
+    "sampleRate": 32000,
+    "channels": 1
+  },
+  "PTL_50CAL_SHOT_VER4.R": {
+    "fileName": "PTL_50CAL_SHOT_VER4.R.wav",
+    "sampleRate": 32000,
+    "channels": 1
+  },
+  "PISTOL_IMPACT_05": {
+    "fileName": "PISTOL_IMPACT_05.wav",
+    "sampleRate": 24010,
+    "channels": 1
+  },
+  "FUEL_CAN_STOP_4": {
+    "fileName": "FUEL_CAN_STOP_4.wav",
+    "sampleRate": 32000,
+    "channels": 1
+  },
+  "MOLOTOV_SLOSH_5": {
+    "fileName": "MOLOTOV_SLOSH_5.wav",
+    "sampleRate": 32000,
+    "channels": 1
+  },
+  "HGUN_ASSKICK_EL8": {
+    "fileName": "HGUN_ASSKICK_EL8.wav",
+    "sampleRate": 32001,
+    "channels": 1
+  },
+  "ABSEIL_LEATHER_CREAK_03": {
+    "fileName": "ABSEIL_LEATHER_CREAK_03.wav",
+    "sampleRate": 32000,
+    "channels": 1
+  },
+  "GTA5_SILENCED_EQ_01_END.L": {
+    "fileName": "GTA5_SILENCED_EQ_01_END.L.wav",
+    "sampleRate": 36000,
+    "channels": 1
+  },
+  "MGN_AK47_PLYR_VERB_02.L": {
+    "fileName": "MGN_AK47_PLYR_VERB_02.L.wav",
+    "sampleRate": 36004,
+    "channels": 1
+  },
+  "SLOW_MO_WEAPON_ANIM_03": {
+    "fileName": "SLOW_MO_WEAPON_ANIM_03.wav",
+    "sampleRate": 44100,
+    "channels": 1
+  },
+  "HGUN_MECH_OVERLAY_A_1": {
+    "fileName": "HGUN_MECH_OVERLAY_A_1.wav",
+    "sampleRate": 32001,
+    "channels": 1
+  },
+  "SLOW_MO_SHOT_11_R": {
+    "fileName": "SLOW_MO_SHOT_11_R.wav",
+    "sampleRate": 44100,
+    "channels": 1
+  },
+  "BULLETBY_SVK_11": {
+    "fileName": "BULLETBY_SVK_11.wav",
+    "sampleRate": 32001,
+    "channels": 1
+  },
+  "MGN_SCARL_MID_MIC3_COLOR1_04": {
+    "fileName": "MGN_SCARL_MID_MIC3_COLOR1_04.wav",
+    "sampleRate": 28003,
+    "channels": 1
+  },
+  "SLOW_MO_WEAPON_ANIM_13": {
+    "fileName": "SLOW_MO_WEAPON_ANIM_13.wav",
+    "sampleRate": 44100,
+    "channels": 1
+  },
+  "SNPR_M82_REPORT_A_R": {
+    "fileName": "SNPR_M82_REPORT_A_R.wav",
+    "sampleRate": 20000,
+    "channels": 1
+  },
+  "GTA5_SILENCED_EQ_03.L": {
+    "fileName": "GTA5_SILENCED_EQ_03.L.wav",
+    "sampleRate": 36003,
+    "channels": 1
+  },
+  "MGN_AK47_MID_MIC1_COLOR1_02": {
+    "fileName": "MGN_AK47_MID_MIC1_COLOR1_02.wav",
+    "sampleRate": 28004,
+    "channels": 1
+  },
+  "LMG_FOLEY_SWTNR_MED_1": {
+    "fileName": "LMG_FOLEY_SWTNR_MED_1.wav",
+    "sampleRate": 28004,
+    "channels": 1
+  },
+  "MGN_AK47_OFF4_SVK_01": {
+    "fileName": "MGN_AK47_OFF4_SVK_01.wav",
+    "sampleRate": 27999,
+    "channels": 1
+  }
+}

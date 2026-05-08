@@ -12,7 +12,8 @@ const packageJsonContent = JSON.stringify({
     "cors": "^2.8.5",
     "express": "^4.19.2",
     "multer": "^1.4.5-lts.1",
-    "adm-zip": "^0.5.12"
+    "adm-zip": "^0.5.12",
+    "archiver": "^7.0.1"
   }
 });
 
