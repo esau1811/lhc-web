@@ -4,6 +4,7 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import Header from '@/components/Header';
 import GlassCard from '@/components/GlassCard';
+import { useLang } from '@/components/LangProvider';
 import { Music, FileCode, Zap, ChevronRight, CheckCircle2, LockKeyhole, FileArchive, Target, Layers } from 'lucide-react';
 
 const VPS_URL = 'https://187.33.157.103.nip.io';
@@ -11,6 +12,7 @@ const CHUNK_SIZE = 5 * 1024 * 1024; // 5MB por trozo para burlar cualquier lími
 
 export default function SoundPage() {
   const { data: session } = useSession();
+  const { t } = useLang();
   
   const audioInputRef = useRef(null);
   const awcInputRef = useRef(null);
@@ -354,7 +356,7 @@ export default function SoundPage() {
             LHC Sound <span className="text-red-500 font-mono">Injector</span>
           </h1>
           <p className="text-gray-400 max-w-2xl mx-auto italic">
-            Inyecta sonidos en armas de GTA V. Ahora con soporte para archivos gigantes (Chunks).
+            {t('sound_subtitle')}
           </p>
         </div>
 
@@ -366,7 +368,7 @@ export default function SoundPage() {
             </div>
             <div className="flex items-center gap-4 mb-6 relative z-10">
               <div className="w-10 h-10 rounded-full bg-red-500/10 flex items-center justify-center text-red-500 font-bold border border-red-500/20 shadow-[0_0_15px_rgba(239,68,68,0.2)]">1</div>
-              <h2 className="text-xl font-bold uppercase tracking-wider">Tu Sonido (.MP3 / .WAV)</h2>
+              <h2 className="text-xl font-bold uppercase tracking-wider">{t('sound_step_1_title')}</h2>
             </div>
             <div 
               onClick={() => audioInputRef.current?.click()}
@@ -378,7 +380,7 @@ export default function SoundPage() {
                 ${audioFile ? 'border-green-500/50 bg-green-500/10' : ''}`}
             >
               <Music className={`w-12 h-12 ${audioFile ? 'text-green-500 animate-pulse' : 'text-gray-500'}`} />
-              <p className="text-gray-400 text-center">{audioFile ? audioFile.name : 'Haz clic o arrastra tu audio personalizado'}</p>
+              <p className="text-gray-400 text-center">{audioFile ? audioFile.name : t('sound_upload_audio')}</p>
               <input type="file" ref={audioInputRef} className="hidden" accept="audio/*" onChange={(e) => setAudioFile(e.target.files[0])} />
             </div>
           </GlassCard>
@@ -404,7 +406,7 @@ export default function SoundPage() {
               <p className="text-sm text-gray-400 text-center">
                 {awcFile
                   ? <span className="text-red-300 font-bold">{awcFile.name}</span>
-                  : 'Sube tu .AWC o .RPF — se detectarán los canales automáticamente'}
+                  : t('sound_upload_rpf')}
               </p>
               <input type="file" ref={awcInputRef} className="hidden" accept=".awc,.rpf"
                 onChange={(e) => { const f = e.target.files[0]; if (f) { setAwcFile(f); scanAwcFile(f); } }} />
@@ -414,7 +416,7 @@ export default function SoundPage() {
             {awcScanLoading && (
               <div className="flex items-center gap-3 py-4 text-red-400 text-xs font-mono animate-pulse">
                 <div className="w-4 h-4 border-2 border-red-500 border-t-transparent rounded-full animate-spin" />
-                Analizando canales del archivo...
+                {t('sound_analyzing')}
               </div>
             )}
 
@@ -651,7 +653,7 @@ export default function SoundPage() {
                 <div className="w-10 h-10 rounded-full bg-yellow-500/10 flex items-center justify-center text-yellow-500 font-bold border border-yellow-500/20 shadow-[0_0_15px_rgba(234,179,8,0.1)]">
                   <LockKeyhole size={20} />
                 </div>
-                <h2 className="text-xl font-bold uppercase tracking-wider text-yellow-500">Firmar Archivo .RPF <span className="text-[10px] bg-yellow-500/10 px-2 py-1 rounded ml-2">Modo Chunks</span></h2>
+                <h2 className="text-xl font-bold uppercase tracking-wider text-yellow-500">{t('sound_sign_rpf')} <span className="text-[10px] bg-yellow-500/10 px-2 py-1 rounded ml-2">Chunks</span></h2>
               </div>
               <div 
                 onDragOver={(e) => handleDragOver(e, setIsDragOverRPF)}
@@ -663,7 +665,7 @@ export default function SoundPage() {
                   ${rpfFile ? 'border-green-500/50 bg-green-500/10' : ''}`}
               >
                 <FileArchive className={`w-12 h-12 ${rpfFile ? 'text-green-500' : 'text-gray-600'}`} />
-                <p className="text-gray-400 text-center text-sm">{rpfFile ? rpfFile.name : 'Sube tu .RPF (incluso archivos de 100MB+)'}</p>
+                <p className="text-gray-400 text-center text-sm">{rpfFile ? rpfFile.name : t('sound_rpf_upload')}</p>
               </div>
 
               {isFixing && (
@@ -683,7 +685,7 @@ export default function SoundPage() {
                 disabled={isFixing || !rpfFile}
                 className={`w-full mt-6 py-4 rounded-xl font-bold uppercase tracking-widest border transition-all ${isFixing ? 'bg-gray-800 text-gray-500 border-white/5' : 'bg-yellow-600/10 text-yellow-500 border-yellow-600/30 hover:bg-yellow-600/20 shadow-lg shadow-yellow-600/10'}`}
               >
-                {isFixing ? `Procesando... ${fixProgress}%` : 'Firmar y Descargar RPF'}
+                {isFixing ? `${t('sound_processing')} ${fixProgress}%` : t('sound_sign_download')}
               </button>
             </GlassCard>
           </div>
