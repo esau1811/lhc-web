@@ -2,7 +2,7 @@
 
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
-import { Crown, Rocket, Star, ArrowRight, User, Settings, Activity, Target, Zap } from 'lucide-react';
+import { Crown, Rocket, Star, ArrowRight, User, Settings, Activity, Target, Zap, Palette } from 'lucide-react';
 import Link from 'next/link';
 import GlassCard from '@/components/GlassCard';
 import { motion } from 'framer-motion';
@@ -50,6 +50,20 @@ export default function ToolsPage() {
       users: '1.5K',
       rating: '4.7',
       link: '/trainer'
+    },
+    {
+      id: 'skinforge',
+      category: 'Personalización',
+      name: 'LHC SkinForge',
+      desc: 'Diseña la skin de tu arma MK2 directamente en el navegador. Pinta, añade stickers y exporta lista para el juego.',
+      icon: null,
+      badge: 'Mantenimiento',
+      badgeColor: 'bg-yellow-500',
+      glowClass: 'yellow-glow',
+      users: '—',
+      rating: '—',
+      link: '/tools/weapon-skin',
+      iconEl: <Palette size={22} className="text-yellow-400" />
     },
   ];
 
@@ -115,7 +129,7 @@ export default function ToolsPage() {
 
                   <div className="flex justify-between items-start mb-6">
                     <div className={`w-14 h-14 shrink-0 rounded-2xl bg-white/5 p-3.5 flex items-center justify-center transition-all duration-500 group-hover:scale-110 group-hover:rotate-3 border border-white/5 ${tool.glowClass}`}>
-                      <img src={tool.icon} alt={tool.name} className="w-full h-full object-contain ai-icon-blend" />
+                      {tool.iconEl ? tool.iconEl : <img src={tool.icon} alt={tool.name} className="w-full h-full object-contain ai-icon-blend" />}
                     </div>
                     <div className={`${tool.badgeColor} text-black text-[8px] font-black px-3 py-1.5 rounded-lg uppercase tracking-wider shadow-lg`}>
                       {tool.badge}
