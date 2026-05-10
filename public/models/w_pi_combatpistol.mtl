@@ -1,0 +1,7 @@
+﻿# Material for w_pi_combatpistol
+newmtl w_pi_combatpistol
+Ka 1.0 1.0 1.0
+Kd 1.0 1.0 1.0
+Ks 0.0 0.0 0.0
+d 1.0
+map_Kd /weapons/w_pi_combatpistol.png
