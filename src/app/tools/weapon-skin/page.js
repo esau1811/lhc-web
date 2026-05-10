@@ -2,7 +2,7 @@
 import { useRef, useState, useEffect, useCallback } from 'react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
-import { Paintbrush, Eraser, Type, Undo2, Download, Upload, ChevronDown, AlertTriangle, Minus, Plus, Square } from 'lucide-react';
+import { Paintbrush, Eraser, Type, Undo2, Download, Upload, ChevronDown, AlertTriangle, Minus, Plus, Square, Circle, Droplets, Pipette, ZoomIn, ZoomOut } from 'lucide-react';
 
 const WEAPONS = [
   { id:'w_pi_pistol',          name:'Pistol',            cat:'Pistola',  size:'Pequeña' },
@@ -59,11 +59,15 @@ const STICKERS = ['⭐','💀','🔥','❤️','🎯','⚡','🏆','💎','🦅'
 const CATS = ['Todos', ...new Set(WEAPONS.map(w => w.cat))];
 
 export default function WeaponSkinPage() {
-  const canvasRef  = useRef(null);
-  const lastPos    = useRef(null);
+  const canvasRef   = useRef(null);
+  const overlayRef  = useRef(null); // shape preview overlay
+  const lastPos     = useRef(null);
+  const shapeStart  = useRef(null);
+  const baseDataUrl = useRef(null); // locked weapon texture
   const [tool, setTool]             = useState('brush');
   const [color, setColor]           = useState('#ef4444');
   const [brushSize, setBrushSize]   = useState(8);
+  const [opacity, setOpacity]       = useState(100);
   const [weapon, setWeapon]         = useState(WEAPONS[0]);
   const [catFilter, setCatFilter]   = useState('Todos');
   const [dropOpen, setDropOpen]     = useState(false);
@@ -74,6 +78,7 @@ export default function WeaponSkinPage() {
   const [textPos, setTextPos]       = useState({x:0,y:0});
   const [fontSize, setFontSize]     = useState(24);
   const [loading, setLoading]       = useState(false);
+  const [zoom, setZoom]             = useState(1);
   const W = 1024, H = 512;
 
   const saveHistory = useCallback(() => {
@@ -90,6 +95,7 @@ export default function WeaponSkinPage() {
     img.onload = () => {
       ctx.clearRect(0,0,W,H);
       ctx.drawImage(img,0,0,W,H);
+      baseDataUrl.current = canvas.toDataURL();
       setLoading(false);
       saveHistory();
     };
@@ -98,10 +104,60 @@ export default function WeaponSkinPage() {
       ctx.fillStyle='#1a1a1a'; ctx.fillRect(0,0,W,H);
       ctx.fillStyle='rgba(255,255,255,0.1)'; ctx.font='bold 16px monospace';
       ctx.fillText('Sin textura — importa PNG desde CodeWalker', 40, H/2);
+      baseDataUrl.current = canvas.toDataURL();
       setLoading(false); saveHistory();
     };
     img.src = `/weapons/${weapon.id}.png`;
   }, [weapon, saveHistory]);
+
+  // --- FLOOD FILL ---
+  const floodFill = useCallback((x0, y0, fillColor) => {
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d');
+    const imgData = ctx.getImageData(0,0,W,H);
+    const d = imgData.data;
+    x0=Math.round(x0); y0=Math.round(y0);
+    if(x0<0||x0>=W||y0<0||y0>=H) return;
+    const idx=(y,x)=>(y*W+x)*4;
+    const si=idx(y0,x0);
+    const sr=d[si],sg=d[si+1],sb=d[si+2],sa=d[si+3];
+    const r2=parseInt(fillColor.slice(1,3),16),g2=parseInt(fillColor.slice(3,5),16),b2=parseInt(fillColor.slice(5,7),16);
+    const a2=Math.round((opacity/100)*255);
+    if(sr===r2&&sg===g2&&sb===b2&&sa===a2) return;
+    const match=i=>Math.abs(d[i]-sr)<32&&Math.abs(d[i+1]-sg)<32&&Math.abs(d[i+2]-sb)<32&&Math.abs(d[i+3]-sa)<32;
+    const stack=[[x0,y0]];
+    const visited=new Uint8Array(W*H);
+    while(stack.length){
+      const[x,y]=stack.pop();
+      if(x<0||x>=W||y<0||y>=H) continue;
+      const i=idx(y,x); if(visited[y*W+x]||!match(i)) continue;
+      visited[y*W+x]=1;
+      d[i]=r2;d[i+1]=g2;d[i+2]=b2;d[i+3]=a2;
+      stack.push([x+1,y],[x-1,y],[x,y+1],[x,y-1]);
+    }
+    ctx.putImageData(imgData,0,0);
+    saveHistory();
+  },[opacity,saveHistory]);
+
+  // --- SPRAY ---
+  const sprayRef = useRef(null);
+  const startSpray = (pos) => {
+    const doSpray=()=>{
+      const ctx=canvasRef.current.getContext('2d');
+      const a=opacity/100;
+      for(let i=0;i<20;i++){
+        const angle=Math.random()*Math.PI*2;
+        const r=Math.random()*brushSize*2;
+        ctx.globalAlpha=Math.random()*a;
+        ctx.fillStyle=color;
+        ctx.beginPath(); ctx.arc(pos.x+Math.cos(angle)*r,pos.y+Math.sin(angle)*r,1,0,Math.PI*2); ctx.fill();
+      }
+      ctx.globalAlpha=1;
+    };
+    doSpray();
+    sprayRef.current=setInterval(doSpray,30);
+  };
+  const stopSpray=()=>{ clearInterval(sprayRef.current); sprayRef.current=null; };
 
   const undo = () => {
     if (history.length < 2) return;
@@ -120,29 +176,70 @@ export default function WeaponSkinPage() {
   const onDown = (e) => {
     e.preventDefault();
     const pos = getPos(e);
-    if (tool==='text') { setTextPos(pos); setShowText(true); return; }
+    if (tool==='text')  { setTextPos(pos); setShowText(true); return; }
+    if (tool==='fill')  { floodFill(pos.x, pos.y, color); return; }
+    if (tool==='spray') { setIsDrawing(true); lastPos.current=pos; startSpray(pos); return; }
+    if (tool==='rect'||tool==='circle') { setIsDrawing(true); shapeStart.current=pos; lastPos.current=pos; return; }
     setIsDrawing(true); lastPos.current=pos;
     const ctx = canvasRef.current.getContext('2d');
+    ctx.globalAlpha = tool==='eraser'?1:opacity/100;
     ctx.globalCompositeOperation = tool==='eraser'?'destination-out':'source-over';
     ctx.beginPath(); ctx.arc(pos.x,pos.y,(tool==='eraser'?brushSize*2:brushSize)/2,0,Math.PI*2);
     ctx.fillStyle = tool==='eraser'?'rgba(0,0,0,1)':color; ctx.fill();
-    ctx.globalCompositeOperation='source-over';
+    ctx.globalCompositeOperation='source-over'; ctx.globalAlpha=1;
   };
 
   const onMove = (e) => {
     e.preventDefault(); if (!isDrawing) return;
     const pos = getPos(e);
     const ctx = canvasRef.current.getContext('2d');
+    if (tool==='spray') { lastPos.current=pos; return; }
+    if (tool==='rect'||tool==='circle') {
+      // Preview on overlay canvas
+      const oc = overlayRef.current; if(!oc) return;
+      const octx = oc.getContext('2d');
+      octx.clearRect(0,0,W,H);
+      const s=shapeStart.current;
+      octx.strokeStyle=color; octx.lineWidth=brushSize; octx.globalAlpha=opacity/100;
+      if(tool==='rect'){
+        octx.strokeRect(s.x,s.y,pos.x-s.x,pos.y-s.y);
+      } else {
+        const rx=Math.abs(pos.x-s.x)/2, ry=Math.abs(pos.y-s.y)/2;
+        const cx=(s.x+pos.x)/2, cy=(s.y+pos.y)/2;
+        octx.beginPath(); octx.ellipse(cx,cy,rx,ry,0,0,Math.PI*2); octx.stroke();
+      }
+      octx.globalAlpha=1;
+      lastPos.current=pos; return;
+    }
+    ctx.globalAlpha = tool==='eraser'?1:opacity/100;
     ctx.globalCompositeOperation = tool==='eraser'?'destination-out':'source-over';
     ctx.strokeStyle = tool==='eraser'?'rgba(0,0,0,1)':color;
     ctx.lineWidth = tool==='eraser'?brushSize*2:brushSize;
     ctx.lineCap='round'; ctx.lineJoin='round';
     ctx.beginPath(); ctx.moveTo(lastPos.current.x,lastPos.current.y); ctx.lineTo(pos.x,pos.y); ctx.stroke();
-    ctx.globalCompositeOperation='source-over';
+    ctx.globalCompositeOperation='source-over'; ctx.globalAlpha=1;
     lastPos.current=pos;
   };
 
-  const onUp = () => { if(isDrawing){setIsDrawing(false);saveHistory();} };
+  const onUp = () => {
+    if (!isDrawing) return;
+    if (tool==='spray') { stopSpray(); setIsDrawing(false); saveHistory(); return; }
+    if (tool==='rect'||tool==='circle') {
+      const oc=overlayRef.current; const ctx=canvasRef.current.getContext('2d');
+      const s=shapeStart.current, pos=lastPos.current;
+      ctx.strokeStyle=color; ctx.lineWidth=brushSize; ctx.globalAlpha=opacity/100;
+      if(tool==='rect'){
+        ctx.strokeRect(s.x,s.y,pos.x-s.x,pos.y-s.y);
+      } else {
+        const rx=Math.abs(pos.x-s.x)/2,ry=Math.abs(pos.y-s.y)/2,cx=(s.x+pos.x)/2,cy=(s.y+pos.y)/2;
+        ctx.beginPath(); ctx.ellipse(cx,cy,Math.max(1,rx),Math.max(1,ry),0,0,Math.PI*2); ctx.stroke();
+      }
+      ctx.globalAlpha=1;
+      if(oc){ const octx=oc.getContext('2d'); octx.clearRect(0,0,W,H); }
+      setIsDrawing(false); saveHistory(); return;
+    }
+    setIsDrawing(false); saveHistory();
+  };
 
   const placeText = () => {
     if (!textInput.trim()) { setShowText(false); return; }
@@ -178,10 +275,13 @@ export default function WeaponSkinPage() {
 
   const filtered = catFilter==='Todos' ? WEAPONS : WEAPONS.filter(w=>w.cat===catFilter);
   const TOOLS = [
-    {id:'brush',icon:<Paintbrush size={18}/>,label:'Pincel'},
-    {id:'eraser',icon:<Eraser size={18}/>,label:'Borrador'},
-    {id:'fill',icon:<Square size={18}/>,label:'Relleno'},
-    {id:'text',icon:<Type size={18}/>,label:'Texto'},
+    {id:'brush', icon:<Paintbrush size={16}/>, label:'Pincel'},
+    {id:'eraser',icon:<Eraser size={16}/>,     label:'Borrador'},
+    {id:'fill',  icon:<Droplets size={16}/>,   label:'Relleno'},
+    {id:'spray', icon:<Pipette size={16}/>,    label:'Spray'},
+    {id:'rect',  icon:<Square size={16}/>,     label:'Rectángulo'},
+    {id:'circle',icon:<Circle size={16}/>,     label:'Círculo'},
+    {id:'text',  icon:<Type size={16}/>,       label:'Texto'},
   ];
 
   const gridBg = {
@@ -278,6 +378,10 @@ export default function WeaponSkinPage() {
                   <button onClick={placeText} className="ml-2 bg-red-500 text-white px-3 py-2 rounded-lg text-xs font-black">OK</button>
                 </div>
               )}
+              {/* Overlay canvas for shape preview */}
+              <canvas ref={overlayRef} width={W} height={H}
+                className="absolute inset-0 w-full h-full z-25 pointer-events-none"
+                style={{pointerEvents:'none'}}/>
             </div>
             <div className="flex justify-between mt-2 px-1">
               <span className="text-[10px] text-zinc-600 font-mono">{W}×{H}px · {weapon.name}</span>
@@ -287,15 +391,26 @@ export default function WeaponSkinPage() {
 
           {/* Right panel */}
           <div className="lg:w-60 flex flex-col gap-3">
-            {/* Brush size */}
-            {(tool==='brush'||tool==='eraser') && (
-              <div className="bg-white/3 border border-white/8 rounded-2xl p-4">
-                <div className="text-[9px] text-zinc-500 font-black uppercase tracking-widest mb-3">Tamaño</div>
-                <div className="flex items-center gap-3">
-                  <button onClick={()=>setBrushSize(s=>Math.max(1,s-2))} className="w-7 h-7 rounded-lg bg-white/5 flex items-center justify-center"><Minus size={12}/></button>
-                  <div className="flex-1 text-center font-black text-xl">{tool==='eraser'?brushSize*2:brushSize}<span className="text-[9px] text-zinc-600 font-normal">px</span></div>
-                  <button onClick={()=>setBrushSize(s=>Math.min(80,s+2))} className="w-7 h-7 rounded-lg bg-white/5 flex items-center justify-center"><Plus size={12}/></button>
+            {/* Size + Opacity — visible for all drawing tools */}
+            {tool!=='text' && tool!=='fill' && (
+              <div className="bg-white/3 border border-white/8 rounded-2xl p-4 space-y-3">
+                <div>
+                  <div className="text-[9px] text-zinc-500 font-black uppercase tracking-widest mb-2">Tamaño</div>
+                  <div className="flex items-center gap-3">
+                    <button onClick={()=>setBrushSize(s=>Math.max(1,s-2))} className="w-7 h-7 rounded-lg bg-white/5 flex items-center justify-center"><Minus size={12}/></button>
+                    <div className="flex-1 text-center font-black text-xl">{tool==='eraser'?brushSize*2:brushSize}<span className="text-[9px] text-zinc-600 font-normal">px</span></div>
+                    <button onClick={()=>setBrushSize(s=>Math.min(120,s+2))} className="w-7 h-7 rounded-lg bg-white/5 flex items-center justify-center"><Plus size={12}/></button>
+                  </div>
                 </div>
+                {tool!=='eraser' && (
+                  <div>
+                    <div className="flex justify-between text-[9px] text-zinc-500 font-black uppercase tracking-widest mb-2">
+                      <span>Opacidad</span><span className="text-white font-black">{opacity}%</span>
+                    </div>
+                    <input type="range" min={5} max={100} value={opacity} onChange={e=>setOpacity(+e.target.value)}
+                      className="w-full h-1.5 rounded-full appearance-none bg-white/10 accent-red-500"/>
+                  </div>
+                )}
               </div>
             )}
             {tool==='text' && (
