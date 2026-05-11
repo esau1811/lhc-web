@@ -1,9 +1,16 @@
+export const runtime = 'nodejs';    // must be Node.js, not Edge
+export const maxDuration = 60;      // allow up to 60s for the exe
+
 import { NextResponse } from 'next/server';
 import { exec } from 'child_process';
 import { promisify } from 'util';
 import fs from 'fs';
 import path from 'path';
 import os from 'os';
+
+// YtdPatcher only works on Windows (local dev).
+// On Vercel (Linux) we return 501 with a clear message.
+const IS_WINDOWS = process.platform === 'win32';
 
 const execAsync = promisify(exec);
 
@@ -51,6 +58,14 @@ export async function POST(request) {
 
     if (!weaponName || !pixels) {
       return NextResponse.json({ error: 'Faltan parámetros' }, { status: 400 });
+    }
+
+    // YtdPatcher.exe only runs on Windows — on Vercel return clear error
+    if (!IS_WINDOWS) {
+      return NextResponse.json(
+        { error: 'RPF generation requires local server (Windows). Download the DDS instead.' },
+        { status: 501 }
+      );
     }
 
     if (!fs.existsSync(PATCHER_EXE)) {
