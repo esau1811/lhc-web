@@ -8,16 +8,21 @@ import fs from 'fs';
 import path from 'path';
 import os from 'os';
 
-// YtdPatcher only works on Windows (local dev).
-// On Vercel (Linux) we return 501 with a clear message.
+// On Vercel, we need to run the correct binary based on the platform
 const IS_WINDOWS = process.platform === 'win32';
 
 const execAsync = promisify(exec);
 
-// Ruta al exe del YtdPatcher (publicado como self-contained)
+// Ruta al exe del YtdPatcher (en bin/)
 const PATCHER_EXE = path.join(
   process.cwd(),
-  'scratch', 'YtdPatcher', 'bin', 'Release', 'net9.0-windows', 'win-x64', 'YtdPatcher.exe'
+  'src', 'app', 'api', 'generate-rpf', 'bin',
+  IS_WINDOWS ? 'YtdPatcher-win.exe' : 'YtdPatcher-linux'
+);
+
+const ASSETS_DIR = path.join(
+  process.cwd(),
+  'src', 'app', 'api', 'generate-rpf', 'assets'
 );
 
 // Construye header DDS A8R8G8B8 (mismo formato que exporta el canvas)
@@ -60,23 +65,21 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Faltan parámetros' }, { status: 400 });
     }
 
-    if (!IS_WINDOWS) {
-      return NextResponse.json(
-        { error: 'RPF generation requires local server (Windows). Download the DDS instead.' },
-        { status: 501 }
-      );
-    }
-
     if (!fs.existsSync(PATCHER_EXE)) {
       return NextResponse.json(
-        { error: `YtdPatcher.exe no encontrado: ${PATCHER_EXE}` },
+        { error: `YtdPatcher no encontrado en: ${PATCHER_EXE}` },
         { status: 500 }
       );
     }
 
-    const tmpDir  = os.tmpdir();
-    const tmpId   = Date.now();
-    const ddsPng  = path.join(tmpDir, `lhc_skin_${tmpId}.dds`);
+    // Si estamos en Linux, nos aseguramos que tenga permisos de ejecución
+    if (!IS_WINDOWS) {
+      await execAsync(`chmod +x "${PATCHER_EXE}"`);
+    }
+
+    const tmpDir = os.tmpdir();
+    const tmpId  = Date.now();
+    const ddsPng = path.join(tmpDir, `lhc_skin_${tmpId}.dds`);
 
     const rgbaBytes = Buffer.from(pixels, 'base64');
     const bgraBytes = Buffer.alloc(rgbaBytes.length);
@@ -90,15 +93,20 @@ export async function POST(request) {
     const header = buildDdsHeader(width || 512, height || 512);
     fs.writeFileSync(ddsPng, Buffer.concat([header, bgraBytes]));
 
-    const cmd = `"${PATCHER_EXE}" "${ddsPng}" "${weaponName}"`;
+    const cmd = `"${PATCHER_EXE}" "${ddsPng}" "${weaponName}" "${ASSETS_DIR}"`;
     console.log('[generate-rpf] Ejecutando en:', tmpDir);
     console.log('[generate-rpf] Command:', cmd.slice(0, 100) + '...');
 
-    const { stdout, stderr } = await execAsync(cmd, {
+    const execOptions = {
       maxBuffer: 1024 * 1024,
-      cwd: tmpDir,
-      shell: 'cmd.exe'
-    });
+      cwd: tmpDir
+    };
+    // On Windows, sometimes shell is needed. On Linux, it's not.
+    if (IS_WINDOWS) {
+        execOptions.shell = 'cmd.exe';
+    }
+
+    const { stdout, stderr } = await execAsync(cmd, execOptions);
 
     console.log('[generate-rpf] stdout:', stdout.slice(0, 500));
     if (stderr) console.warn('[generate-rpf] stderr:', stderr.slice(0, 300));
