@@ -334,7 +334,7 @@ export default function SkinForge3D() {
     return buf;
   };
 
-  const [exporting, setExporting] = React.useState(false);
+  const [exporting, setExporting] = useState(false);
 
   const exportRPF = async () => {
     const tc = tcRef.current; if (!tc || exporting) return;
