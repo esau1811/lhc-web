@@ -33,7 +33,7 @@ export default function SkinForge3D() {
   const [weapon,    setWeapon]    = useState(WEAPONS[0]);
   const [tool,      setTool]      = useState('brush');
   const [color,     setColor]     = useState('#ef4444');
-  const [size,      setSize]      = useState(30);
+  const [size,      setSize]      = useState(50);
   const [opacity,   setOpacity]   = useState(90);
   const [mode,      setMode]      = useState('paint'); // 'paint' | 'rotate'
   const [dropOpen,  setDropOpen]  = useState(false);
@@ -132,7 +132,7 @@ export default function SkinForge3D() {
           if (c.isMesh) {
             c.material = new THREE.MeshStandardMaterial({
               map: tt,
-              side: THREE.DoubleSide, // paint front AND back faces
+              side: THREE.FrontSide, // FrontSide only — DoubleSide causa pintura en caras traseras con mismas UVs
               roughness: 0.55,
               metalness: 0.4,
             });
@@ -168,58 +168,46 @@ export default function SkinForge3D() {
     return hits[0]?.uv ?? null;
   }, []);
 
-  const applyPaint = useCallback((uv, prev) => {
+  const applyPaint = useCallback((uv) => {
     const tc = tcRef.current; const tt = ttRef.current;
     if (!tc || !tt || !uv) return;
     const ctx = tc.getContext('2d');
 
-    // UV → canvas coords. flipY=true on texture means UV.y=0 → bottom of image
-    // Canvas y=0 is top, so: cy = (1 - uv.y) * TEX
+    // UV → canvas. Three.js flipY=true: UV.y=0 = bottom of image = bottom of canvas (high y)
     const cx = uv.x * TEX;
     const cy = (1 - uv.y) * TEX;
 
     ctx.globalAlpha = opacity / 100;
+    ctx.globalCompositeOperation = 'source-over';
 
     if (tool === 'eraser') {
+      // Erase paint layer only, restore base texture underneath
       ctx.globalCompositeOperation = 'destination-out';
       ctx.beginPath(); ctx.arc(cx, cy, size, 0, Math.PI*2); ctx.fill();
       if (baseRef.current) {
         ctx.globalCompositeOperation = 'destination-over';
+        ctx.globalAlpha = 1;
         ctx.drawImage(baseRef.current, 0, 0, TEX, TEX);
       }
-      ctx.globalCompositeOperation = 'source-over';
     } else if (tool === 'brush') {
+      // Single dot per raycast hit — NO UV interpolation to avoid seam bleed
       ctx.fillStyle = color;
-      ctx.globalCompositeOperation = 'source-over';
-      // Draw line from last point to smooth strokes
-      if (prev) {
-        const pcx = prev.x * TEX; const pcy = (1-prev.y)*TEX;
-        const dist = Math.hypot(cx-pcx, cy-pcy);
-        const steps = Math.max(1, Math.ceil(dist / (size*0.3)));
-        for (let i=0; i<=steps; i++) {
-          const t = i/steps;
-          const x = pcx + (cx-pcx)*t; const y = pcy + (cy-pcy)*t;
-          ctx.beginPath(); ctx.arc(x, y, size/2, 0, Math.PI*2); ctx.fill();
-        }
-      } else {
-        ctx.beginPath(); ctx.arc(cx, cy, size/2, 0, Math.PI*2); ctx.fill();
-      }
+      ctx.beginPath(); ctx.arc(cx, cy, size/2, 0, Math.PI*2); ctx.fill();
     } else if (tool === 'spray') {
       ctx.fillStyle = color;
-      ctx.globalCompositeOperation = 'source-over';
-      const r = size; const dots = Math.floor(r*1.5);
-      for (let i=0; i<dots; i++) {
-        const a = Math.random()*Math.PI*2;
-        const d = Math.random()*r;
-        ctx.globalAlpha = (opacity/100) * (0.3 + Math.random()*0.4);
-        ctx.beginPath(); ctx.arc(cx+Math.cos(a)*d, cy+Math.sin(a)*d, 1.5, 0, Math.PI*2); ctx.fill();
+      const r = size; const dots = Math.floor(r * 1.2);
+      for (let i = 0; i < dots; i++) {
+        const a = Math.random() * Math.PI * 2;
+        const d = Math.random() * r;
+        ctx.globalAlpha = (opacity / 100) * (0.2 + Math.random() * 0.5);
+        ctx.beginPath(); ctx.arc(cx + Math.cos(a)*d, cy + Math.sin(a)*d, 1.5, 0, Math.PI*2); ctx.fill();
       }
     } else if (tool === 'fill') {
-      // Simple flood fill on UV canvas
       floodFill(ctx, cx|0, cy|0, color);
     }
 
     ctx.globalAlpha = 1;
+    ctx.globalCompositeOperation = 'source-over';
     tt.needsUpdate = true;
   }, [tool, color, size, opacity]);
 
@@ -244,15 +232,15 @@ export default function SkinForge3D() {
 
   const onDown = useCallback((e) => {
     if (mode==='rotate') return;
-    e.preventDefault(); paintRef.current=true; lastUVRef.current=null;
-    const uv=getUV(e.clientX,e.clientY); applyPaint(uv,null); lastUVRef.current=uv;
-  },[mode,getUV,applyPaint]);
+    e.preventDefault(); paintRef.current = true;
+    const uv = getUV(e.clientX, e.clientY); applyPaint(uv);
+  }, [mode, getUV, applyPaint]);
 
   const onMove = useCallback((e) => {
-    if (!paintRef.current||mode==='rotate') return;
+    if (!paintRef.current || mode==='rotate') return;
     e.preventDefault();
-    const uv=getUV(e.clientX,e.clientY); applyPaint(uv,lastUVRef.current); lastUVRef.current=uv;
-  },[mode,getUV,applyPaint]);
+    const uv = getUV(e.clientX, e.clientY); applyPaint(uv);
+  }, [mode, getUV, applyPaint]);
 
   const onUp = useCallback(()=>{ paintRef.current=false; lastUVRef.current=null; },[]);
 
