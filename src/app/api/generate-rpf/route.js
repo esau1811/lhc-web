@@ -1,0 +1,120 @@
+import { NextResponse } from 'next/server';
+import { exec } from 'child_process';
+import { promisify } from 'util';
+import fs from 'fs';
+import path from 'path';
+import os from 'os';
+
+const execAsync = promisify(exec);
+
+// Ruta al exe del YtdPatcher (publicado como self-contained)
+const PATCHER_EXE = path.join(
+  process.cwd(),
+  'scratch', 'YtdPatcher', 'publish', 'YtdPatcher.exe'
+);
+
+// Construye header DDS A8R8G8B8 (mismo formato que exporta el canvas)
+function buildDdsHeader(w, h) {
+  const buf = new ArrayBuffer(128);
+  const dv = new DataView(buf);
+  let o = 0;
+  dv.setUint32(o, 0x20534444, true); o += 4; // 'DDS '
+  dv.setUint32(o, 124, true);        o += 4; // dwSize
+  dv.setUint32(o, 0x1007, true);     o += 4; // dwFlags
+  dv.setUint32(o, h, true);          o += 4; // dwHeight
+  dv.setUint32(o, w, true);          o += 4; // dwWidth
+  dv.setUint32(o, w * 4, true);      o += 4; // dwPitch
+  dv.setUint32(o, 0, true);          o += 4; // dwDepth
+  dv.setUint32(o, 1, true);          o += 4; // dwMipMapCount
+  for (let i = 0; i < 11; i++) { dv.setUint32(o, 0, true); o += 4; }
+  // Pixel format
+  dv.setUint32(o, 32, true);         o += 4;
+  dv.setUint32(o, 0x41, true);       o += 4; // ALPHAPIXELS|RGB
+  dv.setUint32(o, 0, true);          o += 4;
+  dv.setUint32(o, 32, true);         o += 4;
+  dv.setUint32(o, 0x00FF0000, true); o += 4; // R
+  dv.setUint32(o, 0x0000FF00, true); o += 4; // G
+  dv.setUint32(o, 0x000000FF, true); o += 4; // B
+  dv.setUint32(o, 0xFF000000, true); o += 4; // A
+  dv.setUint32(o, 0x1000, true);     o += 4; // TEXTURE cap
+  dv.setUint32(o, 0, true); o += 4;
+  dv.setUint32(o, 0, true); o += 4;
+  dv.setUint32(o, 0, true); o += 4;
+  dv.setUint32(o, 0, true); o += 4;
+  return Buffer.from(buf);
+}
+
+export async function POST(request) {
+  try {
+    const body = await request.json();
+    const { weaponName, width, height, pixels } = body;
+
+    if (!weaponName || !pixels) {
+      return NextResponse.json({ error: 'Faltan parámetros' }, { status: 400 });
+    }
+
+    if (!fs.existsSync(PATCHER_EXE)) {
+      return NextResponse.json(
+        { error: `YtdPatcher.exe no encontrado en: ${PATCHER_EXE}` },
+        { status: 500 }
+      );
+    }
+
+    // ── Crear DDS temporal ──────────────────────────────────────────────────
+    const tmpDir  = os.tmpdir();
+    const tmpId   = Date.now();
+    const ddsPng  = path.join(tmpDir, `lhc_skin_${tmpId}.dds`);
+    const rpfOut  = path.join(tmpDir, `lhc_rpf_${tmpId}`);
+
+    // pixels = base64 de RGBA (del canvas)
+    const rgbaBytes = Buffer.from(pixels, 'base64');
+
+    // Convertir RGBA → BGRA (formato A8R8G8B8 para DDS)
+    const bgraBytes = Buffer.alloc(rgbaBytes.length);
+    for (let i = 0; i < rgbaBytes.length; i += 4) {
+      bgraBytes[i]     = rgbaBytes[i + 2]; // B ← R
+      bgraBytes[i + 1] = rgbaBytes[i + 1]; // G
+      bgraBytes[i + 2] = rgbaBytes[i];     // R ← B
+      bgraBytes[i + 3] = rgbaBytes[i + 3]; // A
+    }
+
+    const header = buildDdsHeader(width || 512, height || 512);
+    fs.writeFileSync(ddsPng, Buffer.concat([header, bgraBytes]));
+
+    // ── Llamar al YtdPatcher ───────────────────────────────────────────────
+    const cmd = `"${PATCHER_EXE}" "${ddsPng}" "${weaponName}"`;
+    const { stdout, stderr } = await execAsync(cmd, { cwd: tmpDir });
+
+    console.log('[generate-rpf] stdout:', stdout.slice(0, 500));
+    if (stderr) console.warn('[generate-rpf] stderr:', stderr.slice(0, 200));
+
+    // ── Leer RPF generado ──────────────────────────────────────────────────
+    const rpfPath = path.join(tmpDir, `${weaponName}.rpf`);
+    if (!fs.existsSync(rpfPath)) {
+      return NextResponse.json(
+        { error: 'RPF no generado. Log: ' + stdout.slice(-300) },
+        { status: 500 }
+      );
+    }
+
+    const rpfBytes = fs.readFileSync(rpfPath);
+
+    // ── Cleanup temporal ───────────────────────────────────────────────────
+    try { fs.unlinkSync(ddsPng); } catch {}
+    try { fs.unlinkSync(rpfPath); } catch {}
+
+    // ── Devolver RPF como descarga ─────────────────────────────────────────
+    return new NextResponse(rpfBytes, {
+      status: 200,
+      headers: {
+        'Content-Type': 'application/octet-stream',
+        'Content-Disposition': `attachment; filename="${weaponName}.rpf"`,
+        'Content-Length': rpfBytes.length.toString(),
+      },
+    });
+
+  } catch (err) {
+    console.error('[generate-rpf] error:', err);
+    return NextResponse.json({ error: err.message }, { status: 500 });
+  }
+}

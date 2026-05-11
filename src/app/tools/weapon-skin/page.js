@@ -90,6 +90,22 @@ export default function SkinForge3D() {
     return () => { window.removeEventListener('resize', onResize); cancelAnimationFrame(raf); renderer.dispose(); el.innerHTML=''; };
   }, []);
 
+  // ---- E key: hold to rotate, release to paint ----
+  useEffect(() => {
+    const onKeyDown = (e) => {
+      if (e.code === 'KeyE' && !e.repeat) setMode('rotate');
+    };
+    const onKeyUp = (e) => {
+      if (e.code === 'KeyE') setMode('paint');
+    };
+    window.addEventListener('keydown', onKeyDown);
+    window.addEventListener('keyup', onKeyUp);
+    return () => {
+      window.removeEventListener('keydown', onKeyDown);
+      window.removeEventListener('keyup', onKeyUp);
+    };
+  }, []);
+
   useEffect(() => { if (ctrlRef.current) ctrlRef.current.enabled = (mode === 'rotate'); }, [mode]);
 
   useEffect(() => { loadWeapon(weapon.id); }, [weapon.id]);
@@ -162,8 +178,22 @@ export default function SkinForge3D() {
     );
     const ray = new THREE.Raycaster();
     ray.setFromCamera(ndc, cam);
+    // Camera direction vector (world space)
+    const camDir = new THREE.Vector3();
+    cam.getWorldDirection(camDir);
     const hits = [];
-    mesh.traverse(c => { if (c.isMesh) hits.push(...ray.intersectObject(c, false)); });
+    mesh.traverse(c => {
+      if (!c.isMesh) return;
+      const candidates = ray.intersectObject(c, false);
+      for (const hit of candidates) {
+        // Only accept face whose world-space normal faces the camera
+        if (!hit.face) { hits.push(hit); continue; }
+        const worldNorm = hit.face.normal.clone()
+          .transformDirection(c.matrixWorld);
+        // dot > 0 means face is looking toward camera (front-facing)
+        if (worldNorm.dot(camDir) < 0) hits.push(hit);
+      }
+    });
     hits.sort((a,b)=>a.distance-b.distance);
     return hits[0]?.uv ?? null;
   }, []);
@@ -304,22 +334,43 @@ export default function SkinForge3D() {
     return buf;
   };
 
-  const exportDDS = () => {
-    const tc = tcRef.current; if (!tc) return;
-    // Match original texture size (512x512 for this weapon)
-    const ddsData = canvasToDDS(tc, 512, 512);
-    const blob = new Blob([ddsData], { type: 'application/octet-stream' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.download = `${weapon.id}_custom.dds`;
-    a.href = url; a.click();
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
-  };
+  const [exporting, setExporting] = React.useState(false);
 
-  const exportPNG = () => {
-    const tc=tcRef.current; if(!tc)return;
-    const a=document.createElement('a');
-    a.download=`${weapon.id}_custom.png`; a.href=tc.toDataURL('image/png'); a.click();
+  const exportRPF = async () => {
+    const tc = tcRef.current; if (!tc || exporting) return;
+    setExporting(true);
+    setStatus('Generando RPF...');
+    try {
+      // Get canvas pixels at 512x512 (match original texture)
+      const W = weapon.texW || 512, H = weapon.texH || 512;
+      const tmp = document.createElement('canvas');
+      tmp.width = W; tmp.height = H;
+      tmp.getContext('2d').drawImage(tc, 0, 0, W, H);
+      const imgData = tmp.getContext('2d').getImageData(0, 0, W, H);
+      // base64 encode RGBA pixels
+      const b64 = btoa(String.fromCharCode(...imgData.data));
+      const res = await fetch('/api/generate-rpf', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ weaponName: weapon.id, width: W, height: H, pixels: b64 }),
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        setStatus('Error: ' + (err.error || res.statusText));
+        return;
+      }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.download = `${weapon.id}.rpf`;
+      a.href = url; a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 2000);
+      setStatus('RPF descargado — arrastralo a FiveM/mods/');
+    } catch(e) {
+      setStatus('Error: ' + e.message);
+    } finally {
+      setExporting(false);
+    }
   };
 
   const TOOLS = [
@@ -338,16 +389,26 @@ export default function SkinForge3D() {
           <div className="flex items-center gap-2 bg-yellow-500/10 border border-yellow-500/20 px-2 py-1 rounded-full text-[9px] font-black text-yellow-400 uppercase">
             <AlertTriangle size={8}/> LHC SkinForge 3D
           </div>
-          {/* Mode toggle — botones grandes con cursor claro */}
-          <div className="flex rounded-lg overflow-hidden border border-white/10 text-xs font-black select-none">
-            <button type="button" onClick={()=>setMode('paint')}
-              className={`flex items-center gap-1.5 px-4 py-2 cursor-pointer transition-colors ${mode==='paint'?'bg-red-500 text-white':'bg-white/5 text-zinc-400 hover:bg-white/10 hover:text-white'}`}>
+          {/* Mode toggle — full-area clickable, z-index above canvas */}
+          <div className="flex rounded-lg border border-white/10 text-xs font-black select-none" style={{zIndex:100,position:'relative'}}>
+            <button
+              type="button"
+              onPointerDown={(e)=>{ e.stopPropagation(); setMode('paint'); }}
+              style={{pointerEvents:'all', minWidth:80, minHeight:36}}
+              className={`flex items-center justify-center gap-1.5 px-4 py-2 cursor-pointer transition-colors rounded-l-lg ${
+                mode==='paint'?'bg-red-500 text-white':'bg-white/5 text-zinc-400 hover:bg-white/10 hover:text-white'
+              }`}>
               ✏️ Pintar
             </button>
             <div className="w-px bg-white/10"/>
-            <button type="button" onClick={()=>setMode('rotate')}
-              className={`flex items-center gap-1.5 px-4 py-2 cursor-pointer transition-colors ${mode==='rotate'?'bg-blue-500 text-white':'bg-white/5 text-zinc-400 hover:bg-white/10 hover:text-white'}`}>
-              🔄 Rotar
+            <button
+              type="button"
+              onPointerDown={(e)=>{ e.stopPropagation(); setMode('rotate'); }}
+              style={{pointerEvents:'all', minWidth:80, minHeight:36}}
+              className={`flex items-center justify-center gap-1.5 px-4 py-2 cursor-pointer transition-colors rounded-r-lg ${
+                mode==='rotate'?'bg-blue-500 text-white':'bg-white/5 text-zinc-400 hover:bg-white/10 hover:text-white'
+              }`}>
+              🔄 Rotar <span className="text-[9px] opacity-50 ml-1">[E]</span>
             </button>
           </div>
           {/* Weapon selector */}
@@ -385,7 +446,11 @@ export default function SkinForge3D() {
             <button onClick={resetTexture} title="Reset" className="w-9 h-9 rounded-xl flex items-center justify-center text-zinc-500 hover:bg-white/5">
               <RotateCcw size={14}/>
             </button>
-            <button onClick={exportDDS} title="Exportar DDS (CodeWalker)" className="w-9 h-9 rounded-xl flex items-center justify-center text-zinc-500 hover:text-white hover:bg-green-500/20">
+            <button
+              onClick={exportRPF}
+              disabled={exporting}
+              title="Descargar RPF para FiveM mods/"
+              className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all ${exporting ? 'text-yellow-400 bg-yellow-500/10 animate-pulse cursor-wait' : 'text-zinc-500 hover:text-white hover:bg-green-500/20'}`}>
               <Download size={14}/>
             </button>
           </div>
