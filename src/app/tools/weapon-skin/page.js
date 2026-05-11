@@ -338,10 +338,17 @@ export default function SkinForge3D() {
           <div className="flex items-center gap-2 bg-yellow-500/10 border border-yellow-500/20 px-2 py-1 rounded-full text-[9px] font-black text-yellow-400 uppercase">
             <AlertTriangle size={8}/> LHC SkinForge 3D
           </div>
-          {/* Mode toggle */}
-          <div className="flex bg-white/5 border border-white/10 rounded-lg overflow-hidden text-[10px] font-bold">
-            <button onClick={()=>setMode('paint')} className={`px-3 py-1.5 ${mode==='paint'?'bg-red-500 text-white':'text-zinc-400 hover:text-white'}`}>✏️ Pintar</button>
-            <button onClick={()=>setMode('rotate')} className={`px-3 py-1.5 ${mode==='rotate'?'bg-blue-500 text-white':'text-zinc-400 hover:text-white'}`}>🔄 Rotar</button>
+          {/* Mode toggle — botones grandes con cursor claro */}
+          <div className="flex rounded-lg overflow-hidden border border-white/10 text-xs font-black select-none">
+            <button type="button" onClick={()=>setMode('paint')}
+              className={`flex items-center gap-1.5 px-4 py-2 cursor-pointer transition-colors ${mode==='paint'?'bg-red-500 text-white':'bg-white/5 text-zinc-400 hover:bg-white/10 hover:text-white'}`}>
+              ✏️ Pintar
+            </button>
+            <div className="w-px bg-white/10"/>
+            <button type="button" onClick={()=>setMode('rotate')}
+              className={`flex items-center gap-1.5 px-4 py-2 cursor-pointer transition-colors ${mode==='rotate'?'bg-blue-500 text-white':'bg-white/5 text-zinc-400 hover:bg-white/10 hover:text-white'}`}>
+              🔄 Rotar
+            </button>
           </div>
           {/* Weapon selector */}
           <div className="relative">
