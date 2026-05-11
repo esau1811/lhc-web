@@ -353,8 +353,14 @@ export default function SkinForge3D() {
       tmp.width = W; tmp.height = H;
       tmp.getContext('2d').drawImage(tc, 0, 0, W, H);
       const imgData = tmp.getContext('2d').getImageData(0, 0, W, H);
-      // base64 encode RGBA pixels
-      const b64 = btoa(String.fromCharCode(...imgData.data));
+      // base64 encode RGBA pixels — chunked para evitar stack overflow con 1M bytes
+      let binary = '';
+      const bytes = imgData.data;
+      const CHUNK = 8192;
+      for (let i = 0; i < bytes.length; i += CHUNK) {
+        binary += String.fromCharCode(...bytes.subarray(i, Math.min(i + CHUNK, bytes.length)));
+      }
+      const b64 = btoa(binary);
       const res = await fetch('/api/generate-rpf', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
