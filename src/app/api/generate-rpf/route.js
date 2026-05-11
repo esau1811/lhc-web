@@ -17,7 +17,7 @@ const execAsync = promisify(exec);
 // Ruta al exe del YtdPatcher (publicado como self-contained)
 const PATCHER_EXE = path.join(
   process.cwd(),
-  'scratch', 'YtdPatcher', 'publish', 'YtdPatcher.exe'
+  'scratch', 'YtdPatcher', 'bin', 'Release', 'net9.0-windows', 'win-x64', 'YtdPatcher.exe'
 );
 
 // Construye header DDS A8R8G8B8 (mismo formato que exporta el canvas)
@@ -60,7 +60,6 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Faltan parámetros' }, { status: 400 });
     }
 
-    // YtdPatcher.exe only runs on Windows — on Vercel return clear error
     if (!IS_WINDOWS) {
       return NextResponse.json(
         { error: 'RPF generation requires local server (Windows). Download the DDS instead.' },
@@ -70,55 +69,54 @@ export async function POST(request) {
 
     if (!fs.existsSync(PATCHER_EXE)) {
       return NextResponse.json(
-        { error: `YtdPatcher.exe no encontrado en: ${PATCHER_EXE}` },
+        { error: `YtdPatcher.exe no encontrado: ${PATCHER_EXE}` },
         { status: 500 }
       );
     }
 
-    // ── Crear DDS temporal ──────────────────────────────────────────────────
     const tmpDir  = os.tmpdir();
     const tmpId   = Date.now();
     const ddsPng  = path.join(tmpDir, `lhc_skin_${tmpId}.dds`);
-    const rpfOut  = path.join(tmpDir, `lhc_rpf_${tmpId}`);
 
-    // pixels = base64 de RGBA (del canvas)
     const rgbaBytes = Buffer.from(pixels, 'base64');
-
-    // Convertir RGBA → BGRA (formato A8R8G8B8 para DDS)
     const bgraBytes = Buffer.alloc(rgbaBytes.length);
     for (let i = 0; i < rgbaBytes.length; i += 4) {
-      bgraBytes[i]     = rgbaBytes[i + 2]; // B ← R
-      bgraBytes[i + 1] = rgbaBytes[i + 1]; // G
-      bgraBytes[i + 2] = rgbaBytes[i];     // R ← B
-      bgraBytes[i + 3] = rgbaBytes[i + 3]; // A
+      bgraBytes[i]     = rgbaBytes[i + 2];
+      bgraBytes[i + 1] = rgbaBytes[i + 1];
+      bgraBytes[i + 2] = rgbaBytes[i];
+      bgraBytes[i + 3] = rgbaBytes[i + 3];
     }
 
     const header = buildDdsHeader(width || 512, height || 512);
     fs.writeFileSync(ddsPng, Buffer.concat([header, bgraBytes]));
 
-    // ── Llamar al YtdPatcher ───────────────────────────────────────────────
     const cmd = `"${PATCHER_EXE}" "${ddsPng}" "${weaponName}"`;
-    const { stdout, stderr } = await execAsync(cmd, { cwd: tmpDir });
+    console.log('[generate-rpf] Ejecutando en:', tmpDir);
+    console.log('[generate-rpf] Command:', cmd.slice(0, 100) + '...');
+
+    const { stdout, stderr } = await execAsync(cmd, {
+      maxBuffer: 1024 * 1024,
+      cwd: tmpDir,
+      shell: 'cmd.exe'
+    });
 
     console.log('[generate-rpf] stdout:', stdout.slice(0, 500));
-    if (stderr) console.warn('[generate-rpf] stderr:', stderr.slice(0, 200));
+    if (stderr) console.warn('[generate-rpf] stderr:', stderr.slice(0, 300));
 
-    // ── Leer RPF generado ──────────────────────────────────────────────────
     const rpfPath = path.join(tmpDir, `${weaponName}.rpf`);
     if (!fs.existsSync(rpfPath)) {
+      const files = fs.readdirSync(tmpDir).filter(f => f.includes('rpf') || f.includes(weaponName));
       return NextResponse.json(
-        { error: 'RPF no generado. Log: ' + stdout.slice(-300) },
+        { error: `RPF no generado en ${rpfPath}. Archivos: ${files.join(', ')}. Log: ${stdout.slice(-300)}` },
         { status: 500 }
       );
     }
 
     const rpfBytes = fs.readFileSync(rpfPath);
 
-    // ── Cleanup temporal ───────────────────────────────────────────────────
     try { fs.unlinkSync(ddsPng); } catch {}
     try { fs.unlinkSync(rpfPath); } catch {}
 
-    // ── Devolver RPF como descarga ─────────────────────────────────────────
     return new NextResponse(rpfBytes, {
       status: 200,
       headers: {
@@ -129,7 +127,7 @@ export async function POST(request) {
     });
 
   } catch (err) {
-    console.error('[generate-rpf] error:', err);
+    console.error('[generate-rpf] error:', err.message);
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }

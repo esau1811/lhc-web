@@ -178,23 +178,29 @@ export default function SkinForge3D() {
     );
     const ray = new THREE.Raycaster();
     ray.setFromCamera(ndc, cam);
-    // Camera direction vector (world space)
+    ray.params.Points.threshold = 0.1;
     const camDir = new THREE.Vector3();
     cam.getWorldDirection(camDir);
     const hits = [];
+    let closestDist = Infinity;
     mesh.traverse(c => {
       if (!c.isMesh) return;
       const candidates = ray.intersectObject(c, false);
       for (const hit of candidates) {
-        // Only accept face whose world-space normal faces the camera
         if (!hit.face) { hits.push(hit); continue; }
         const worldNorm = hit.face.normal.clone()
           .transformDirection(c.matrixWorld);
-        // dot > 0 means face is looking toward camera (front-facing)
-        if (worldNorm.dot(camDir) < 0) hits.push(hit);
+        if (worldNorm.dot(camDir) < 0) {
+          if (hit.distance < closestDist) {
+            closestDist = hit.distance;
+            hits.length = 0;
+            hits.push(hit);
+          } else if (Math.abs(hit.distance - closestDist) < 0.05) {
+            hits.push(hit);
+          }
+        }
       }
     });
-    hits.sort((a,b)=>a.distance-b.distance);
     return hits[0]?.uv ?? null;
   }, []);
 
