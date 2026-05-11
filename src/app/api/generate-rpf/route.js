@@ -72,10 +72,7 @@ export async function POST(request) {
       );
     }
 
-    // Si estamos en Linux, nos aseguramos que tenga permisos de ejecución
-    if (!IS_WINDOWS) {
-      await execAsync(`chmod +x "${PATCHER_EXE}"`);
-    }
+    // Si estamos en Linux, la ejecución asume que los permisos ya están seteados via git
 
     const tmpDir = os.tmpdir();
     const tmpId  = Date.now();
