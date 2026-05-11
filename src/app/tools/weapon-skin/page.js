@@ -254,6 +254,68 @@ export default function SkinForge3D() {
     tt.needsUpdate=true;
   };
 
+  // ---- DDS EXPORT (browser-side, no server needed) ----
+  const canvasToDDS = (canvas, w, h) => {
+    // Resize to target dimensions
+    const tmp = document.createElement('canvas');
+    tmp.width = w; tmp.height = h;
+    tmp.getContext('2d').drawImage(canvas, 0, 0, w, h);
+    const pixels = tmp.getContext('2d').getImageData(0, 0, w, h).data; // RGBA
+
+    const headerSize = 128; // 4 magic + 124 DDS header
+    const buf = new ArrayBuffer(headerSize + w * h * 4);
+    const dv = new DataView(buf);
+    let o = 0;
+
+    // Magic 'DDS '
+    dv.setUint32(o, 0x20534444, true); o += 4;
+    // Header
+    dv.setUint32(o, 124, true);   o += 4; // dwSize
+    dv.setUint32(o, 0x1007, true); o += 4; // dwFlags: CAPS|HEIGHT|WIDTH|PITCH|PIXELFORMAT
+    dv.setUint32(o, h, true);     o += 4; // dwHeight
+    dv.setUint32(o, w, true);     o += 4; // dwWidth
+    dv.setUint32(o, w*4, true);   o += 4; // dwPitchOrLinearSize
+    dv.setUint32(o, 0, true);     o += 4; // dwDepth
+    dv.setUint32(o, 1, true);     o += 4; // dwMipMapCount = 1
+    for (let i=0;i<11;i++){dv.setUint32(o,0,true);o+=4;} // reserved[11]
+    // Pixel format (32 bytes)
+    dv.setUint32(o, 32, true);         o += 4; // pf.dwSize
+    dv.setUint32(o, 0x41, true);       o += 4; // pf.dwFlags: ALPHAPIXELS|RGB
+    dv.setUint32(o, 0, true);          o += 4; // pf.dwFourCC (uncompressed)
+    dv.setUint32(o, 32, true);         o += 4; // pf.dwRGBBitCount
+    dv.setUint32(o, 0x00FF0000, true); o += 4; // pf.dwRBitMask
+    dv.setUint32(o, 0x0000FF00, true); o += 4; // pf.dwGBitMask
+    dv.setUint32(o, 0x000000FF, true); o += 4; // pf.dwBBitMask
+    dv.setUint32(o, 0xFF000000, true); o += 4; // pf.dwAlphaBitMask
+    // Caps
+    dv.setUint32(o, 0x1000, true); o += 4; // TEXTURE
+    dv.setUint32(o, 0, true); o += 4;
+    dv.setUint32(o, 0, true); o += 4;
+    dv.setUint32(o, 0, true); o += 4;
+    dv.setUint32(o, 0, true); o += 4; // reserved2
+
+    // Pixel data: DDS stores BGRA for A8R8G8B8
+    for (let i = 0; i < pixels.length; i += 4) {
+      dv.setUint8(o++, pixels[i+2]); // B
+      dv.setUint8(o++, pixels[i+1]); // G
+      dv.setUint8(o++, pixels[i]);   // R
+      dv.setUint8(o++, pixels[i+3]); // A
+    }
+    return buf;
+  };
+
+  const exportDDS = () => {
+    const tc = tcRef.current; if (!tc) return;
+    // Match original texture size (512x512 for this weapon)
+    const ddsData = canvasToDDS(tc, 512, 512);
+    const blob = new Blob([ddsData], { type: 'application/octet-stream' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.download = `${weapon.id}_custom.dds`;
+    a.href = url; a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  };
+
   const exportPNG = () => {
     const tc=tcRef.current; if(!tc)return;
     const a=document.createElement('a');
@@ -316,7 +378,7 @@ export default function SkinForge3D() {
             <button onClick={resetTexture} title="Reset" className="w-9 h-9 rounded-xl flex items-center justify-center text-zinc-500 hover:bg-white/5">
               <RotateCcw size={14}/>
             </button>
-            <button onClick={exportPNG} title="Exportar PNG" className="w-9 h-9 rounded-xl flex items-center justify-center text-zinc-500 hover:text-white hover:bg-red-500/20">
+            <button onClick={exportDDS} title="Exportar DDS (CodeWalker)" className="w-9 h-9 rounded-xl flex items-center justify-center text-zinc-500 hover:text-white hover:bg-green-500/20">
               <Download size={14}/>
             </button>
           </div>
