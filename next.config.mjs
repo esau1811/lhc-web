@@ -1,5 +1,12 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  experimental: {
+    outputFileTracingIncludes: {
+      '/api/generate-rpf': [
+        './src/app/api/generate-rpf/bin/keys/**',
+      ],
+    },
+  },
   async headers() {
     return [
       {
