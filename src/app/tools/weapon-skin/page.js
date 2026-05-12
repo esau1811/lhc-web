@@ -536,7 +536,7 @@ export default function SkinForge3D() {
               <p>1. Descarga el ZIP con el botón <b>↓</b></p>
               <p>2. Extrae el ZIP en tu carpeta <code className="bg-white/10 px-1 rounded">FiveM.app\</code></p>
               <p className="text-zinc-500">Resultado:</p>
-              <p className="font-mono text-[9px] break-all text-zinc-500">FiveM.app\mods\x64e.rpf\models\cdimages\{weapon.id}.rpf</p>
+              <p className="font-mono text-[9px] break-all text-zinc-500">FiveM.app\mods\{weapon.id}.rpf</p>
               <p>3. Reinicia FiveM</p>
             </div>
           </div>

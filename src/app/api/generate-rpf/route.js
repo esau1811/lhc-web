@@ -129,7 +129,7 @@ export async function POST(request) {
     // placing the file there as an override makes FiveM register the custom
     // YTD with higher priority than the base weapons.rpf.
     const zip = new JSZip();
-    zip.file(`mods/x64e.rpf/models/cdimages/${weaponName}.rpf`, rpfBytes);
+    zip.file(`mods/${weaponName}.rpf`, rpfBytes);
     const zipBytes = await zip.generateAsync({ type: 'nodebuffer', compression: 'DEFLATE', compressionOptions: { level: 1 } });
 
     return new NextResponse(zipBytes, {
