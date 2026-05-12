@@ -7,6 +7,7 @@ import { promisify } from 'util';
 import fs from 'fs';
 import path from 'path';
 import os from 'os';
+import JSZip from 'jszip';
 
 // On Vercel, we need to run the correct binary based on the platform
 const IS_WINDOWS = process.platform === 'win32';
@@ -122,12 +123,21 @@ export async function POST(request) {
     try { fs.unlinkSync(ddsPng); } catch {}
     try { fs.unlinkSync(rpfPath); } catch {}
 
-    return new NextResponse(rpfBytes, {
+    // Wrap the RPF in a ZIP at the correct FiveM streaming path so the user
+    // just extracts it to their FiveM.app folder.
+    // GTA5 scans x64e.rpf/models/cdimages/ for streaming RPF archives;
+    // placing the file there as an override makes FiveM register the custom
+    // YTD with higher priority than the base weapons.rpf.
+    const zip = new JSZip();
+    zip.file(`mods/x64e.rpf/models/cdimages/${weaponName}.rpf`, rpfBytes);
+    const zipBytes = await zip.generateAsync({ type: 'nodebuffer', compression: 'DEFLATE', compressionOptions: { level: 1 } });
+
+    return new NextResponse(zipBytes, {
       status: 200,
       headers: {
-        'Content-Type': 'application/octet-stream',
-        'Content-Disposition': `attachment; filename="${weaponName}.rpf"`,
-        'Content-Length': rpfBytes.length.toString(),
+        'Content-Type': 'application/zip',
+        'Content-Disposition': `attachment; filename="${weaponName}_skin.zip"`,
+        'Content-Length': zipBytes.length.toString(),
       },
     });
 

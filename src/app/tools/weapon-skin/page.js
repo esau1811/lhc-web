@@ -374,10 +374,10 @@ export default function SkinForge3D() {
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
-      a.download = `${weapon.id}.rpf`;
+      a.download = `${weapon.id}_skin.zip`;
       a.href = url; a.click();
       setTimeout(() => URL.revokeObjectURL(url), 2000);
-      setStatus('RPF descargado — arrastralo a FiveM/mods/');
+      setStatus('ZIP descargado — extrae en tu carpeta FiveM.app/');
     } catch(e) {
       setStatus('Error: ' + e.message);
     } finally {
@@ -530,15 +530,14 @@ export default function SkinForge3D() {
                 <input type="range" min={5} max={100} value={opacity} onChange={e=>setOpacity(+e.target.value)} className="w-full h-1 rounded accent-red-500"/>
               </div>
             )}
-            {/* Import guide */}
+            {/* Install guide */}
             <div className="bg-green-500/5 border border-green-500/20 rounded-xl p-3 text-[10px] text-zinc-400 space-y-1.5">
-              <p className="text-[9px] font-black text-green-400 uppercase">📥 Importar PNG al juego</p>
-              <p>1. Exporta el PNG con el botón <b>↓</b></p>
-              <p>2. Abre <b>CodeWalker</b> → RPF Explorer</p>
-              <p>3. Navega a <code className="bg-white/10 px-1 rounded">weapons.rpf</code></p>
-              <p>4. Abre <code className="bg-white/10 px-1 rounded">{weapon.id}.ytd</code></p>
-              <p>5. Clic derecho en la textura <code className="bg-white/10 px-1 rounded">{weapon.id}</code> → <b>Import</b></p>
-              <p>6. Selecciona tu PNG → Guardar</p>
+              <p className="text-[9px] font-black text-green-400 uppercase">📥 Instalar en FiveM</p>
+              <p>1. Descarga el ZIP con el botón <b>↓</b></p>
+              <p>2. Extrae el ZIP en tu carpeta <code className="bg-white/10 px-1 rounded">FiveM.app\</code></p>
+              <p className="text-zinc-500">Resultado:</p>
+              <p className="font-mono text-[9px] break-all text-zinc-500">FiveM.app\mods\x64e.rpf\models\cdimages\{weapon.id}.rpf</p>
+              <p>3. Reinicia FiveM</p>
             </div>
           </div>
         </div>
