@@ -619,29 +619,36 @@ export default function SkinForge3D() {
     const plane = stickerPlaneMeshRef.current;
     if (!el || !cam || !mesh || !plane) return;
 
-    const r = el.getBoundingClientRect();
-    const ndc = new THREE.Vector2(
-      ((clientX - r.left) / r.width)  * 2 - 1,
-      -((clientY - r.top)  / r.height) * 2 + 1
-    );
-    const ray = new THREE.Raycaster();
-    ray.setFromCamera(ndc, cam);
-    const hits = ray.intersectObject(mesh, true);
-    if (!hits.length) return;
+    let hit = null;
+    if (clientX !== undefined && clientY !== undefined) {
+      const r = el.getBoundingClientRect();
+      const ndc = new THREE.Vector2(
+        ((clientX - r.left) / r.width)  * 2 - 1,
+        -((clientY - r.top)  / r.height) * 2 + 1
+      );
+      const ray = new THREE.Raycaster();
+      ray.setFromCamera(ndc, cam);
+      const hits = ray.intersectObject(mesh, true);
+      if (hits.length > 0) {
+        hit = hits[0];
+        stickerHitRef.current = hit;
+      }
+    } else {
+      hit = stickerHitRef.current;
+    }
 
-    const hit = hits[0];
-    stickerHitRef.current = hit;
+    if (!hit) return;
 
-    // Orient plane: face the camera direction (so it’s always visible)
+    // Orient plane: face normal, upright to camera
     plane.position.copy(hit.point);
     const camDir = new THREE.Vector3().subVectors(cam.position, hit.point).normalize();
-    const wn = hit.face.normal.clone().transformDirection(hit.object.matrixWorld);
+    const wn = hit.face.normal.clone().transformDirection(hit.object.matrixWorld).normalize();
     const facing = wn.dot(camDir) > 0 ? wn : wn.negate();
     const tgt = hit.point.clone().add(facing);
     plane.lookAt(tgt);
     // Apply user rotation around normal
     plane.rotateZ(stickerRotation * Math.PI / 180);
-    plane.position.copy(hit.point).addScaledVector(facing, 0.0003); // tiny offset to avoid z-fight
+    plane.position.copy(hit.point).addScaledVector(facing, 0.0005); // tiny offset to avoid z-fight
   }, [stickerRotation]);
 
   const loadSticker = useCallback((file) => {
@@ -692,12 +699,8 @@ export default function SkinForge3D() {
     const box = mesh ? new THREE.Box3().setFromObject(mesh) : null;
     const weaponLen = box ? (box.max.x - box.min.x) : 0.2;
     pl.scale.set(stickerScale * weaponLen, stickerScale * weaponLen * aspect, 1);
-    // Re-apply rotation if we have a stored hit
-    if (stickerHitRef.current) moveStickerToSurface(
-      // dummy — re-position at last hit world point by manually setting:
-      // (we can’t call moveStickerToSurface without clientX/Y here, so just rotate in-place)
-      0, 0
-    );
+    // Re-apply rotation using stored hit without triggering new raycast
+    moveStickerToSurface();
   }, [stickerScale, stickerRotation, moveStickerToSurface]);
 
   // Mouse handlers for sticker viewport dragging
@@ -718,59 +721,89 @@ export default function SkinForge3D() {
     stickerDraggingRef.current = false;
   }, []);
 
-  // Stamp: project plane world-space bounds → UV via local density
+  // Stamp: exact affine decal projection mapping onto the hit triangle face
   const stampSticker = useCallback(() => {
-    const tc  = tcRef.current; const tt = ttRef.current;
-    const img = stickerImgRef.current;
-    const pl  = stickerPlaneMeshRef.current;
-    const mesh = meshRef.current;
-    if (!tc || !tt || !img || !pl || !mesh) return;
-
-    // Build raycaster helper in world space
-    const castUV = (origin, dir) => {
-      const r = new THREE.Raycaster(origin, dir.normalize(), 0, 5);
-      return r.intersectObject(mesh, true)[0]?.uv ?? null;
-    };
-
-    // Get plane world-space axes and center
-    const right  = new THREE.Vector3(1, 0, 0).applyQuaternion(pl.quaternion);
-    const up     = new THREE.Vector3(0, 1, 0).applyQuaternion(pl.quaternion);
-    const fwd    = new THREE.Vector3(0, 0, 1).applyQuaternion(pl.quaternion);
-    const center = pl.position.clone();
-    const hw = pl.scale.x * 0.5;  // half-width in world units
-    const hh = pl.scale.y * 0.5;  // half-height in world units
-
-    // Cast center ray from slightly in front of plane surface
-    const offset = fwd.clone().multiplyScalar(0.05);
-    const dir    = fwd.clone().negate();
-
-    const centerUV = castUV(center.clone().add(offset), dir);
-    if (!centerUV) {
-      alert('Coloca el sticker sobre la superficie del arma.');
+    const tc   = tcRef.current; const tt = ttRef.current;
+    const img  = stickerImgRef.current;
+    const pl   = stickerPlaneMeshRef.current;
+    const hit  = stickerHitRef.current;
+    if (!tc || !tt || !img || !pl || !hit || !hit.face) {
+      alert('Coloca el sticker sobre la superficie del arma antes de sellar.');
       return;
     }
 
-    // Estimate local UV density by casting micro-offset rays
-    const microDelta = hw * 0.05; // tiny offset to measure UV/world ratio
-    const rUV = castUV(center.clone().add(offset).addScaledVector(right, microDelta), dir);
-    const uUV = castUV(center.clone().add(offset).addScaledVector(up,    microDelta), dir);
+    const geom = hit.object.geometry;
+    if (!geom || !geom.attributes.position || !geom.attributes.uv) return;
 
-    // UV units per world unit at the hit point
-    const densityU = rUV ? Math.abs(rUV.x - centerUV.x) / microDelta : 1.0;
-    const densityV = uUV ? Math.abs(uUV.y - centerUV.y) / microDelta : 1.0;
+    const posAttr = geom.attributes.position;
+    const uvAttr  = geom.attributes.uv;
+    const face    = hit.face;
 
-    // Use average density to compute UV size (handles distorted UV islands)
-    const avgDensity = (densityU + densityV) / 2;
-    const uvW = hw * 2 * avgDensity;
-    const uvH = hh * 2 * avgDensity;
+    // Get face vertices in world space
+    const objMat = hit.object.matrixWorld;
+    const vA = new THREE.Vector3().fromBufferAttribute(posAttr, face.a).applyMatrix4(objMat);
+    const vB = new THREE.Vector3().fromBufferAttribute(posAttr, face.b).applyMatrix4(objMat);
+    const vC = new THREE.Vector3().fromBufferAttribute(posAttr, face.c).applyMatrix4(objMat);
+
+    // Get face UVs
+    const uvA = new THREE.Vector2().fromBufferAttribute(uvAttr, face.a);
+    const uvB = new THREE.Vector2().fromBufferAttribute(uvAttr, face.b);
+    const uvC = new THREE.Vector2().fromBufferAttribute(uvAttr, face.c);
+
+    // Delta vectors on the triangle
+    const dP_AB = new THREE.Vector3().subVectors(vB, vA);
+    const dP_AC = new THREE.Vector3().subVectors(vC, vA);
+    const dUV_AB = new THREE.Vector2().subVectors(uvB, uvA);
+    const dUV_AC = new THREE.Vector2().subVectors(uvC, uvA);
+
+    // Precompute dot products for the 2x2 linear system
+    const dAB_AB = dP_AB.dot(dP_AB);
+    const dAB_AC = dP_AB.dot(dP_AC);
+    const dAC_AC = dP_AC.dot(dP_AC);
+    const det = dAB_AB * dAC_AC - dAB_AC * dAB_AC;
+
+    // Helper to convert any world vector V tangent to face into UV displacement
+    const worldToUV = (worldVec) => {
+      if (Math.abs(det) < 1e-10) return new THREE.Vector2(0, 0);
+      const b1 = worldVec.dot(dP_AB);
+      const b2 = worldVec.dot(dP_AC);
+      const alpha = (b1 * dAC_AC - b2 * dAB_AC) / det;
+      const beta  = (b2 * dAB_AB - b1 * dAB_AC) / det;
+      return new THREE.Vector2(
+        alpha * dUV_AB.x + beta * dUV_AC.x,
+        alpha * dUV_AB.y + beta * dUV_AC.y
+      );
+    };
+
+    // Sticker plane world axes scaled by its world half-dimensions
+    const hw = pl.scale.x * 0.5;
+    const hh = pl.scale.y * 0.5;
+    const right = new THREE.Vector3(1, 0, 0).applyQuaternion(pl.quaternion).multiplyScalar(hw);
+    const up    = new THREE.Vector3(0, 1, 0).applyQuaternion(pl.quaternion).multiplyScalar(hh);
+
+    // Ensure right and up vectors are perfectly tangent to the hit face
+    const normal = face.normal.clone().transformDirection(objMat).normalize();
+    right.sub(normal.clone().multiplyScalar(right.dot(normal)));
+    up.sub(normal.clone().multiplyScalar(up.dot(normal)));
+
+    const uX = worldToUV(right).multiplyScalar(TEX);
+    const uY = worldToUV(up).multiplyScalar(TEX);
+
+    const centerUV = hit.uv;
+    const e = centerUV.x * TEX;
+    const f = centerUV.y * TEX;
 
     saveHistory();
     const ctx = tc.getContext('2d');
-    const texW = Math.max(uvW, 0.01) * TEX;
-    const texH = texW * (img.naturalHeight / img.naturalWidth);
-    const texX = centerUV.x * TEX - texW / 2;
-    const texY = centerUV.y * TEX - texH / 2;
-    ctx.drawImage(img, texX, texY, texW, texH);
+    ctx.save();
+    // Affine transform maps local space to pixel space exactly:
+    // local center (0,0) -> (e, f)
+    // local center-right (1,0) -> (e + uX.x, f + uX.y)
+    // local center-bottom (0,1) -> (e - uY.x, f - uY.y) because Three.js 'up' maps to sticker top
+    ctx.setTransform(uX.x, uX.y, -uY.x, -uY.y, e, f);
+    ctx.drawImage(img, -1, -1, 2, 2);
+    ctx.restore();
+
     tt.needsUpdate = true;
     syncUV2D();
     setWeaponPainted(true);
