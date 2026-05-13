@@ -4,7 +4,7 @@ import Header from '@/components/Header';
 import * as THREE from 'three';
 import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader.js';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
-import { Paintbrush, Eraser, Download, RotateCcw, ChevronDown, AlertTriangle, Minus, Plus, Droplets, Wind } from 'lucide-react';
+import { Paintbrush, Eraser, Download, RotateCcw, Undo2, ChevronDown, AlertTriangle, Minus, Plus, Droplets, Wind } from 'lucide-react';
 
 const WEAPONS = [
   { id: 'w_pi_combatpistol', name: 'Combat Pistol', cat: 'Pistola' },
@@ -14,7 +14,12 @@ const WEAPONS = [
   { id: 'w_sr_sniperrifle',  name: 'Sniper Rifle',  cat: 'Sniper'  },
 ];
 
-const PRESETS = ['#ffffff','#000000','#ef4444','#f97316','#eab308','#22c55e','#3b82f6','#8b5cf6','#ec4899','#14b8a6','#78716c','#a16207'];
+const PRESETS = [
+  '#ffffff','#d4d4d4','#a3a3a3','#737373','#404040','#1a1a1a','#000000',
+  '#ef4444','#dc2626','#b91c1c','#f97316','#ea580c','#eab308','#ca8a04',
+  '#22c55e','#16a34a','#14b8a6','#0891b2','#3b82f6','#2563eb','#6366f1',
+  '#8b5cf6','#a855f7','#ec4899','#db2777','#f43f5e','#78716c','#a16207',
+];
 const TEX = 1024;
 
 export default function SkinForge3D() {
@@ -27,8 +32,9 @@ export default function SkinForge3D() {
   const tcRef     = useRef(null);   // paint canvas
   const ttRef     = useRef(null);   // THREE.CanvasTexture
   const baseRef   = useRef(null);   // base Image
-  const paintRef  = useRef(false);
-  const lastUVRef = useRef(null);
+  const paintRef   = useRef(false);
+  const lastUVRef  = useRef(null);
+  const historyRef = useRef([]);
 
   const [weapon,    setWeapon]    = useState(WEAPONS[0]);
   const [tool,      setTool]      = useState('brush');
@@ -90,10 +96,26 @@ export default function SkinForge3D() {
     return () => { window.removeEventListener('resize', onResize); cancelAnimationFrame(raf); renderer.dispose(); el.innerHTML=''; };
   }, []);
 
-  // ---- E key: hold to rotate, release to paint ----
+  const saveHistory = () => {
+    const tc = tcRef.current; if (!tc) return;
+    const snap = tc.getContext('2d').getImageData(0, 0, TEX, TEX);
+    const h = historyRef.current;
+    historyRef.current = h.length >= 20 ? [...h.slice(1), snap] : [...h, snap];
+  };
+
+  const undo = () => {
+    const h = historyRef.current; if (h.length === 0) return;
+    const tc = tcRef.current; const tt = ttRef.current; if (!tc || !tt) return;
+    historyRef.current = h.slice(0, -1);
+    tc.getContext('2d').putImageData(h[h.length - 1], 0, 0);
+    tt.needsUpdate = true;
+  };
+
+  // ---- E key: hold to rotate, release to paint; Ctrl+Z to undo ----
   useEffect(() => {
     const onKeyDown = (e) => {
       if (e.code === 'KeyE' && !e.repeat) setMode('rotate');
+      if ((e.ctrlKey || e.metaKey) && e.key === 'z') { e.preventDefault(); undo(); }
     };
     const onKeyUp = (e) => {
       if (e.code === 'KeyE') setMode('paint');
@@ -278,7 +300,10 @@ export default function SkinForge3D() {
     const uv = getUV(e.clientX, e.clientY); applyPaint(uv);
   }, [mode, getUV, applyPaint]);
 
-  const onUp = useCallback(()=>{ paintRef.current=false; lastUVRef.current=null; },[]);
+  const onUp = useCallback(()=>{
+    if (paintRef.current) saveHistory();
+    paintRef.current=false; lastUVRef.current=null;
+  },[]);
 
   const onTouchDown = useCallback((e)=>{ if(e.touches[0]) onDown({clientX:e.touches[0].clientX,clientY:e.touches[0].clientY,preventDefault:()=>{}}); },[onDown]);
   const onTouchMove = useCallback((e)=>{ e.preventDefault(); if(e.touches[0]) onMove({clientX:e.touches[0].clientX,clientY:e.touches[0].clientY,preventDefault:()=>{}}); },[onMove]);
@@ -425,18 +450,23 @@ export default function SkinForge3D() {
           </div>
           {/* Weapon selector */}
           <div className="relative">
-            <button onClick={()=>setDropOpen(o=>!o)}
-              className="flex items-center gap-2 bg-white/5 border border-white/10 hover:border-red-500/40 rounded-lg px-3 py-1.5 text-xs font-bold">
-              <span className="text-zinc-400 text-[9px]">{weapon.cat}</span>
-              <span>{weapon.name}</span>
-              <ChevronDown size={11} className={dropOpen?'rotate-180 text-zinc-400':'text-zinc-400'}/>
+            <button
+              onPointerDown={(e)=>{ e.stopPropagation(); setDropOpen(o=>!o); }}
+              className="flex items-center gap-2 bg-white/5 border border-white/10 hover:border-red-500/40 rounded-lg px-3 py-1.5 text-xs font-bold select-none cursor-pointer w-full h-full">
+              <span className="text-zinc-400 text-[9px] pointer-events-none">{weapon.cat}</span>
+              <span className="pointer-events-none">{weapon.name}</span>
+              <ChevronDown size={11} className={`pointer-events-none ${dropOpen?'rotate-180 text-zinc-400':'text-zinc-400'}`}/>
             </button>
             {dropOpen && (
-              <div className="absolute top-full mt-1 left-0 bg-[#111] border border-white/10 rounded-xl z-50 w-52 shadow-2xl overflow-hidden">
+              <div
+                className="absolute top-full mt-1 left-0 bg-[#111] border border-white/10 rounded-xl z-50 w-52 shadow-2xl overflow-hidden"
+                onPointerDown={e=>e.stopPropagation()}>
                 {WEAPONS.map(w=>(
-                  <button key={w.id} onClick={()=>{setWeapon(w);setDropOpen(false);}}
-                    className={`w-full text-left px-3 py-2 text-xs hover:bg-white/5 ${weapon.id===w.id?'text-red-400':''}`}>
-                    <span className="text-zinc-500 text-[9px] mr-1">{w.cat}</span>{w.name}
+                  <button key={w.id}
+                    onPointerDown={(e)=>{ e.stopPropagation(); setWeapon(w); setDropOpen(false); }}
+                    className={`w-full text-left px-3 py-2.5 text-xs hover:bg-white/8 select-none cursor-pointer ${weapon.id===w.id?'text-red-400 bg-red-500/5':''}`}>
+                    <span className="text-zinc-500 text-[9px] mr-1 block">{w.cat}</span>
+                    <span>{w.name}</span>
                   </button>
                 ))}
               </div>
@@ -455,7 +485,10 @@ export default function SkinForge3D() {
               </button>
             ))}
             <div className="h-px w-8 bg-white/10 my-1"/>
-            <button onClick={resetTexture} title="Reset" className="w-9 h-9 rounded-xl flex items-center justify-center text-zinc-500 hover:bg-white/5">
+            <button onClick={undo} title="Deshacer (Ctrl+Z)" className="w-9 h-9 rounded-xl flex items-center justify-center text-zinc-500 hover:bg-white/5 hover:text-white">
+              <Undo2 size={14}/>
+            </button>
+            <button onClick={resetTexture} title="Reiniciar textura" className="w-9 h-9 rounded-xl flex items-center justify-center text-zinc-500 hover:bg-white/5">
               <RotateCcw size={14}/>
             </button>
             <button
@@ -501,10 +534,10 @@ export default function SkinForge3D() {
                 <input type="color" value={color} onChange={e=>setColor(e.target.value)} className="w-9 h-9 rounded-lg border-0 cursor-pointer bg-transparent"/>
                 <span className="text-[10px] font-mono">{color.toUpperCase()}</span>
               </div>
-              <div className="grid grid-cols-6 gap-1">
+              <div className="grid grid-cols-7 gap-1">
                 {PRESETS.map(c=>(
                   <button key={c} onClick={()=>setColor(c)}
-                    className={`w-6 h-6 rounded-md hover:scale-110 transition-all ${color===c?'ring-2 ring-white ring-offset-1 ring-offset-black':''}`}
+                    className={`w-5 h-5 rounded hover:scale-110 transition-all ${color===c?'ring-2 ring-white ring-offset-1 ring-offset-black':''}`}
                     style={{backgroundColor:c}}/>
                 ))}
               </div>
