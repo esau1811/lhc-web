@@ -222,6 +222,22 @@ export default function SkinForge3D() {
         obj.position.sub(box.getCenter(new THREE.Vector3()));
         sceneRef.current.add(obj);
         meshRef.current = obj;
+
+        // Auto-fit camera to bounding sphere
+        const sphere = box.getBoundingSphere(new THREE.Sphere());
+        const cam = camRef.current;
+        const ctrl = ctrlRef.current;
+        if (cam && ctrl) {
+          const dist = sphere.radius / Math.sin((cam.fov * Math.PI / 180) / 2) * 0.85;
+          cam.position.set(0, sphere.radius * 0.15, dist);
+          cam.near = dist * 0.001;
+          cam.far  = dist * 100;
+          cam.updateProjectionMatrix();
+          ctrl.minDistance = dist * 0.1;
+          ctrl.maxDistance = dist * 10;
+          ctrl.update();
+        }
+
         setLoading(false); setHasModel(true);
         setStatus(id);
       },
