@@ -156,7 +156,7 @@ export default function SkinForge3D() {
   const buildMesh = (id, tc, ctx) => {
     const scene = sceneRef.current;
     const tt = new THREE.CanvasTexture(tc);
-    tt.flipY = true;   // standard Three.js — texture Y flipped vs UV
+    tt.flipY = false;  // GTA5 OBJ exports use DX convention (V=0 at top), no flip needed
     ttRef.current = tt;
 
     setStatus('Cargando modelo 3D...');
@@ -228,9 +228,9 @@ export default function SkinForge3D() {
     if (!tc || !tt || !uv) return;
     const ctx = tc.getContext('2d');
 
-    // UV → canvas. Three.js flipY=true: UV.y=0 = bottom of image = bottom of canvas (high y)
+    // UV → canvas. flipY=false: UV.y=0 = top of canvas (DX convention, V=0 at top)
     const cx = uv.x * TEX;
-    const cy = (1 - uv.y) * TEX;
+    const cy = uv.y * TEX;
 
     ctx.globalAlpha = opacity / 100;
     ctx.globalCompositeOperation = 'source-over';
