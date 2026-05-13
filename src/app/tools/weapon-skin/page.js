@@ -63,6 +63,7 @@ export default function SkinForge3D() {
   const ttRef      = useRef(null);  // THREE.CanvasTexture
   const baseRef    = useRef(null);  // base Image
   const uv2DRef    = useRef(null);  // display canvas for 2D UV mode
+  const dropBtnRef = useRef(null);  // weapon selector button ref
   const paintRef   = useRef(false);
   const lastUVRef  = useRef(null);
   const historyRef = useRef([]);
@@ -75,6 +76,7 @@ export default function SkinForge3D() {
   const [mode,      setMode]      = useState('paint');  // 'paint' | 'rotate' (3D only)
   const [viewMode,  setViewMode]  = useState('3d');     // '3d' | '2d'
   const [dropOpen,  setDropOpen]  = useState(false);
+  const [dropPos,   setDropPos]   = useState({ top: 0, left: 0 });
   const [loading,   setLoading]   = useState(true);
   const [hasModel,  setHasModel]  = useState(false);
   const [status,    setStatus]    = useState('Cargando...');
@@ -409,7 +411,7 @@ export default function SkinForge3D() {
       <div className="pt-16 flex-1 flex flex-col" style={{height:'calc(100vh - 64px)'}}>
 
         {/* ── TOP BAR ── */}
-        <div className="flex items-center gap-3 px-4 py-2 border-b border-white/8 bg-black/40 shrink-0 overflow-x-auto">
+        <div className="flex items-center gap-3 px-4 py-2 border-b border-white/8 bg-black/40 shrink-0">
           <div className="flex items-center gap-2 bg-yellow-500/10 border border-yellow-500/20 px-2 py-1 rounded-full text-[9px] font-black text-yellow-400 uppercase shrink-0">
             <AlertTriangle size={8}/> LHC SkinForge 3D
           </div>
@@ -447,9 +449,16 @@ export default function SkinForge3D() {
           )}
 
           {/* Weapon selector */}
-          <div style={{position:'relative', zIndex:300}} className="shrink-0">
+          <div className="shrink-0">
             <button
-              onClick={() => setDropOpen(o => !o)}
+              ref={dropBtnRef}
+              onClick={() => {
+                if (dropBtnRef.current) {
+                  const r = dropBtnRef.current.getBoundingClientRect();
+                  setDropPos({ top: r.bottom + 4, left: r.left });
+                }
+                setDropOpen(o => !o);
+              }}
               style={{display:'flex', alignItems:'center', gap:8, padding:'5px 12px', background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:8, cursor:'pointer', userSelect:'none', color:'white', minWidth:150, outline:'none'}}>
               <div style={{display:'flex', flexDirection:'column', alignItems:'flex-start', flex:1, gap:1}}>
                 <span style={{fontSize:9, color:'#737373', lineHeight:1}}>{weapon.cat}</span>
@@ -459,21 +468,23 @@ export default function SkinForge3D() {
             </button>
 
             {dropOpen && (
-              <div
-                style={{position:'absolute', top:'calc(100% + 4px)', left:0, minWidth:200, maxHeight:340, overflowY:'auto', background:'#111', border:'1px solid rgba(255,255,255,0.1)', borderRadius:12, zIndex:9999, boxShadow:'0 8px 32px rgba(0,0,0,0.9)'}}>
-                {cats.map(cat => (
-                  <div key={cat}>
-                    <div style={{padding:'6px 12px 2px', fontSize:9, color:'#555', fontWeight:900, textTransform:'uppercase', letterSpacing:2, borderTop:'1px solid rgba(255,255,255,0.06)'}}>{cat}</div>
-                    {WEAPONS.filter(w => w.cat === cat).map(w => (
-                      <button key={w.id}
-                        onClick={() => { setWeapon(w); setDropOpen(false); }}
-                        style={{display:'block', width:'100%', textAlign:'left', padding:'7px 12px 7px 16px', fontSize:12, cursor:'pointer', background:weapon.id===w.id?'rgba(239,68,68,0.1)':'transparent', color:weapon.id===w.id?'#f87171':'#d4d4d4', userSelect:'none', border:'none', outline:'none'}}>
-                        {w.name}
-                      </button>
-                    ))}
-                  </div>
-                ))}
-              </div>
+              <>
+                <div onClick={() => setDropOpen(false)} style={{position:'fixed', inset:0, zIndex:9998}}/>
+                <div style={{position:'fixed', top:dropPos.top, left:dropPos.left, minWidth:200, maxHeight:340, overflowY:'auto', background:'#111', border:'1px solid rgba(255,255,255,0.1)', borderRadius:12, zIndex:9999, boxShadow:'0 8px 32px rgba(0,0,0,0.9)'}}>
+                  {cats.map(cat => (
+                    <div key={cat}>
+                      <div style={{padding:'6px 12px 2px', fontSize:9, color:'#555', fontWeight:900, textTransform:'uppercase', letterSpacing:2, borderTop:'1px solid rgba(255,255,255,0.06)'}}>{cat}</div>
+                      {WEAPONS.filter(w => w.cat === cat).map(w => (
+                        <button key={w.id}
+                          onClick={() => { setWeapon(w); setDropOpen(false); }}
+                          style={{display:'block', width:'100%', textAlign:'left', padding:'7px 12px 7px 16px', fontSize:12, cursor:'pointer', background:weapon.id===w.id?'rgba(239,68,68,0.1)':'transparent', color:weapon.id===w.id?'#f87171':'#d4d4d4', userSelect:'none', border:'none', outline:'none'}}>
+                          {w.name}
+                        </button>
+                      ))}
+                    </div>
+                  ))}
+                </div>
+              </>
             )}
           </div>
 
