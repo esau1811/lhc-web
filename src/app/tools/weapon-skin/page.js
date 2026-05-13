@@ -111,14 +111,18 @@ export default function SkinForge3D() {
   const [paintTarget,  setPaintTarget]  = useState('weapon'); // 'weapon' | 'supp'
 
   // Sticker state
-  const stickerImgRef  = useRef(null);
-  const stickerDragRef = useRef(null);
-  const stickerInputRef = useRef(null);
-  const [stickerSrc,   setStickerSrc]   = useState(null);
-  const [stickerX,     setStickerX]     = useState(0.5);
-  const [stickerY,     setStickerY]     = useState(0.5);
-  const [stickerScale, setStickerScale] = useState(0.3);
-  const [stickerActive,setStickerActive]= useState(false);
+  const stickerImgRef    = useRef(null);
+  const stickerDragRef   = useRef(null);
+  const stickerOverlayRef= useRef(null);
+  const stickerInputRef  = useRef(null);
+  const [stickerSrc,     setStickerSrc]   = useState(null);
+  const [stickerPxX,     setStickerPxX]   = useState(0);   // center px relative to 3D container
+  const [stickerPxY,     setStickerPxY]   = useState(0);
+  const [stickerScale,   setStickerScale] = useState(0.25); // % of container width (0-1)
+  const [stickerActive,  setStickerActive]= useState(false);
+  // 2D UV fallback coords (kept for 2D mode compatibility)
+  const [stickerX,       setStickerX]     = useState(0.5);
+  const [stickerY,       setStickerY]     = useState(0.5);
 
   // ---- THREE.JS INIT ----
   useEffect(() => {
@@ -604,45 +608,95 @@ export default function SkinForge3D() {
       stickerImgRef.current = img;
       setStickerSrc(url);
       setStickerActive(true);
-      setStickerX(0.5);
-      setStickerY(0.5);
-      setStickerScale(0.3);
-      // Switch to 2D mode so the user can position the sticker
-      setViewMode('2d');
+      setStickerScale(0.25);
+      // Stay in 3D mode — initialize position to center of 3D container
+      const el = mountRef.current;
+      if (el) {
+        const r = el.getBoundingClientRect();
+        setStickerPxX(r.width / 2);
+        setStickerPxY(r.height / 2);
+      }
+      setViewMode('3d');
+      setMode('rotate'); // let user rotate freely while positioning sticker
     };
     img.src = url;
   }, []);
 
+  // Stamp sticker onto texture using raycasting (3D mode)
   const stampSticker = useCallback(() => {
-    const tc = tcRef.current; const tt = ttRef.current; const img = stickerImgRef.current;
+    const tc = tcRef.current; const tt = ttRef.current;
+    const img = stickerImgRef.current;
+    const el = mountRef.current; const cam = camRef.current; const mesh = meshRef.current;
     if (!tc || !tt || !img) return;
+
+    // Helper: NDC → UV via raycaster
+    const getUV = (px, py) => {
+      if (!el || !cam || !mesh) return null;
+      const r = el.getBoundingClientRect();
+      const ndc = new THREE.Vector2((px / r.width) * 2 - 1, -(py / r.height) * 2 + 1);
+      const ray = new THREE.Raycaster();
+      ray.setFromCamera(ndc, cam);
+      const hits = ray.intersectObject(mesh, true);
+      return hits[0]?.uv ?? null;
+    };
+
+    // Get overlay bounding rect to know its exact screen size
+    const overlay = stickerOverlayRef.current;
+    const container = el?.getBoundingClientRect();
+    const overlayRect = overlay?.getBoundingClientRect();
+
+    let cx, cy, halfW, halfH;
+    if (overlayRect && container) {
+      cx    = overlayRect.left + overlayRect.width  / 2 - container.left;
+      cy    = overlayRect.top  + overlayRect.height / 2 - container.top;
+      halfW = overlayRect.width  / 2;
+      halfH = overlayRect.height / 2;
+    } else {
+      // Fallback to stored px position
+      cx = stickerPxX; cy = stickerPxY;
+      halfW = halfH = 50;
+    }
+
+    const centerUV = getUV(cx, cy);
+    if (!centerUV) {
+      alert('Coloca el sticker sobre el arma antes de sellar.');
+      return;
+    }
+
+    // Sample edge points to estimate UV extents
+    const rightUV  = getUV(cx + halfW, cy) ?? getUV(cx + halfW * 0.5, cy);
+    const bottomUV = getUV(cx, cy + halfH) ?? getUV(cx, cy + halfH * 0.5);
+
+    const uvW = rightUV  ? Math.abs(rightUV.x  - centerUV.x) * 2 : (halfW  / (el?.getBoundingClientRect().width  || 600)) * 0.6;
+    const uvH = bottomUV ? Math.abs(bottomUV.y - centerUV.y) * 2 : (halfH  / (el?.getBoundingClientRect().height || 400)) * 0.6;
+
     saveHistory();
     const ctx = tc.getContext('2d');
-    const w = stickerScale * TEX;
-    const h = (img.naturalHeight / img.naturalWidth) * w;
-    const x = stickerX * TEX - w / 2;
-    const y = stickerY * TEX - h / 2;
-    ctx.drawImage(img, x, y, w, h);
+    const texW = Math.max(uvW, 0.02) * TEX;
+    const texH = texW * (img.naturalHeight / img.naturalWidth);
+    const texX = centerUV.x * TEX - texW / 2;
+    const texY = centerUV.y * TEX - texH / 2;
+    ctx.drawImage(img, texX, texY, texW, texH);
     tt.needsUpdate = true;
     syncUV2D();
     setWeaponPainted(true);
     setStickerActive(false);
-  }, [stickerX, stickerY, stickerScale, syncUV2D, saveHistory]);
+    setMode('paint');
+  }, [stickerPxX, stickerPxY, stickerScale, syncUV2D, saveHistory]);
 
+  // Drag sticker in 3D viewport (px-space)
   const onStickerPointerDown = useCallback((e) => {
     e.preventDefault(); e.stopPropagation();
-    const canvasEl = uv2DRef.current; if (!canvasEl) return;
-    const r = canvasEl.getBoundingClientRect();
-    stickerDragRef.current = { sx: e.clientX, sy: e.clientY, ux: stickerX, uy: stickerY, dw: r.width, dh: r.height };
-  }, [stickerX, stickerY]);
+    stickerDragRef.current = { sx: e.clientX, sy: e.clientY, px: stickerPxX, py: stickerPxY };
+  }, [stickerPxX, stickerPxY]);
 
   // Window-level events for smooth sticker drag
   useEffect(() => {
     const onMove = (e) => {
       if (!stickerDragRef.current) return;
       const d = stickerDragRef.current;
-      setStickerX(Math.max(0, Math.min(1, d.ux + (e.clientX - d.sx) / d.dw)));
-      setStickerY(Math.max(0, Math.min(1, d.uy + (e.clientY - d.sy) / d.dh)));
+      setStickerPxX(d.px + (e.clientX - d.sx));
+      setStickerPxY(d.py + (e.clientY - d.sy));
     };
     const onUp = () => { stickerDragRef.current = null; };
     window.addEventListener('mousemove', onMove);
@@ -792,10 +846,43 @@ export default function SkinForge3D() {
                 </div>
               )}
               <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-10 pointer-events-none">
-                <div className={`text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full ${mode==='paint'?'bg-red-500/20 text-red-400 border border-red-500/30':'bg-blue-500/20 text-blue-400 border border-blue-500/30'}`}>
-                  {mode==='paint'?'MODO PINTURA — Click para pintar':'MODO ROTACIÓN — Arrastra para rotar'}
+                <div className={`text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full ${
+                  stickerActive ? 'bg-yellow-500/20 text-yellow-300 border border-yellow-500/40'
+                  : mode==='paint' ? 'bg-red-500/20 text-red-400 border border-red-500/30'
+                  : 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
+                }`}>
+                  {stickerActive
+                    ? '🖼️ ARRASTRA EL STICKER · ROTA EL ARMA LIBREMENTE · Ajusta tamaño en panel derecho · ✅ SELLAR'
+                    : mode==='paint' ? 'MODO PINTURA — Click para pintar' : 'MODO ROTACIÓN — Arrastra para rotar'}
                 </div>
               </div>
+
+              {/* 3D Sticker overlay — floats over the weapon model */}
+              {stickerActive && stickerSrc && viewMode === '3d' && (
+                <img
+                  ref={stickerOverlayRef}
+                  src={stickerSrc}
+                  alt="sticker overlay"
+                  draggable={false}
+                  onMouseDown={onStickerPointerDown}
+                  style={{
+                    position: 'absolute',
+                    left: stickerPxX,
+                    top:  stickerPxY,
+                    width: `${stickerScale * 100}%`,
+                    height: 'auto',
+                    transform: 'translate(-50%, -50%)',
+                    cursor: 'grab',
+                    userSelect: 'none',
+                    pointerEvents: 'all',
+                    zIndex: 15,
+                    outline: '2px dashed rgba(255,220,50,0.8)',
+                    outlineOffset: 3,
+                    filter: 'drop-shadow(0 0 6px rgba(255,220,50,0.5))',
+                    imageRendering: 'auto',
+                  }}
+                />
+              )}
             </div>
 
             {/* 2D UV Canvas */}
