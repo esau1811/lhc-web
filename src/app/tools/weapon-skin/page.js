@@ -420,19 +420,7 @@ export default function SkinForge3D() {
     const ndc = new THREE.Vector2(((clientX-r.left)/r.width)*2-1, -((clientY-r.top)/r.height)*2+1);
     const ray = new THREE.Raycaster();
     ray.setFromCamera(ndc, cam);
-    const camDir = new THREE.Vector3(); cam.getWorldDirection(camDir);
-    const hits = []; let closestDist = Infinity;
-    mesh.traverse(c => {
-      if (!c.isMesh) return;
-      for (const hit of ray.intersectObject(c, false)) {
-        if (!hit.face) { hits.push(hit); continue; }
-        const wn = hit.face.normal.clone().transformDirection(c.matrixWorld);
-        if (wn.dot(camDir) < 0) {
-          if (hit.distance < closestDist) { closestDist = hit.distance; hits.length = 0; hits.push(hit); }
-          else if (Math.abs(hit.distance - closestDist) < 0.05) hits.push(hit);
-        }
-      }
-    });
+    const hits = ray.intersectObject(mesh, true);
     return hits[0]?.uv ?? null;
   }, []);
 
