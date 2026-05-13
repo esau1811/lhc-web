@@ -4,6 +4,7 @@ const nextConfig = {
     outputFileTracingIncludes: {
       '/api/generate-rpf': [
         './src/app/api/generate-rpf/bin/keys/**',
+        './src/app/api/generate-rpf/assets/**',
       ],
     },
   },
