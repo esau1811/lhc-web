@@ -667,8 +667,10 @@ export default function SkinForge3D() {
         tex.needsUpdate = true;
         const aspect = img.naturalHeight / img.naturalWidth;
         const geom = new THREE.PlaneGeometry(1, aspect);
-        const mat  = new THREE.MeshBasicMaterial({
-          map: tex, transparent: true, depthTest: false, side: THREE.DoubleSide,
+        // Use MeshStandardMaterial with identical roughness/metalness so the preview shading perfectly matches the weapon lighting
+        const mat = new THREE.MeshStandardMaterial({
+          map: tex, transparent: true, depthTest: true, side: THREE.DoubleSide,
+          roughness: 0.55, metalness: 0.4
         });
         const pl = new THREE.Mesh(geom, mat);
         pl.renderOrder = 999;
@@ -721,13 +723,14 @@ export default function SkinForge3D() {
     stickerDraggingRef.current = false;
   }, []);
 
-  // Stamp: exact affine decal projection mapping onto the hit triangle face
+  // Stamp: true 3D Mesh Decal Volume Projection rasterization loop
+  // Maps the sticker pixels directly onto every covered 3D triangle's UV space perfectly seamlessly
   const stampSticker = useCallback(() => {
-    const tc   = tcRef.current; const tt = ttRef.current;
-    const img  = stickerImgRef.current;
-    const pl   = stickerPlaneMeshRef.current;
-    const hit  = stickerHitRef.current;
-    if (!tc || !tt || !img || !pl || !hit || !hit.face) {
+    const tc = tcRef.current; const tt = ttRef.current;
+    const img = stickerImgRef.current;
+    const pl = stickerPlaneMeshRef.current;
+    const hit = stickerHitRef.current;
+    if (!tc || !tt || !img || !pl || !hit || !hit.object) {
       alert('Coloca el sticker sobre la superficie del arma antes de sellar.');
       return;
     }
@@ -735,75 +738,162 @@ export default function SkinForge3D() {
     const geom = hit.object.geometry;
     if (!geom || !geom.attributes.position || !geom.attributes.uv) return;
 
+    saveHistory();
+
+    // Extract raw RGBA pixels of the source sticker image
+    const srcW = img.naturalWidth;
+    const srcH = img.naturalHeight;
+    const tmpCanvas = document.createElement('canvas');
+    tmpCanvas.width = srcW; tmpCanvas.height = srcH;
+    const tmpCtx = tmpCanvas.getContext('2d');
+    tmpCtx.drawImage(img, 0, 0);
+    const srcPixels = tmpCtx.getImageData(0, 0, srcW, srcH).data;
+
+    // Get direct target texture ImageData array for high-performance blending
+    const ctx = tc.getContext('2d');
+    const targetData = ctx.getImageData(0, 0, TEX, TEX);
+    const targetPixels = targetData.data;
+
     const posAttr = geom.attributes.position;
-    const uvAttr  = geom.attributes.uv;
-    const face    = hit.face;
-
-    // Get face vertices in world space
+    const uvAttr = geom.attributes.uv;
+    const indexAttr = geom.index;
     const objMat = hit.object.matrixWorld;
-    const vA = new THREE.Vector3().fromBufferAttribute(posAttr, face.a).applyMatrix4(objMat);
-    const vB = new THREE.Vector3().fromBufferAttribute(posAttr, face.b).applyMatrix4(objMat);
-    const vC = new THREE.Vector3().fromBufferAttribute(posAttr, face.c).applyMatrix4(objMat);
 
-    // Get face UVs
-    const uvA = new THREE.Vector2().fromBufferAttribute(uvAttr, face.a);
-    const uvB = new THREE.Vector2().fromBufferAttribute(uvAttr, face.b);
-    const uvC = new THREE.Vector2().fromBufferAttribute(uvAttr, face.c);
+    const totalTriangles = indexAttr ? indexAttr.count / 3 : posAttr.count / 3;
 
-    // Delta vectors on the triangle
-    const dP_AB = new THREE.Vector3().subVectors(vB, vA);
-    const dP_AC = new THREE.Vector3().subVectors(vC, vA);
-    const dUV_AB = new THREE.Vector2().subVectors(uvB, uvA);
-    const dUV_AC = new THREE.Vector2().subVectors(uvC, uvA);
-
-    // Precompute dot products for the 2x2 linear system
-    const dAB_AB = dP_AB.dot(dP_AB);
-    const dAB_AC = dP_AB.dot(dP_AC);
-    const dAC_AC = dP_AC.dot(dP_AC);
-    const det = dAB_AB * dAC_AC - dAB_AC * dAB_AC;
-
-    // Helper to convert any world vector V tangent to face into UV displacement
-    const worldToUV = (worldVec) => {
-      if (Math.abs(det) < 1e-10) return new THREE.Vector2(0, 0);
-      const b1 = worldVec.dot(dP_AB);
-      const b2 = worldVec.dot(dP_AC);
-      const alpha = (b1 * dAC_AC - b2 * dAB_AC) / det;
-      const beta  = (b2 * dAB_AB - b1 * dAB_AC) / det;
-      return new THREE.Vector2(
-        alpha * dUV_AB.x + beta * dUV_AC.x,
-        alpha * dUV_AB.y + beta * dUV_AC.y
-      );
-    };
-
-    // Sticker plane world axes scaled by its world half-dimensions
+    // Sticker plane coordinate frame in world space
+    const pCenter = pl.position.clone();
     const hw = pl.scale.x * 0.5;
     const hh = pl.scale.y * 0.5;
-    const right = new THREE.Vector3(1, 0, 0).applyQuaternion(pl.quaternion).multiplyScalar(hw);
-    const up    = new THREE.Vector3(0, 1, 0).applyQuaternion(pl.quaternion).multiplyScalar(hh);
+    const pRight = new THREE.Vector3(1, 0, 0).applyQuaternion(pl.quaternion);
+    const pUp = new THREE.Vector3(0, 1, 0).applyQuaternion(pl.quaternion);
+    const pNormal = new THREE.Vector3(0, 0, 1).applyQuaternion(pl.quaternion);
 
-    // Ensure right and up vectors are perfectly tangent to the hit face
-    const normal = face.normal.clone().transformDirection(objMat).normalize();
-    right.sub(normal.clone().multiplyScalar(right.dot(normal)));
-    up.sub(normal.clone().multiplyScalar(up.dot(normal)));
+    const vA = new THREE.Vector3(), vB = new THREE.Vector3(), vC = new THREE.Vector3();
+    const uvA = new THREE.Vector2(), uvB = new THREE.Vector2(), uvC = new THREE.Vector2();
+    const dP1 = new THREE.Vector3(), dP2 = new THREE.Vector3(), faceNormal = new THREE.Vector3();
 
-    const uX = worldToUV(right).multiplyScalar(TEX);
-    const uY = worldToUV(up).multiplyScalar(TEX);
+    // Helper to compute local decal space coordinates
+    const getDecalCoords = (pos) => {
+      const dx = pos.x - pCenter.x;
+      const dy = pos.y - pCenter.y;
+      const dz = pos.z - pCenter.z;
+      return {
+        x: (dx * pRight.x + dy * pRight.y + dz * pRight.z) / hw,
+        y: (dx * pUp.x + dy * pUp.y + dz * pUp.z) / hh,
+        z: dx * pNormal.x + dy * pNormal.y + dz * pNormal.z
+      };
+    };
 
-    const centerUV = hit.uv;
-    const e = centerUV.x * TEX;
-    const f = centerUV.y * TEX;
+    for (let i = 0; i < totalTriangles; i++) {
+      let aIdx, bIdx, cIdx;
+      if (indexAttr) {
+        aIdx = indexAttr.getX(i * 3);
+        bIdx = indexAttr.getX(i * 3 + 1);
+        cIdx = indexAttr.getX(i * 3 + 2);
+      } else {
+        aIdx = i * 3;
+        bIdx = i * 3 + 1;
+        cIdx = i * 3 + 2;
+      }
 
-    saveHistory();
-    const ctx = tc.getContext('2d');
-    ctx.save();
-    // Affine transform maps local space to pixel space exactly:
-    // local center (0,0) -> (e, f)
-    // local center-right (1,0) -> (e + uX.x, f + uX.y)
-    // local center-bottom (0,1) -> (e - uY.x, f - uY.y) because Three.js 'up' maps to sticker top
-    ctx.setTransform(uX.x, uX.y, -uY.x, -uY.y, e, f);
-    ctx.drawImage(img, -1, -1, 2, 2);
-    ctx.restore();
+      vA.fromBufferAttribute(posAttr, aIdx).applyMatrix4(objMat);
+      vB.fromBufferAttribute(posAttr, bIdx).applyMatrix4(objMat);
+      vC.fromBufferAttribute(posAttr, cIdx).applyMatrix4(objMat);
 
+      // Fast Decal Volume Overlap Filter
+      const dA = getDecalCoords(vA);
+      const dB = getDecalCoords(vB);
+      const dC = getDecalCoords(vC);
+
+      if (Math.max(dA.x, dB.x, dC.x) < -1.0 || Math.min(dA.x, dB.x, dC.x) > 1.0) continue;
+      if (Math.max(dA.y, dB.y, dC.y) < -1.0 || Math.min(dA.y, dB.y, dC.y) > 1.0) continue;
+      // Allow projection depth onto local front-facing surface layer (e.g. within +-0.08 world units)
+      if (Math.max(dA.z, dB.z, dC.z) < -0.08 || Math.min(dA.z, dB.z, dC.z) > 0.08) continue;
+
+      // Filter out back-facing or perpendicular triangles
+      dP1.subVectors(vB, vA);
+      dP2.subVectors(vC, vA);
+      faceNormal.crossVectors(dP1, dP2).normalize();
+      if (faceNormal.dot(pNormal) < 0.05) continue;
+
+      uvA.fromBufferAttribute(uvAttr, aIdx);
+      uvB.fromBufferAttribute(uvAttr, bIdx);
+      uvC.fromBufferAttribute(uvAttr, cIdx);
+
+      // UV space coordinates mapped to canvas pixels
+      const pAx = uvA.x * TEX, pAy = uvA.y * TEX;
+      const pBx = uvB.x * TEX, pBy = uvB.y * TEX;
+      const pCx = uvC.x * TEX, pCy = uvC.y * TEX;
+
+      // Integer pixel bounding box of this triangle in texture canvas
+      const xMin = Math.max(0, Math.floor(Math.min(pAx, pBx, pCx)));
+      const xMax = Math.min(TEX - 1, Math.ceil(Math.max(pAx, pBx, pCx)));
+      const yMin = Math.max(0, Math.floor(Math.min(pAy, pBy, pCy)));
+      const yMax = Math.min(TEX - 1, Math.ceil(Math.max(pAy, pBy, pCy)));
+
+      const v0x = pBx - pAx, v0y = pBy - pAy;
+      const v1x = pCx - pAx, v1y = pCy - pAy;
+      const d00 = v0x * v0x + v0y * v0y;
+      const d01 = v0x * v1x + v0y * v1y;
+      const d11 = v1x * v1x + v1y * v1y;
+      const denom = d00 * d11 - d01 * d01;
+      if (Math.abs(denom) < 1e-8) continue;
+      const invDenom = 1.0 / denom;
+
+      for (let py = yMin; py <= yMax; py++) {
+        for (let px = xMin; px <= xMax; px++) {
+          const v2x = (px + 0.5) - pAx;
+          const v2y = (py + 0.5) - pAy;
+          const d20 = v2x * v0x + v2y * v0y;
+          const d21 = v2x * v1x + v2y * v1y;
+          const v = (d11 * d20 - d01 * d21) * invDenom;
+          const w = (d00 * d21 - d01 * d20) * invDenom;
+          const u = 1.0 - v - w;
+
+          // Include slight tolerance to ensure complete edge rasterization coverage without seam line gaps
+          if (u >= -0.002 && v >= -0.002 && w >= -0.002) {
+            // Precise 3D world position of this pixel
+            const wx = u * vA.x + v * vB.x + w * vC.x;
+            const wy = u * vA.y + v * vB.y + w * vC.y;
+            const wz = u * vA.z + v * vB.z + w * vC.z;
+
+            // Project point back into local sticker decal plane coordinates
+            const dx = wx - pCenter.x;
+            const dy = wy - pCenter.y;
+            const dz = wz - pCenter.z;
+            const decX = (dx * pRight.x + dy * pRight.y + dz * pRight.z) / hw;
+            const decY = (dx * pUp.x + dy * pUp.y + dz * pUp.z) / hh;
+
+            if (decX >= -1.0 && decX <= 1.0 && decY >= -1.0 && decY <= 1.0) {
+              // Map to pixel in the source sticker image
+              const sx = Math.min(srcW - 1, Math.max(0, Math.floor((decX + 1.0) * 0.5 * srcW)));
+              const sy = Math.min(srcH - 1, Math.max(0, Math.floor((1.0 - decY) * 0.5 * srcH)));
+
+              const sIdx = (sy * srcW + sx) * 4;
+              const sAlpha = srcPixels[sIdx + 3] / 255.0;
+              if (sAlpha > 0.01) {
+                const tIdx = (py * TEX + px) * 4;
+                const baseR = targetPixels[tIdx];
+                const baseG = targetPixels[tIdx + 1];
+                const baseB = targetPixels[tIdx + 2];
+                const baseA = targetPixels[tIdx + 3] / 255.0;
+
+                // Standard Alpha Compositing Source-Over
+                const outAlpha = sAlpha + baseA * (1.0 - sAlpha);
+                targetPixels[tIdx]     = Math.min(255, (srcPixels[sIdx]     * sAlpha + baseR * (1.0 - sAlpha)) | 0);
+                targetPixels[tIdx + 1] = Math.min(255, (srcPixels[sIdx + 1] * sAlpha + baseG * (1.0 - sAlpha)) | 0);
+                targetPixels[tIdx + 2] = Math.min(255, (srcPixels[sIdx + 2] * sAlpha + baseB * (1.0 - sAlpha)) | 0);
+                targetPixels[tIdx + 3] = Math.min(255, (outAlpha * 255) | 0);
+              }
+            }
+          }
+        }
+      }
+    }
+
+    // Flush blended pixel data back to the GPU texture
+    ctx.putImageData(targetData, 0, 0);
     tt.needsUpdate = true;
     syncUV2D();
     setWeaponPainted(true);
