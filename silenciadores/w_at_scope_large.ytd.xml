@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TextureDictionary>
+ <Item>
+  <Name>w_at_scope_large</Name>
+  <Unk32 value="128" />
+  <Usage>DIFFUSE</Usage>
+  <UsageFlags>NOT_HALF, Y4, X16, X32, Y64, X256, UNK24</UsageFlags>
+  <ExtraFlags value="0" />
+  <Width value="512" />
+  <Height value="256" />
+  <MipLevels value="7" />
+  <Format>D3DFMT_DXT1</Format>
+  <FileName>w_at_scope_large.dds</FileName>
+ </Item>
+ <Item>
+  <Name>w_at_scope_large_n</Name>
+  <Unk32 value="128" />
+  <Usage>NORMAL</Usage>
+  <UsageFlags>Y4, X16, X32, Y64, X256, UNK24</UsageFlags>
+  <ExtraFlags value="0" />
+  <Width value="512" />
+  <Height value="256" />
+  <MipLevels value="7" />
+  <Format>D3DFMT_DXT1</Format>
+  <FileName>w_at_scope_large_n.dds</FileName>
+ </Item>
+ <Item>
+  <Name>w_at_scope_glass_s</Name>
+  <Unk32 value="128" />
+  <Usage>SPECULAR</Usage>
+  <UsageFlags>X32, X64, X128, UNK24</UsageFlags>
+  <ExtraFlags value="0" />
+  <Width value="256" />
+  <Height value="256" />
+  <MipLevels value="7" />
+  <Format>D3DFMT_DXT1</Format>
+  <FileName>w_at_scope_glass_s.dds</FileName>
+ </Item>
+ <Item>
+  <Name>w_at_scope_glass_n</Name>
+  <Unk32 value="128" />
+  <Usage>NORMAL</Usage>
+  <UsageFlags>X32, X64, X128, UNK24</UsageFlags>
+  <ExtraFlags value="0" />
+  <Width value="256" />
+  <Height value="256" />
+  <MipLevels value="7" />
+  <Format>D3DFMT_DXT1</Format>
+  <FileName>w_at_scope_glass_n.dds</FileName>
+ </Item>
+ <Item>
+  <Name>w_at_scope_large_s</Name>
+  <Unk32 value="128" />
+  <Usage>SPECULAR</Usage>
+  <UsageFlags>Y4, X16, X32, Y64, X256, UNK24</UsageFlags>
+  <ExtraFlags value="0" />
+  <Width value="512" />
+  <Height value="256" />
+  <MipLevels value="7" />
+  <Format>D3DFMT_DXT1</Format>
+  <FileName>w_at_scope_large_s.dds</FileName>
+ </Item>
+ <Item>
+  <Name>w_at_scope_glassw_at_scope_glass_a</Name>
+  <Unk32 value="128" />
+  <Usage>DIFFUSE</Usage>
+  <UsageFlags>NOT_HALF, X64, Y64, X256, UNK24</UsageFlags>
+  <ExtraFlags value="0" />
+  <Width value="256" />
+  <Height value="256" />
+  <MipLevels value="7" />
+  <Format>D3DFMT_DXT5</Format>
+  <FileName>w_at_scope_glassw_at_scope_glass_a.dds</FileName>
+ </Item>
+</TextureDictionary>

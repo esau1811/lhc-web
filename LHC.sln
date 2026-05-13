@@ -1,0 +1,43 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.5.2.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "scratch", "scratch", "{F2659A5F-1EBD-3F4F-4A30-86EC08B46DDA}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TextureExtractor", "scratch\TextureExtractor\TextureExtractor.csproj", "{02182789-222C-5E65-1405-D6B78D7FC3BA}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "YdrToObj", "scratch\YdrToObj\YdrToObj.csproj", "{7C576C11-41F9-8CB5-0551-3F1A57AFF96E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "YtdPatcher", "scratch\YtdPatcher\YtdPatcher.csproj", "{05A2100E-4421-6A51-EA3D-0800A7BD29FE}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{02182789-222C-5E65-1405-D6B78D7FC3BA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{02182789-222C-5E65-1405-D6B78D7FC3BA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{02182789-222C-5E65-1405-D6B78D7FC3BA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{02182789-222C-5E65-1405-D6B78D7FC3BA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7C576C11-41F9-8CB5-0551-3F1A57AFF96E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7C576C11-41F9-8CB5-0551-3F1A57AFF96E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7C576C11-41F9-8CB5-0551-3F1A57AFF96E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7C576C11-41F9-8CB5-0551-3F1A57AFF96E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{05A2100E-4421-6A51-EA3D-0800A7BD29FE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{05A2100E-4421-6A51-EA3D-0800A7BD29FE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{05A2100E-4421-6A51-EA3D-0800A7BD29FE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{05A2100E-4421-6A51-EA3D-0800A7BD29FE}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{02182789-222C-5E65-1405-D6B78D7FC3BA} = {F2659A5F-1EBD-3F4F-4A30-86EC08B46DDA}
+		{7C576C11-41F9-8CB5-0551-3F1A57AFF96E} = {F2659A5F-1EBD-3F4F-4A30-86EC08B46DDA}
+		{05A2100E-4421-6A51-EA3D-0800A7BD29FE} = {F2659A5F-1EBD-3F4F-4A30-86EC08B46DDA}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {E4272265-F3DD-402E-BF3F-2E6F465D23A4}
+	EndGlobalSection
+EndGlobal

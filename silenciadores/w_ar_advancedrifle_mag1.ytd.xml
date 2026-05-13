@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TextureDictionary>
+ <Item>
+  <Name>w_ar_advancedrifle_s</Name>
+  <Unk32 value="128" />
+  <Usage>SPECULAR</Usage>
+  <UsageFlags>Y4, X16, X32, Y64, UNK24</UsageFlags>
+  <ExtraFlags value="0" />
+  <Width value="256" />
+  <Height value="128" />
+  <MipLevels value="6" />
+  <Format>D3DFMT_DXT1</Format>
+  <FileName>w_ar_advancedrifle_s.dds</FileName>
+ </Item>
+ <Item>
+  <Name>w_ar_advancedrifle_n</Name>
+  <Unk32 value="128" />
+  <Usage>NORMAL</Usage>
+  <UsageFlags>Y4, X16, X32, Y64, UNK24</UsageFlags>
+  <ExtraFlags value="0" />
+  <Width value="256" />
+  <Height value="128" />
+  <MipLevels value="6" />
+  <Format>D3DFMT_DXT1</Format>
+  <FileName>w_ar_advancedrifle_n.dds</FileName>
+ </Item>
+ <Item>
+  <Name>w_ar_advancedrifle</Name>
+  <Unk32 value="128" />
+  <Usage>DIFFUSE</Usage>
+  <UsageFlags>HD_SPLIT, X8, X32, X64, X128, X512, UNK24</UsageFlags>
+  <ExtraFlags value="0" />
+  <Width value="512" />
+  <Height value="256" />
+  <MipLevels value="7" />
+  <Format>D3DFMT_DXT5</Format>
+  <FileName>w_ar_advancedrifle.dds</FileName>
+ </Item>
+</TextureDictionary>

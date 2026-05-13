@@ -107,6 +107,7 @@ export default function SkinForge3D() {
   const [suppStyle,    setSuppStyle]    = useState(0);    // 0 or 1
   const [suppColor,    setSuppColor]    = useState('#888888');
   const [suppPainted,  setSuppPainted]  = useState(false);
+  const [weaponPainted, setWeaponPainted] = useState(false);
   const [paintTarget,  setPaintTarget]  = useState('weapon'); // 'weapon' | 'supp'
 
   // ---- THREE.JS INIT ----
@@ -282,8 +283,12 @@ export default function SkinForge3D() {
     // Remove existing suppressor mesh if any
     if (suppMesh3DRef.current) {
       scene.remove(suppMesh3DRef.current);
-      if (suppMesh3DRef.current.geometry) suppMesh3DRef.current.geometry.dispose();
-      if (suppMesh3DRef.current.material) suppMesh3DRef.current.material.dispose();
+      suppMesh3DRef.current.traverse(c => {
+        if (c.isMesh) {
+          if (c.geometry) c.geometry.dispose();
+          if (c.material) c.material.dispose();
+        }
+      });
       suppMesh3DRef.current = null;
     }
 
@@ -299,38 +304,51 @@ export default function SkinForge3D() {
       tt.needsUpdate = true;
     }
 
+    const opts = getSuppOptions(weapon.id);
+    const suppId = opts ? opts[suppStyle] : null;
+    if (!suppId) return;
+
     // Measure weapon to attach perfectly at the muzzle tip
     const box = new THREE.Box3().setFromObject(parentMesh);
     const length = box.max.x - box.min.x;
     const height = box.max.y - box.min.y;
 
-    const isPistol = weapon.id.startsWith('w_pi_');
-    const suppLen = length * (isPistol ? 0.38 : 0.28);
-    
-    // Style 0 (Estilo 1): sleek round gunmetal. Style 1 (Estilo 2): tactical ribbed profile.
-    const radius  = height * (suppStyle === 1 ? 0.13 : 0.10);
-    const segments = suppStyle === 1 ? 12 : 32;
-    const geom = new THREE.CylinderGeometry(radius, radius, suppLen, segments);
-    geom.rotateZ(Math.PI / 2);
+    new OBJLoader().load(
+      `/models/${suppId}.obj`,
+      (suppObj) => {
+        // If disabled or cleared while loading asynchronously, abort adding
+        if (!suppEnabled) return;
 
-    const mat = new THREE.MeshStandardMaterial({
-      map: suppPainted ? tt : null,
-      color: suppPainted ? 0xffffff : (suppStyle === 1 ? 0x1a1a1a : 0x262626),
-      roughness: suppPainted ? 0.4 : 0.6,
-      metalness: suppPainted ? 0.6 : 0.8,
-    });
+        suppObj.traverse(c => {
+          if (c.isMesh) {
+            c.material = new THREE.MeshStandardMaterial({
+              map: suppPainted ? tt : null,
+              color: suppPainted ? 0xffffff : (suppStyle === 1 ? 0x222222 : 0x333333),
+              roughness: suppPainted ? 0.4 : 0.5,
+              metalness: suppPainted ? 0.6 : 0.7,
+              side: THREE.DoubleSide,
+            });
+            c.geometry.computeVertexNormals();
+          }
+        });
 
-    const mesh = new THREE.Mesh(geom, mat);
+        // The authentic converted suppressor extends towards positive X in its local bone space.
+        // Since the FiveM/GTA weapon points left (negative X), rotate the suppressor 180 degrees around Y.
+        suppObj.rotation.y = Math.PI;
 
-    // Pull suppressor leftward (length * 0.22) to attach completely flush against physical muzzle.
-    // GTA V exports include empty collision boxes extending far right of the visible barrel.
-    const muzzleX = box.max.x - length * 0.22 + suppLen / 2;
-    const muzzleY = (box.max.y + box.min.y) / 2 + height * (isPistol ? 0.15 : 0.06);
-    const muzzleZ = (box.max.z + box.min.z) / 2;
+        // Align base flush against the muzzle tip (extreme left bounding bound box.min.x)
+        const isPistol = weapon.id.startsWith('w_pi_');
+        const muzzleX = box.min.x + length * 0.01;
+        const muzzleY = box.max.y - height * (isPistol ? 0.21 : 0.25);
+        const muzzleZ = (box.max.z + box.min.z) / 2;
 
-    mesh.position.set(muzzleX, muzzleY, muzzleZ);
-    scene.add(mesh);
-    suppMesh3DRef.current = mesh;
+        suppObj.position.set(muzzleX, muzzleY, muzzleZ);
+        scene.add(suppObj);
+        suppMesh3DRef.current = suppObj;
+      },
+      undefined,
+      (err) => console.log('Error loading suppressor OBJ:', err)
+    );
 
   }, [suppEnabled, suppStyle, hasModel, weapon.id, suppPainted]);
 
@@ -372,6 +390,7 @@ export default function SkinForge3D() {
     ctx.globalAlpha = 1;
     ctx.globalCompositeOperation = 'source-over';
     tt.needsUpdate = true;
+    setWeaponPainted(true);
   }, [tool, color, size, opacity]);
 
   const floodFill = (ctx, sx, sy, fillColor) => {
@@ -463,6 +482,7 @@ export default function SkinForge3D() {
     const ctx=tc.getContext('2d'); ctx.clearRect(0,0,TEX,TEX);
     if(baseRef.current) ctx.drawImage(baseRef.current,0,0,TEX,TEX);
     tt.needsUpdate=true; syncUV2D();
+    setWeaponPainted(false);
   };
 
   // Helper: canvas → base64 pixels
@@ -485,6 +505,7 @@ export default function SkinForge3D() {
     setExporting(true); setStatus('Generando RPF...');
     try {
       const W = weapon.texW || 512, H = weapon.texH || 512;
+      // Siempre exportamos los píxeles del lienzo principal del arma para garantizar que el archivo YTD generado contenga la textura base nativa completa y evitar que el arma se vea negra en el juego.
       const b64 = canvasToB64(tc, W, H);
 
       // Suppressor

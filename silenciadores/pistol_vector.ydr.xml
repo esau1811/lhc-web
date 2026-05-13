@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Drawable>
+ <Name>pistol_vector.#dr</Name>
+ <BoundingSphereCenter x="1.820739" y="-19.5772514" z="1.02673" />
+ <BoundingSphereRadius value="0.124524" />
+ <BoundingBoxMin x="1.71074" y="-19.57742" z="0.968365" />
+ <BoundingBoxMax x="1.930737" y="-19.5770817" z="1.085095" />
+ <LodDistHigh value="9998" />
+ <LodDistMed value="9998" />
+ <LodDistLow value="9998" />
+ <LodDistVlow value="9998" />
+ <FlagsHigh value="1" />
+ <FlagsMed value="0" />
+ <FlagsLow value="0" />
+ <FlagsVlow value="0" />
+ <ShaderGroup>
+  <Shaders>
+   <Item>
+    <Name>default</Name>
+    <FileName />
+    <RenderBucket value="0" />
+    <Parameters>
+     <Item name="DiffuseSampler" type="Texture" />
+     <Item name="matMaterialColorScale" type="Vector" x="1" y="0" z="0" w="1" />
+     <Item name="HardAlphaBlend" type="Vector" x="1" y="0" z="0" w="0" />
+     <Item name="useTessellation" type="Vector" x="0" y="0" z="0" w="0" />
+     <Item name="wetnessMultiplier" type="Vector" x="1" y="0" z="0" w="0" />
+     <Item name="globalAnimUV1" type="Vector" x="0" y="1" z="0" w="0" />
+     <Item name="globalAnimUV0" type="Vector" x="1" y="0" z="0" w="0" />
+    </Parameters>
+   </Item>
+  </Shaders>
+ </ShaderGroup>
+ <Skeleton>
+  <Unknown1C value="0" />
+  <Unknown50 value="3283568608" />
+  <Unknown54 value="3954038922" />
+  <Unknown58 value="734772910" />
+  <Bones>
+   <Item>
+    <Name>PISTOL_VECTOR</Name>
+    <Tag value="0" />
+    <Index value="0" />
+    <ParentIndex value="-1" />
+    <SiblingIndex value="-1" />
+    <Flags>RotX, RotY, RotZ, TransX, TransY, TransZ</Flags>
+    <Translation x="0" y="0" z="0" />
+    <Rotation x="0.7113408" y="-0.01580129" z="0.0208425689" w="0.7023606" />
+    <Scale x="1" y="1" z="1" />
+    <TransformUnk x="0" y="1.97324145" z="-0.973241448" w="0" />
+   </Item>
+  </Bones>
+ </Skeleton>
+ <DrawableModelsHigh>
+  <Item>
+   <RenderMask value="255" />
+   <Flags value="0" />
+   <HasSkin value="0" />
+   <BoneIndex value="0" />
+   <Unknown1 value="0" />
+   <Geometries>
+    <Item>
+     <ShaderIndex value="0" />
+     <BoundingBoxMin x="-0.112792969" y="-0.0532226563" z="-0.0009765625" w="-0.112792969" />
+     <BoundingBoxMax x="0.112792969" y="0.06201172" z="0" w="0.112792969" />
+     <VertexBuffer>
+      <Flags value="0" />
+      <Layout type="GTAV1">
+       <Position />
+       <Normal />
+       <Colour0 />
+       <TexCoord0 />
+      </Layout>
+      <Data>
+       -0.07373047 0.06201172 -0.0009765625   -0.0078125 0.01171875 1   255 255 255 255   0 1
+       -0.112792969 -0.0532226563 0   -0.0078125 0.01171875 1   255 255 255 255   0 1
+       0.112792969 0.0522460938 0   -0.0078125 0.01171875 1   255 255 255 255   0 1
+      </Data>
+     </VertexBuffer>
+     <IndexBuffer>
+      <Data>0 1 2</Data>
+     </IndexBuffer>
+    </Item>
+   </Geometries>
+  </Item>
+ </DrawableModelsHigh>
+ <Lights />
+</Drawable>

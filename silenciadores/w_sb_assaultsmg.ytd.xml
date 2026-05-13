@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TextureDictionary>
+ <Item>
+  <Name>w_at_weapondecals</Name>
+  <Unk32 value="128" />
+  <Usage>SPECULAR</Usage>
+  <UsageFlags>X32, X64, X128, X512, X1024, UNK24</UsageFlags>
+  <ExtraFlags value="0" />
+  <Width value="1024" />
+  <Height value="1024" />
+  <MipLevels value="9" />
+  <Format>D3DFMT_DXT1</Format>
+  <FileName>w_at_weapondecals.dds</FileName>
+ </Item>
+ <Item>
+  <Name>w_sb_assaultsmg_n</Name>
+  <Unk32 value="128" />
+  <Usage>NORMAL</Usage>
+  <UsageFlags>X32, X64, X128, X512, X1024, X2048, UNK24</UsageFlags>
+  <ExtraFlags value="0" />
+  <Width value="2048" />
+  <Height value="2048" />
+  <MipLevels value="10" />
+  <Format>D3DFMT_DXT1</Format>
+  <FileName>w_sb_assaultsmg_n.dds</FileName>
+ </Item>
+ <Item>
+  <Name>w_at_weapondecals_n</Name>
+  <Unk32 value="128" />
+  <Usage>NORMAL</Usage>
+  <UsageFlags>X32, X64, X128, X512, X1024, UNK24</UsageFlags>
+  <ExtraFlags value="0" />
+  <Width value="1024" />
+  <Height value="1024" />
+  <MipLevels value="9" />
+  <Format>D3DFMT_DXT1</Format>
+  <FileName>w_at_weapondecals_n.dds</FileName>
+ </Item>
+ <Item>
+  <Name>w_sb_assaultsmg_dpal</Name>
+  <Unk32 value="128" />
+  <Usage>TINTPALETTE</Usage>
+  <UsageFlags>Y64, UNK24</UsageFlags>
+  <ExtraFlags value="0" />
+  <Width value="128" />
+  <Height value="32" />
+  <MipLevels value="1" />
+  <Format>D3DFMT_A8R8G8B8</Format>
+  <FileName>w_sb_assaultsmg_dpal.dds</FileName>
+ </Item>
+ <Item>
+  <Name>w_sb_assaultsmg_tint</Name>
+  <Unk32 value="128" />
+  <Usage>DIFFUSE</Usage>
+  <UsageFlags>HD_SPLIT, X32, X64, X128, UNK24</UsageFlags>
+  <ExtraFlags value="0" />
+  <Width value="256" />
+  <Height value="256" />
+  <MipLevels value="7" />
+  <Format>D3DFMT_DXT1</Format>
+  <FileName>w_sb_assaultsmg_tint.dds</FileName>
+ </Item>
+ <Item>
+  <Name>w_sb_assaultsmg_s</Name>
+  <Unk32 value="128" />
+  <Usage>SPECULAR</Usage>
+  <UsageFlags>X32, X64, X128, X512, X1024, X2048, UNK24</UsageFlags>
+  <ExtraFlags value="0" />
+  <Width value="2048" />
+  <Height value="2048" />
+  <MipLevels value="10" />
+  <Format>D3DFMT_DXT1</Format>
+  <FileName>w_sb_assaultsmg_s.dds</FileName>
+ </Item>
+ <Item>
+  <Name>w_at_weapondecalsw_at_weapondecals_a</Name>
+  <Unk32 value="128" />
+  <Usage>DIFFUSE</Usage>
+  <UsageFlags>X64, Y64, X256, Y512, Y1024, UNK24</UsageFlags>
+  <ExtraFlags value="0" />
+  <Width value="1024" />
+  <Height value="1024" />
+  <MipLevels value="9" />
+  <Format>D3DFMT_DXT5</Format>
+  <FileName>w_at_weapondecalsw_at_weapondecals_a.dds</FileName>
+ </Item>
+ <Item>
+  <Name>w_sb_assaultsmg</Name>
+  <Unk32 value="128" />
+  <Usage>DIFFUSE</Usage>
+  <UsageFlags>X64, Y64, X256, Y512, Y1024, Y2048, UNK24</UsageFlags>
+  <ExtraFlags value="0" />
+  <Width value="2048" />
+  <Height value="2048" />
+  <MipLevels value="10" />
+  <Format>D3DFMT_DXT5</Format>
+  <FileName>w_sb_assaultsmg.dds</FileName>
+ </Item>
+</TextureDictionary>

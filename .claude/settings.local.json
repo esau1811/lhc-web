@@ -2,7 +2,11 @@
   "permissions": {
     "allow": [
       "Bash(node -e ' *)",
-      "WebSearch"
+      "WebSearch",
+      "PowerShell(Copy-Item \"c:\\\\Users\\\\esau2\\\\.gemini\\\\antigravity\\\\scratch\\\\LHC\\\\scratch\\\\YtdPatcher\\\\publish-win\\\\YtdPatcher.exe\" \"c:\\\\Users\\\\esau2\\\\.gemini\\\\antigravity\\\\scratch\\\\LHC\\\\src\\\\app\\\\api\\\\generate-rpf\\\\bin\\\\YtdPatcher-win.exe\" -Force)",
+      "PowerShell(Copy-Item \"c:\\\\Users\\\\esau2\\\\.gemini\\\\antigravity\\\\scratch\\\\LHC\\\\scratch\\\\YtdPatcher\\\\publish-linux\\\\YtdPatcher\" \"c:\\\\Users\\\\esau2\\\\.gemini\\\\antigravity\\\\scratch\\\\LHC\\\\src\\\\app\\\\api\\\\generate-rpf\\\\bin\\\\YtdPatcher-linux\" -Force)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "WebFetch(domain:api.github.com)"
     ]
   }
 }

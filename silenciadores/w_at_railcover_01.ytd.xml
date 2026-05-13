@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TextureDictionary>
+ <Item>
+  <Name>w_at_railcover_n</Name>
+  <Unk32 value="128" />
+  <Usage>NORMAL</Usage>
+  <UsageFlags>Y4, X8, UNK24</UsageFlags>
+  <ExtraFlags value="0" />
+  <Width value="32" />
+  <Height value="16" />
+  <MipLevels value="3" />
+  <Format>D3DFMT_DXT1</Format>
+  <FileName>w_at_railcover_n.dds</FileName>
+ </Item>
+ <Item>
+  <Name>w_at_railcover_s</Name>
+  <Unk32 value="128" />
+  <Usage>SPECULAR</Usage>
+  <UsageFlags>Y4, X8, UNK24</UsageFlags>
+  <ExtraFlags value="0" />
+  <Width value="32" />
+  <Height value="16" />
+  <MipLevels value="3" />
+  <Format>D3DFMT_DXT1</Format>
+  <FileName>w_at_railcover_s.dds</FileName>
+ </Item>
+ <Item>
+  <Name>w_at_railcover</Name>
+  <Unk32 value="128" />
+  <Usage>DIFFUSE</Usage>
+  <UsageFlags>HD_SPLIT, Y4, X8, UNK24</UsageFlags>
+  <ExtraFlags value="0" />
+  <Width value="32" />
+  <Height value="16" />
+  <MipLevels value="3" />
+  <Format>D3DFMT_DXT1</Format>
+  <FileName>w_at_railcover.dds</FileName>
+ </Item>
+</TextureDictionary>

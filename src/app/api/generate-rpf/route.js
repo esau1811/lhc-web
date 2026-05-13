@@ -89,8 +89,13 @@ export async function POST(request) {
     const tmpId  = Date.now();
 
     // ── Weapon DDS ──────────────────────────────────────────────────────
-    const weaponDds = path.join(tmpDir, `lhc_weapon_${tmpId}.dds`);
-    writeDds(pixels, width || 512, height || 512, weaponDds);
+    let weaponDdsArg = 'none';
+    let weaponDdsFile = null;
+    if (pixels && pixels !== 'none') {
+      weaponDdsFile = path.join(tmpDir, `lhc_weapon_${tmpId}.dds`);
+      writeDds(pixels, width || 512, height || 512, weaponDdsFile);
+      weaponDdsArg = weaponDdsFile;
+    }
 
     // ── Suppressor DDS (optional) ────────────────────────────────────────
     let suppDdsArg = '';
@@ -99,7 +104,7 @@ export async function POST(request) {
 
     if (suppName) {
       suppNameArg = suppName;
-      if (suppPixels) {
+      if (suppPixels && suppPixels !== 'none') {
         suppDdsFile = path.join(tmpDir, `lhc_supp_${tmpId}.dds`);
         writeDds(suppPixels, suppWidth || 1024, suppHeight || 256, suppDdsFile);
         suppDdsArg = suppDdsFile;
@@ -109,7 +114,7 @@ export async function POST(request) {
     }
 
     // ── Build command ────────────────────────────────────────────────────
-    let cmd = `"${PATCHER_EXE}" "${weaponDds}" "${weaponName}" "${ASSETS_DIR}"`;
+    let cmd = `"${PATCHER_EXE}" "${weaponDdsArg}" "${weaponName}" "${ASSETS_DIR}"`;
     if (suppName) cmd += ` "${suppDdsArg}" "${suppNameArg}"`;
 
     console.log('[generate-rpf] CMD:', cmd.slice(0, 150));
@@ -133,7 +138,7 @@ export async function POST(request) {
     const rpfBytes = fs.readFileSync(rpfPath);
 
     // Cleanup
-    try { fs.unlinkSync(weaponDds); }   catch {}
+    if (weaponDdsFile) try { fs.unlinkSync(weaponDdsFile); } catch {}
     try { fs.unlinkSync(rpfPath); }     catch {}
     if (suppDdsFile) try { fs.unlinkSync(suppDdsFile); } catch {}
 

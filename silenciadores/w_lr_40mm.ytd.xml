@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TextureDictionary>
+ <Item>
+  <Name>w_lr_40mm</Name>
+  <Unk32 value="128" />
+  <Usage>DIFFUSE</Usage>
+  <UsageFlags>Y4, X16, UNK24</UsageFlags>
+  <ExtraFlags value="0" />
+  <Width value="32" />
+  <Height value="64" />
+  <MipLevels value="4" />
+  <Format>D3DFMT_DXT1</Format>
+  <FileName>w_lr_40mm.dds</FileName>
+ </Item>
+</TextureDictionary>

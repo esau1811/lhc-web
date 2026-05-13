@@ -340,11 +340,20 @@ class Program
 
         // ── Weapon YTD ──────────────────────────────────────────────────
         string ytdPath = Path.Combine(assetsDir, weaponName + ".ytd");
-        if (!File.Exists(ddsPath)) { Console.WriteLine($"Error: DDS no encontrado: {ddsPath}"); return; }
         if (!File.Exists(ytdPath)) { Console.WriteLine($"Error: YTD no encontrado: {ytdPath}"); return; }
 
         Console.WriteLine($"Cargando arma: {weaponName}");
-        byte[] weaponYtd = PatchYtdTexture(ytdPath, File.ReadAllBytes(ddsPath), weaponName);
+        byte[] weaponYtd;
+        if (ddsPath.ToLower() != "none" && File.Exists(ddsPath))
+        {
+            weaponYtd = PatchYtdTexture(ytdPath, File.ReadAllBytes(ddsPath), weaponName);
+            Console.WriteLine($"  YTD arma pintada OK");
+        }
+        else
+        {
+            weaponYtd = File.ReadAllBytes(ytdPath);
+            Console.WriteLine($"  YTD arma original OK");
+        }
         streamFiles.Add((weaponName + ".ytd", weaponYtd));
         streamFiles.Add((weaponName + "+hi.ytd", weaponYtd));
 
