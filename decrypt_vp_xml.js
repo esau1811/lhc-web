@@ -141,7 +141,7 @@ function parseRpf(buf, label) {
 }
 
 // ---- Main ----
-const vpPath = path.join(__dirname, 'test', 'Vintage Pistol (2).rpf');
+const vpPath = path.join(__dirname, 'test', 'MK2_SILENCIADA_LHC.rpf');
 const vpBuf  = fs.readFileSync(vpPath);
 
 const outer = parseRpf(vpBuf, 'Outer RPF');
@@ -155,19 +155,40 @@ const innerDlcBuf = vpBuf.slice(asmEntry.dataOff);
 const innerDlc = parseRpf(innerDlcBuf, 'Inner DLC RPF (assembly.xml data)');
 if (!innerDlc) process.exit(1);
 
+// Brute force NG key index
+const asmRaw = vpBuf.slice(asmEntry.dataOff, asmEntry.dataOff + Math.max(asmEntry.diskSize, 512));
+const asmSize = asmEntry.diskSize > 0 ? asmEntry.diskSize : asmEntry.f3;
+console.log(`\n--- Brute-forcing assembly.xml (length=${asmSize}) ---`);
+for (let c = 0; c < 101; c++) {
+    const idx = (jenkinsHash('assembly.xml') + asmSize + 101 - c) % 101;
+    const dec = decryptNgBlock(asmRaw.slice(0, 16), ngKeys[idx]);
+    if (dec.toString().includes('<?xml')) {
+        console.log(`FOUND CONSTANT: ${c} (keyIdx=${idx})`);
+        const fullDec = decryptNg(asmRaw.slice(0, asmSize), 'assembly.xml', asmSize);
+        // Wait, decryptNg uses the internal constant. I'll just do it manually here.
+        const out = Buffer.from(asmRaw.slice(0, asmSize));
+        for (let b = 0; b < Math.floor(asmSize/16); b++) {
+            decryptNgBlock(asmRaw.slice(b*16, b*16+16), ngKeys[idx]).copy(out, b*16);
+        }
+        console.log(out.toString('utf8').replace(/\0/g, ''));
+        break;
+    }
+}
+
 // Decrypt each XML file found in the inner DLC RPF
 for (const e of innerDlc.entries) {
-    if (e.type !== 'bin') continue;
+    if (e.type === 'bin' && e.name.endsWith('.xml')) {
+        const sizeToUse = e.diskSize > 0 ? e.diskSize : e.f3;
+        const rawData = innerDlcBuf.slice(e.dataOff, e.dataOff + Math.max(sizeToUse, 512));
+        console.log(`\n--- Decrypting "${e.name}" (keyIdx by name="${e.name}", length=${sizeToUse}) ---`);
+        const dec = decryptNg(rawData.slice(0, sizeToUse), e.name, sizeToUse);
+        const text = dec.toString('utf8').replace(/\0/g, '');
+        console.log(text.slice(0, 500));
+    }
+    
+    // If this is an RPF, parse its entries
     const rawData = innerDlcBuf.slice(e.dataOff, e.dataOff + Math.max(e.diskSize, 512));
-    // Try decryption with the file's own name and its disk size
-    const sizeToUse = e.diskSize > 0 ? e.diskSize : 512;
-    console.log(`\n--- Decrypting "${e.name}" (keyIdx by name="${e.name}", length=${sizeToUse}) ---`);
-    const dec = decryptNg(rawData.slice(0, sizeToUse), e.name, sizeToUse);
-    const text = dec.toString('utf8').replace(/\0/g, '');
-    console.log(text.slice(0, 2000));
-
-    // If this looks like an RPF, parse it too
-    if (rawData.readUInt32LE(0) === 0x52504637) {
-        const inner2 = parseRpf(rawData, `  Sub-RPF at "${e.name}"`);
+    if (rawData.length > 4 && rawData.readUInt32LE(0) === 0x52504637) {
+        parseRpf(rawData, `Sub-RPF "${e.name}"`);
     }
 }

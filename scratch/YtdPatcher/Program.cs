@@ -416,5 +416,19 @@ class Program
         string outPath = Path.Combine(Directory.GetCurrentDirectory(), weaponName + ".rpf");
         File.WriteAllBytes(outPath, outerRpf);
         Console.WriteLine($"\n✅ RPF generado: {outPath}");
+
+        // Also output raw YTD files directly for universal FiveM Server Resource streaming
+        string ytdOutPath = Path.Combine(Directory.GetCurrentDirectory(), weaponName + ".ytd");
+        File.WriteAllBytes(ytdOutPath, weaponYtd);
+        Console.WriteLine($"✅ YTD generado: {ytdOutPath}");
+
+        // If suppressor was modified/loaded, output its pure YTD too
+        if (!string.IsNullOrEmpty(suppName) && streamFiles.Any(f => f.name == suppName + ".ytd"))
+        {
+            var suppEntry = streamFiles.First(f => f.name == suppName + ".ytd");
+            string suppOutPath = Path.Combine(Directory.GetCurrentDirectory(), suppName + ".ytd");
+            File.WriteAllBytes(suppOutPath, suppEntry.data);
+            Console.WriteLine($"✅ Silenciador YTD generado: {suppOutPath}");
+        }
     }
 }

@@ -245,6 +245,7 @@ export default function SkinForge3D() {
   const buildMesh = (id, tc) => {
     const tt = new THREE.CanvasTexture(tc);
     tt.flipY = false;  // GTA5 OBJ: DX convention (V=0 at top)
+    tt.colorSpace = THREE.SRGBColorSpace;
     ttRef.current = tt;
 
     setStatus('Cargando modelo 3D...');
@@ -310,6 +311,7 @@ export default function SkinForge3D() {
     if (!tt && suppCanvasRef.current) {
       tt = new THREE.CanvasTexture(suppCanvasRef.current);
       tt.flipY = false;
+      tt.colorSpace = THREE.SRGBColorSpace;
       suppTt3DRef.current = tt;
     } else if (tt) {
       tt.needsUpdate = true;
@@ -665,6 +667,7 @@ export default function SkinForge3D() {
       disposeSticker();
       new THREE.TextureLoader().load(url, (tex) => {
         tex.needsUpdate = true;
+        tex.colorSpace = THREE.SRGBColorSpace;
         const aspect = img.naturalHeight / img.naturalWidth;
         const geom = new THREE.PlaneGeometry(1, aspect);
         // Use MeshStandardMaterial with identical roughness/metalness so the preview shading perfectly matches the weapon lighting
@@ -808,14 +811,14 @@ export default function SkinForge3D() {
 
       if (Math.max(dA.x, dB.x, dC.x) < -1.0 || Math.min(dA.x, dB.x, dC.x) > 1.0) continue;
       if (Math.max(dA.y, dB.y, dC.y) < -1.0 || Math.min(dA.y, dB.y, dC.y) > 1.0) continue;
-      // Allow projection depth onto local front-facing surface layer (e.g. within +-0.08 world units)
-      if (Math.max(dA.z, dB.z, dC.z) < -0.08 || Math.min(dA.z, dB.z, dC.z) > 0.08) continue;
+      // Allow rich volumetric projection depth to seamlessly seal around top/cylindrical weapon contours without clipping
+      if (Math.max(dA.z, dB.z, dC.z) < -0.18 || Math.min(dA.z, dB.z, dC.z) > 0.18) continue;
 
-      // Filter out back-facing or perpendicular triangles
+      // Filter out strictly back-facing triangles to prevent projection from penetrating onto the far/underneath side
       dP1.subVectors(vB, vA);
       dP2.subVectors(vC, vA);
       faceNormal.crossVectors(dP1, dP2).normalize();
-      if (faceNormal.dot(pNormal) < 0.05) continue;
+      if (faceNormal.dot(pNormal) <= 0.0) continue;
 
       uvA.fromBufferAttribute(uvAttr, aIdx);
       uvB.fromBufferAttribute(uvAttr, bIdx);
@@ -1279,9 +1282,9 @@ export default function SkinForge3D() {
             )}
             {/* Install guide */}
             <div className="bg-green-500/5 border border-green-500/20 rounded-xl p-3 text-[10px] text-zinc-400 space-y-1.5">
-              <p className="text-[9px] font-black text-green-400 uppercase">📥 Instalar en FiveM</p>
+              <p className="text-[9px] font-black text-green-400 uppercase">📥 Instalar en Carpeta Mods</p>
               <p>1. Descarga el ZIP con el botón <b>↓</b></p>
-              <p>2. Extrae en tu carpeta <code className="bg-white/10 px-1 rounded">FiveM.app\</code></p>
+              <p>2. Extrae el archivo <code className="bg-white/10 px-1 rounded">.rpf</code> en tu carpeta <code className="bg-white/10 px-1 rounded">FiveM.app\mods\</code></p>
               <p className="font-mono text-[9px] break-all text-zinc-500">FiveM.app\mods\{weapon.id}.rpf</p>
               <p>3. Reinicia FiveM</p>
             </div>
