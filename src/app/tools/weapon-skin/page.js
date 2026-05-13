@@ -108,21 +108,18 @@ export default function SkinForge3D() {
   const [suppColor,    setSuppColor]    = useState('#888888');
   const [suppPainted,  setSuppPainted]  = useState(false);
   const [weaponPainted, setWeaponPainted] = useState(false);
-  const [paintTarget,  setPaintTarget]  = useState('weapon'); // 'weapon' | 'supp'
+  const [paintTarget,  setPaintTarget]  = useState('weapon');
 
   // Sticker state
-  const stickerImgRef    = useRef(null);
-  const stickerDragRef   = useRef(null);
-  const stickerOverlayRef= useRef(null);
-  const stickerInputRef  = useRef(null);
-  const [stickerSrc,     setStickerSrc]   = useState(null);
-  const [stickerPxX,     setStickerPxX]   = useState(0);   // center px relative to 3D container
-  const [stickerPxY,     setStickerPxY]   = useState(0);
-  const [stickerScale,   setStickerScale] = useState(0.25); // % of container width (0-1)
-  const [stickerActive,  setStickerActive]= useState(false);
-  // 2D UV fallback coords (kept for 2D mode compatibility)
-  const [stickerX,       setStickerX]     = useState(0.5);
-  const [stickerY,       setStickerY]     = useState(0.5);
+  const stickerImgRef      = useRef(null);
+  const stickerPlaneMeshRef= useRef(null);   // THREE.Mesh plane preview in scene
+  const stickerHitRef      = useRef(null);   // last raycast hit {uv, point, face, object}
+  const stickerDraggingRef = useRef(false);
+  const stickerInputRef    = useRef(null);
+  const [stickerSrc,       setStickerSrc]      = useState(null);
+  const [stickerScale,     setStickerScale]    = useState(0.15);  // fraction of weapon length
+  const [stickerRotation,  setStickerRotation] = useState(0);     // degrees, around normal
+  const [stickerActive,    setStickerActive]   = useState(false);
 
   // ---- THREE.JS INIT ----
   useEffect(() => {
@@ -601,6 +598,52 @@ export default function SkinForge3D() {
   }, [suppEnabled, resetSuppCanvas]);
 
   // ---- STICKER LOGIC ----
+
+  // Helper: dispose current sticker plane
+  const disposeSticker = useCallback(() => {
+    const pl = stickerPlaneMeshRef.current;
+    if (pl) {
+      sceneRef.current?.remove(pl);
+      pl.geometry.dispose();
+      if (Array.isArray(pl.material)) pl.material.forEach(m => m.dispose());
+      else pl.material.dispose();
+      stickerPlaneMeshRef.current = null;
+    }
+    stickerHitRef.current = null;
+    stickerDraggingRef.current = false;
+  }, []);
+
+  // Place / move sticker plane to the surface point under mouse
+  const moveStickerToSurface = useCallback((clientX, clientY) => {
+    const el = mountRef.current; const cam = camRef.current; const mesh = meshRef.current;
+    const plane = stickerPlaneMeshRef.current;
+    if (!el || !cam || !mesh || !plane) return;
+
+    const r = el.getBoundingClientRect();
+    const ndc = new THREE.Vector2(
+      ((clientX - r.left) / r.width)  * 2 - 1,
+      -((clientY - r.top)  / r.height) * 2 + 1
+    );
+    const ray = new THREE.Raycaster();
+    ray.setFromCamera(ndc, cam);
+    const hits = ray.intersectObject(mesh, true);
+    if (!hits.length) return;
+
+    const hit = hits[0];
+    stickerHitRef.current = hit;
+
+    // Orient plane: face the camera direction (so it’s always visible)
+    plane.position.copy(hit.point);
+    const camDir = new THREE.Vector3().subVectors(cam.position, hit.point).normalize();
+    const wn = hit.face.normal.clone().transformDirection(hit.object.matrixWorld);
+    const facing = wn.dot(camDir) > 0 ? wn : wn.negate();
+    const tgt = hit.point.clone().add(facing);
+    plane.lookAt(tgt);
+    // Apply user rotation around normal
+    plane.rotateZ(stickerRotation * Math.PI / 180);
+    plane.position.copy(hit.point).addScaledVector(facing, 0.0003); // tiny offset to avoid z-fight
+  }, [stickerRotation]);
+
   const loadSticker = useCallback((file) => {
     const url = URL.createObjectURL(file);
     const img = new Image();
@@ -608,71 +651,122 @@ export default function SkinForge3D() {
       stickerImgRef.current = img;
       setStickerSrc(url);
       setStickerActive(true);
-      setStickerScale(0.25);
-      // Stay in 3D mode — initialize position to center of 3D container
-      const el = mountRef.current;
-      if (el) {
-        const r = el.getBoundingClientRect();
-        setStickerPxX(r.width / 2);
-        setStickerPxY(r.height / 2);
-      }
+      setStickerRotation(0);
       setViewMode('3d');
-      setMode('rotate'); // let user rotate freely while positioning sticker
+
+      // Build Three.js plane preview
+      disposeSticker();
+      new THREE.TextureLoader().load(url, (tex) => {
+        tex.needsUpdate = true;
+        const aspect = img.naturalHeight / img.naturalWidth;
+        const geom = new THREE.PlaneGeometry(1, aspect);
+        const mat  = new THREE.MeshBasicMaterial({
+          map: tex, transparent: true, depthTest: false, side: THREE.DoubleSide,
+        });
+        const pl = new THREE.Mesh(geom, mat);
+        pl.renderOrder = 999;
+        // Initial scale: 15% of weapon length
+        const box = meshRef.current ? new THREE.Box3().setFromObject(meshRef.current) : null;
+        const weaponLen = box ? (box.max.x - box.min.x) : 0.2;
+        pl.scale.set(stickerScale * weaponLen, stickerScale * weaponLen * aspect, 1);
+        // Place at weapon center initially
+        if (meshRef.current) {
+          const c = box.getCenter(new THREE.Vector3());
+          pl.position.copy(c);
+          pl.lookAt(camRef.current?.position ?? new THREE.Vector3(0, 0, 5));
+        }
+        sceneRef.current?.add(pl);
+        stickerPlaneMeshRef.current = pl;
+      });
     };
     img.src = url;
+  }, [stickerScale, disposeSticker]);
+
+  // Sync plane scale & rotation whenever sliders change
+  useEffect(() => {
+    const pl = stickerPlaneMeshRef.current;
+    const img = stickerImgRef.current;
+    const mesh = meshRef.current;
+    if (!pl || !img) return;
+    const aspect = img.naturalHeight / img.naturalWidth;
+    const box = mesh ? new THREE.Box3().setFromObject(mesh) : null;
+    const weaponLen = box ? (box.max.x - box.min.x) : 0.2;
+    pl.scale.set(stickerScale * weaponLen, stickerScale * weaponLen * aspect, 1);
+    // Re-apply rotation if we have a stored hit
+    if (stickerHitRef.current) moveStickerToSurface(
+      // dummy — re-position at last hit world point by manually setting:
+      // (we can’t call moveStickerToSurface without clientX/Y here, so just rotate in-place)
+      0, 0
+    );
+  }, [stickerScale, stickerRotation, moveStickerToSurface]);
+
+  // Mouse handlers for sticker viewport dragging
+  const onStickerViewportDown = useCallback((e) => {
+    if (!stickerActive) return false;
+    e.stopPropagation();
+    stickerDraggingRef.current = true;
+    moveStickerToSurface(e.clientX, e.clientY);
+    return true;
+  }, [stickerActive, moveStickerToSurface]);
+
+  const onStickerViewportMove = useCallback((e) => {
+    if (!stickerActive || !stickerDraggingRef.current) return;
+    moveStickerToSurface(e.clientX, e.clientY);
+  }, [stickerActive, moveStickerToSurface]);
+
+  const onStickerViewportUp = useCallback(() => {
+    stickerDraggingRef.current = false;
   }, []);
 
-  // Stamp sticker onto texture using raycasting (3D mode)
+  // Stamp: project plane world-space bounds → UV via local density
   const stampSticker = useCallback(() => {
-    const tc = tcRef.current; const tt = ttRef.current;
+    const tc  = tcRef.current; const tt = ttRef.current;
     const img = stickerImgRef.current;
-    const el = mountRef.current; const cam = camRef.current; const mesh = meshRef.current;
-    if (!tc || !tt || !img) return;
+    const pl  = stickerPlaneMeshRef.current;
+    const mesh = meshRef.current;
+    if (!tc || !tt || !img || !pl || !mesh) return;
 
-    // Helper: NDC → UV via raycaster
-    const getUV = (px, py) => {
-      if (!el || !cam || !mesh) return null;
-      const r = el.getBoundingClientRect();
-      const ndc = new THREE.Vector2((px / r.width) * 2 - 1, -(py / r.height) * 2 + 1);
-      const ray = new THREE.Raycaster();
-      ray.setFromCamera(ndc, cam);
-      const hits = ray.intersectObject(mesh, true);
-      return hits[0]?.uv ?? null;
+    // Build raycaster helper in world space
+    const castUV = (origin, dir) => {
+      const r = new THREE.Raycaster(origin, dir.normalize(), 0, 5);
+      return r.intersectObject(mesh, true)[0]?.uv ?? null;
     };
 
-    // Get overlay bounding rect to know its exact screen size
-    const overlay = stickerOverlayRef.current;
-    const container = el?.getBoundingClientRect();
-    const overlayRect = overlay?.getBoundingClientRect();
+    // Get plane world-space axes and center
+    const right  = new THREE.Vector3(1, 0, 0).applyQuaternion(pl.quaternion);
+    const up     = new THREE.Vector3(0, 1, 0).applyQuaternion(pl.quaternion);
+    const fwd    = new THREE.Vector3(0, 0, 1).applyQuaternion(pl.quaternion);
+    const center = pl.position.clone();
+    const hw = pl.scale.x * 0.5;  // half-width in world units
+    const hh = pl.scale.y * 0.5;  // half-height in world units
 
-    let cx, cy, halfW, halfH;
-    if (overlayRect && container) {
-      cx    = overlayRect.left + overlayRect.width  / 2 - container.left;
-      cy    = overlayRect.top  + overlayRect.height / 2 - container.top;
-      halfW = overlayRect.width  / 2;
-      halfH = overlayRect.height / 2;
-    } else {
-      // Fallback to stored px position
-      cx = stickerPxX; cy = stickerPxY;
-      halfW = halfH = 50;
-    }
+    // Cast center ray from slightly in front of plane surface
+    const offset = fwd.clone().multiplyScalar(0.05);
+    const dir    = fwd.clone().negate();
 
-    const centerUV = getUV(cx, cy);
+    const centerUV = castUV(center.clone().add(offset), dir);
     if (!centerUV) {
-      alert('Coloca el sticker sobre el arma antes de sellar.');
+      alert('Coloca el sticker sobre la superficie del arma.');
       return;
     }
 
-    // Sample edge points to estimate UV extents
-    const rightUV  = getUV(cx + halfW, cy) ?? getUV(cx + halfW * 0.5, cy);
-    const bottomUV = getUV(cx, cy + halfH) ?? getUV(cx, cy + halfH * 0.5);
+    // Estimate local UV density by casting micro-offset rays
+    const microDelta = hw * 0.05; // tiny offset to measure UV/world ratio
+    const rUV = castUV(center.clone().add(offset).addScaledVector(right, microDelta), dir);
+    const uUV = castUV(center.clone().add(offset).addScaledVector(up,    microDelta), dir);
 
-    const uvW = rightUV  ? Math.abs(rightUV.x  - centerUV.x) * 2 : (halfW  / (el?.getBoundingClientRect().width  || 600)) * 0.6;
-    const uvH = bottomUV ? Math.abs(bottomUV.y - centerUV.y) * 2 : (halfH  / (el?.getBoundingClientRect().height || 400)) * 0.6;
+    // UV units per world unit at the hit point
+    const densityU = rUV ? Math.abs(rUV.x - centerUV.x) / microDelta : 1.0;
+    const densityV = uUV ? Math.abs(uUV.y - centerUV.y) / microDelta : 1.0;
+
+    // Use average density to compute UV size (handles distorted UV islands)
+    const avgDensity = (densityU + densityV) / 2;
+    const uvW = hw * 2 * avgDensity;
+    const uvH = hh * 2 * avgDensity;
 
     saveHistory();
     const ctx = tc.getContext('2d');
-    const texW = Math.max(uvW, 0.02) * TEX;
+    const texW = Math.max(uvW, 0.01) * TEX;
     const texH = texW * (img.naturalHeight / img.naturalWidth);
     const texX = centerUV.x * TEX - texW / 2;
     const texY = centerUV.y * TEX - texH / 2;
@@ -680,29 +774,17 @@ export default function SkinForge3D() {
     tt.needsUpdate = true;
     syncUV2D();
     setWeaponPainted(true);
+    disposeSticker();
     setStickerActive(false);
+    setStickerSrc(null);
     setMode('paint');
-  }, [stickerPxX, stickerPxY, stickerScale, syncUV2D, saveHistory]);
+  }, [syncUV2D, saveHistory, disposeSticker]);
 
-  // Drag sticker in 3D viewport (px-space)
-  const onStickerPointerDown = useCallback((e) => {
-    e.preventDefault(); e.stopPropagation();
-    stickerDragRef.current = { sx: e.clientX, sy: e.clientY, px: stickerPxX, py: stickerPxY };
-  }, [stickerPxX, stickerPxY]);
-
-  // Window-level events for smooth sticker drag
-  useEffect(() => {
-    const onMove = (e) => {
-      if (!stickerDragRef.current) return;
-      const d = stickerDragRef.current;
-      setStickerPxX(d.px + (e.clientX - d.sx));
-      setStickerPxY(d.py + (e.clientY - d.sy));
-    };
-    const onUp = () => { stickerDragRef.current = null; };
-    window.addEventListener('mousemove', onMove);
-    window.addEventListener('mouseup', onUp);
-    return () => { window.removeEventListener('mousemove', onMove); window.removeEventListener('mouseup', onUp); };
-  }, []);
+  const cancelSticker = useCallback(() => {
+    disposeSticker();
+    setStickerActive(false);
+    setStickerSrc(null);
+  }, [disposeSticker]);
 
   const TOOLS = [
     { id:'brush',  icon:<Paintbrush size={15}/>, label:'Pincel'   },
@@ -828,9 +910,12 @@ export default function SkinForge3D() {
             {/* 3D Viewport — always in DOM, hidden in 2D mode */}
             <div
               ref={mountRef}
-              className={`absolute inset-0 ${mode==='rotate'?'cursor-grab':'cursor-crosshair'}`}
+              className={`absolute inset-0 ${stickerActive ? 'cursor-crosshair' : mode==='rotate' ? 'cursor-grab' : 'cursor-crosshair'}`}
               style={{display: viewMode==='3d' ? 'block' : 'none'}}
-              onMouseDown={on3DDown} onMouseMove={on3DMove} onMouseUp={onUp} onMouseLeave={onUp}
+              onMouseDown={stickerActive ? onStickerViewportDown : on3DDown}
+              onMouseMove={stickerActive ? onStickerViewportMove : on3DMove}
+              onMouseUp={stickerActive ? onStickerViewportUp : onUp}
+              onMouseLeave={stickerActive ? onStickerViewportUp : onUp}
               onTouchStart={onTouch3DDown} onTouchMove={onTouch3DMove} onTouchEnd={onUp}>
               {loading && (
                 <div className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none">
@@ -852,37 +937,10 @@ export default function SkinForge3D() {
                   : 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
                 }`}>
                   {stickerActive
-                    ? '🖼️ ARRASTRA EL STICKER · ROTA EL ARMA LIBREMENTE · Ajusta tamaño en panel derecho · ✅ SELLAR'
+                    ? '🖼️ Arrastra el sticker sobre el arma · Gira cámara con OrbitControls · Ajusta tamaño · ✅ Sellar'
                     : mode==='paint' ? 'MODO PINTURA — Click para pintar' : 'MODO ROTACIÓN — Arrastra para rotar'}
                 </div>
               </div>
-
-              {/* 3D Sticker overlay — floats over the weapon model */}
-              {stickerActive && stickerSrc && viewMode === '3d' && (
-                <img
-                  ref={stickerOverlayRef}
-                  src={stickerSrc}
-                  alt="sticker overlay"
-                  draggable={false}
-                  onMouseDown={onStickerPointerDown}
-                  style={{
-                    position: 'absolute',
-                    left: stickerPxX,
-                    top:  stickerPxY,
-                    width: `${stickerScale * 100}%`,
-                    height: 'auto',
-                    transform: 'translate(-50%, -50%)',
-                    cursor: 'grab',
-                    userSelect: 'none',
-                    pointerEvents: 'all',
-                    zIndex: 15,
-                    outline: '2px dashed rgba(255,220,50,0.8)',
-                    outlineOffset: 3,
-                    filter: 'drop-shadow(0 0 6px rgba(255,220,50,0.5))',
-                    imageRendering: 'auto',
-                  }}
-                />
-              )}
             </div>
 
             {/* 2D UV Canvas */}
@@ -1032,22 +1090,29 @@ export default function SkinForge3D() {
                 <>
                   <div className="mt-2 text-[9px] text-zinc-500 font-black uppercase tracking-widest">Tamaño</div>
                   <div className="flex items-center gap-2 mt-1">
-                    <input type="range" min={0.03} max={0.85} step={0.01} value={stickerScale}
+                    <input type="range" min={0.03} max={0.6} step={0.01} value={stickerScale}
                       onChange={e => setStickerScale(+e.target.value)}
                       className="flex-1 h-1 rounded accent-yellow-400" />
                     <span className="text-[9px] font-black text-yellow-400 w-8 text-right">{Math.round(stickerScale * 100)}%</span>
+                  </div>
+                  <div className="mt-2 text-[9px] text-zinc-500 font-black uppercase tracking-widest">Rotación</div>
+                  <div className="flex items-center gap-2 mt-1">
+                    <input type="range" min={0} max={360} step={1} value={stickerRotation}
+                      onChange={e => setStickerRotation(+e.target.value)}
+                      className="flex-1 h-1 rounded accent-orange-400" />
+                    <span className="text-[9px] font-black text-orange-400 w-8 text-right">{stickerRotation}°</span>
                   </div>
                   <div className="flex gap-1.5 mt-2">
                     <button onClick={stampSticker}
                       className="flex-1 py-1.5 bg-green-500/20 hover:bg-green-500/40 text-green-400 rounded-lg text-[10px] font-black transition-all border border-green-500/30">
                       ✅ Sellar
                     </button>
-                    <button onClick={() => setStickerActive(false)}
+                    <button onClick={cancelSticker}
                       className="flex-1 py-1.5 bg-white/5 hover:bg-red-500/20 text-zinc-400 hover:text-red-400 rounded-lg text-[10px] font-black transition-all">
                       ❌ Cancelar
                     </button>
                   </div>
-                  <div className="text-[9px] text-zinc-600 mt-1.5 leading-tight">Arrastra el sticker en la vista UV 2D para posicionarlo</div>
+                  <div className="text-[9px] text-zinc-600 mt-1.5 leading-tight">Arrastra el sticker sobre el arma en el visor 3D. El plano 3D se pega a la superficie y rota con la cámara.</div>
                 </>
               )}
             </div>
