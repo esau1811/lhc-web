@@ -154,10 +154,10 @@ class Program
         return BuildRpf7(5, nl.ToArray(), files, (bw, secs) =>
         {
             WriteDirEntry(bw, 0,         1, 3);
-            WriteBinEntry(bw, noContent, (uint)contentXml.Length,   secs[0], (uint)contentXml.Length);
-            WriteBinEntry(bw, noSetup,   (uint)setup2Xml.Length,    secs[1], (uint)setup2Xml.Length);
+            WriteBinEntry(bw, noContent, 0u, secs[0], (uint)contentXml.Length);
+            WriteBinEntry(bw, noSetup,   0u, secs[1], (uint)setup2Xml.Length);
             WriteDirEntry(bw, noX64,     4, 1);
-            WriteBinEntry(bw, noStream,  (uint)streamingRpf.Length, secs[2], (uint)streamingRpf.Length);
+            WriteBinEntry(bw, noStream,  0u, secs[2], (uint)streamingRpf.Length);
         });
     }
 
@@ -193,8 +193,6 @@ class Program
         // [1] BIN "assembly.xml"
         // [2] DIR "content"   firstChild=3  count=1
         // [3] BIN "dlc.rpf"
-        var assemblyXmlCompressed = ZlibCompress(assemblyXml);
-
         var nl = new List<byte> { 0 };
         uint noAssembly = (uint)nl.Count; nl.AddRange(Encoding.ASCII.GetBytes("assembly.xml")); nl.Add(0);
         uint noContent  = (uint)nl.Count; nl.AddRange(Encoding.ASCII.GetBytes("content"));      nl.Add(0);
@@ -203,16 +201,17 @@ class Program
 
         var files = new[]
         {
-            ("assembly.xml", assemblyXmlCompressed),
+            ("assembly.xml", assemblyXml),
             ("SKin.rpf",     dlcRpf),
         };
 
+        // diskSize=0 means uncompressed (GTA5 RPF7 convention); f3=actual size on disk
         return BuildRpf7(4, nl.ToArray(), files, (bw, secs) =>
         {
             WriteDirEntry(bw, 0,          1, 2);
-            WriteBinEntry(bw, noAssembly, (uint)assemblyXmlCompressed.Length, secs[0], (uint)assemblyXml.Length);
+            WriteBinEntry(bw, noAssembly, 0u, secs[0], (uint)assemblyXml.Length);
             WriteDirEntry(bw, noContent,  3, 1);
-            WriteBinEntry(bw, noSkin,     (uint)dlcRpf.Length,                secs[1], (uint)dlcRpf.Length);
+            WriteBinEntry(bw, noSkin,     0u, secs[1], (uint)dlcRpf.Length);
         });
     }
 
