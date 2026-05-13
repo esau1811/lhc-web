@@ -4,7 +4,7 @@ import Header from '@/components/Header';
 import * as THREE from 'three';
 import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader.js';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
-import { Paintbrush, Eraser, Download, RotateCcw, Undo2, ChevronDown, AlertTriangle, Minus, Plus, Droplets, Wind } from 'lucide-react';
+import { Paintbrush, Eraser, Download, RotateCcw, Undo2, ChevronDown, AlertTriangle, Minus, Plus, Droplets, Wind, Crosshair } from 'lucide-react';
 import { HexColorPicker } from 'react-colorful';
 
 const WEAPONS = [
@@ -49,8 +49,24 @@ const WEAPONS = [
   { id: 'w_lr_grenadelauncher', name: 'Grenade Launcher',    cat: 'Heavy'    },
 ];
 
+// Suppressor mapping: weapon prefix → available suppressor models
+const SUPP_MAP = {
+  'w_pi_': ['w_at_pi_supp',   'w_at_pi_supp_2'],
+  'w_sb_': ['w_at_ar_supp',   'w_at_ar_supp_02'],
+  'w_ar_': ['w_at_ar_supp',   'w_at_ar_supp_02'],
+  'w_sr_': ['w_at_sr_supp',   'w_at_sr_supp_2'],
+};
+
+function getSuppOptions(weaponId) {
+  for (const [prefix, opts] of Object.entries(SUPP_MAP)) {
+    if (weaponId.startsWith(prefix)) return opts;
+  }
+  return null; // no suppressor for this category
+}
+
 const SWATCHES = ['#ffffff','#000000','#ef4444','#f97316','#eab308','#22c55e','#3b82f6','#8b5cf6','#ec4899','#78716c'];
 const TEX = 1024;
+const SUPP_W = 1024, SUPP_H = 256; // suppressor texture is 4:1
 
 export default function SkinForge3D() {
   const mountRef   = useRef(null);
@@ -81,6 +97,14 @@ export default function SkinForge3D() {
   const [hasModel,  setHasModel]  = useState(false);
   const [status,    setStatus]    = useState('Cargando...');
   const [exporting, setExporting] = useState(false);
+
+  // Suppressor state
+  const suppCanvasRef  = useRef(null);
+  const suppPaintRef   = useRef(false);
+  const [suppEnabled,  setSuppEnabled]  = useState(false);
+  const [suppStyle,    setSuppStyle]    = useState(0);    // 0 or 1
+  const [suppColor,    setSuppColor]    = useState('#888888');
+  const [paintTarget,  setPaintTarget]  = useState('weapon'); // 'weapon' | 'supp'
 
   // ---- THREE.JS INIT ----
   useEffect(() => {
@@ -377,26 +401,49 @@ export default function SkinForge3D() {
     tt.needsUpdate=true; syncUV2D();
   };
 
+  // Helper: canvas → base64 pixels
+  const canvasToB64 = (canvas, w, h) => {
+    const tmp = document.createElement('canvas');
+    tmp.width = w; tmp.height = h;
+    tmp.getContext('2d').drawImage(canvas, 0, 0, w, h);
+    const imgData = tmp.getContext('2d').getImageData(0, 0, w, h);
+    const bytes = imgData.data;
+    const CHUNK = 8192;
+    let binary = '';
+    for (let i = 0; i < bytes.length; i += CHUNK)
+      binary += String.fromCharCode(...bytes.subarray(i, Math.min(i + CHUNK, bytes.length)));
+    return btoa(binary);
+  };
+
   // ---- EXPORT RPF ----
   const exportRPF = async () => {
     const tc = tcRef.current; if (!tc || exporting) return;
     setExporting(true); setStatus('Generando RPF...');
     try {
       const W = weapon.texW || 512, H = weapon.texH || 512;
-      const tmp = document.createElement('canvas');
-      tmp.width = W; tmp.height = H;
-      tmp.getContext('2d').drawImage(tc, 0, 0, W, H);
-      const imgData = tmp.getContext('2d').getImageData(0, 0, W, H);
-      let binary = '';
-      const bytes = imgData.data;
-      const CHUNK = 8192;
-      for (let i = 0; i < bytes.length; i += CHUNK)
-        binary += String.fromCharCode(...bytes.subarray(i, Math.min(i + CHUNK, bytes.length)));
-      const b64 = btoa(binary);
+      const b64 = canvasToB64(tc, W, H);
+
+      // Suppressor
+      const suppOpts = getSuppOptions(weapon.id);
+      const activeSuppName = suppEnabled && suppOpts ? suppOpts[suppStyle] : null;
+      let suppPixels = null;
+      if (activeSuppName && suppCanvasRef.current) {
+        suppPixels = canvasToB64(suppCanvasRef.current, SUPP_W, SUPP_H);
+      }
+
       const res = await fetch('/api/generate-rpf', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ weaponName: weapon.id, width: W, height: H, pixels: b64 }),
+        body: JSON.stringify({
+          weaponName: weapon.id,
+          width: W, height: H, pixels: b64,
+          ...(activeSuppName && {
+            suppName:   activeSuppName,
+            suppPixels: suppPixels,
+            suppWidth:  SUPP_W,
+            suppHeight: SUPP_H,
+          }),
+        }),
       });
       if (!res.ok) { const err = await res.json(); setStatus('Error: ' + (err.error || res.statusText)); return; }
       const blob = await res.blob();
@@ -411,6 +458,36 @@ export default function SkinForge3D() {
       setExporting(false);
     }
   };
+
+  // ---- SUPPRESSOR CANVAS PAINT ----
+  const suppPaint = useCallback((e) => {
+    const canvas = suppCanvasRef.current; if (!canvas) return;
+    const r = canvas.getBoundingClientRect();
+    const x = ((e.clientX - r.left) / r.width)  * SUPP_W;
+    const y = ((e.clientY - r.top)  / r.height) * SUPP_H;
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = suppColor;
+    ctx.globalAlpha = opacity / 100;
+    ctx.beginPath(); ctx.arc(x, y, size / 2, 0, Math.PI * 2); ctx.fill();
+    ctx.globalAlpha = 1;
+  }, [suppColor, size, opacity]);
+
+  const onSuppDown = useCallback((e) => {
+    e.preventDefault(); suppPaintRef.current = true; suppPaint(e);
+  }, [suppPaint]);
+  const onSuppMove = useCallback((e) => {
+    if (!suppPaintRef.current) return; e.preventDefault(); suppPaint(e);
+  }, [suppPaint]);
+  const onSuppUp = useCallback(() => { suppPaintRef.current = false; }, []);
+
+  // Initialise suppressor canvas when enabled
+  useEffect(() => {
+    if (!suppEnabled || !suppCanvasRef.current) return;
+    const canvas = suppCanvasRef.current;
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#444444';
+    ctx.fillRect(0, 0, SUPP_W, SUPP_H);
+  }, [suppEnabled]);
 
   const TOOLS = [
     { id:'brush',  icon:<Paintbrush size={15}/>, label:'Pincel'   },
@@ -579,17 +656,85 @@ export default function SkinForge3D() {
 
           {/* ── RIGHT PANEL ── */}
           <div className="w-52 border-l border-white/8 bg-black/20 p-3 flex flex-col gap-3 overflow-y-auto shrink-0">
+
+            {/* ── SILENCIADOR ── */}
+            {getSuppOptions(weapon.id) && (
+              <div className={`border rounded-xl p-3 transition-all ${suppEnabled ? 'bg-zinc-800/60 border-zinc-500/40' : 'bg-white/3 border-white/8'}`}>
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-1.5">
+                    <Crosshair size={11} className={suppEnabled ? 'text-zinc-300' : 'text-zinc-600'}/>
+                    <span className="text-[9px] font-black uppercase tracking-widest text-zinc-400">Silenciador</span>
+                  </div>
+                  <button
+                    onClick={() => setSuppEnabled(v => !v)}
+                    className={`w-8 h-4 rounded-full transition-all relative ${suppEnabled ? 'bg-zinc-400' : 'bg-white/10'}`}>
+                    <span className={`absolute top-0.5 w-3 h-3 rounded-full bg-white transition-all ${suppEnabled ? 'left-[18px]' : 'left-0.5'}`}/>
+                  </button>
+                </div>
+
+                {suppEnabled && (() => {
+                  const opts = getSuppOptions(weapon.id);
+                  return (
+                    <>
+                      {/* Style selector */}
+                      <div className="flex gap-1 mb-2">
+                        {opts.map((name, i) => (
+                          <button key={i} onClick={() => setSuppStyle(i)}
+                            className={`flex-1 py-1 text-[9px] font-black rounded-lg transition-all ${
+                              suppStyle === i ? 'bg-zinc-500 text-white' : 'bg-white/5 text-zinc-500 hover:bg-white/10'
+                            }`}>
+                            Estilo {i + 1}
+                          </button>
+                        ))}
+                      </div>
+
+                      {/* Suppressor mini-canvas */}
+                      <div className="text-[9px] text-zinc-600 font-black uppercase tracking-widest mb-1">Pintar silenciador</div>
+                      <canvas
+                        ref={suppCanvasRef}
+                        width={SUPP_W}
+                        height={SUPP_H}
+                        style={{
+                          width: '100%',
+                          aspectRatio: '4/1',
+                          borderRadius: 8,
+                          border: '1px solid rgba(255,255,255,0.1)',
+                          cursor: 'crosshair',
+                          imageRendering: 'pixelated',
+                          background: '#444',
+                        }}
+                        onMouseDown={onSuppDown}
+                        onMouseMove={onSuppMove}
+                        onMouseUp={onSuppUp}
+                        onMouseLeave={onSuppUp}
+                      />
+
+                      {/* Suppressor color swatches */}
+                      <div className="grid grid-cols-5 gap-1 mt-1.5">
+                        {['#888','#555','#333','#c0a060','#2a4a2a','#1a1a1a','#8b0000','#001830','#d4d4d4','#000'].map(c => (
+                          <button key={c} onClick={() => setSuppColor(c)}
+                            className={`h-4 rounded hover:scale-110 transition-all ${suppColor===c?'ring-2 ring-white ring-offset-1 ring-offset-black':''}`}
+                            style={{backgroundColor:c}}/>
+                        ))}
+                      </div>
+                      <div className="text-[9px] text-zinc-600 mt-1">Color: usa los de arriba o el selector de arma</div>
+                    </>
+                  );
+                })()}
+              </div>
+            )}
+
             {/* Color */}
             <div className="bg-white/3 border border-white/8 rounded-xl p-3">
               <div className="text-[9px] text-zinc-500 font-black uppercase tracking-widest mb-2">Color</div>
-              <HexColorPicker color={color} onChange={setColor} style={{width:'100%', height:140}}/>
+              <HexColorPicker color={color} onChange={(c) => { setColor(c); if (suppEnabled) setSuppColor(c); }} style={{width:'100%', height:130}}/>
               <div className="flex items-center gap-2 mt-2">
                 <div className="w-6 h-6 rounded-md border border-white/20 shrink-0" style={{backgroundColor:color}}/>
                 <span className="text-[10px] font-mono text-zinc-400">{color.toUpperCase()}</span>
               </div>
               <div className="grid grid-cols-5 gap-1 mt-2">
                 {SWATCHES.map(c => (
-                  <button key={c} onClick={() => setColor(c)}
+                  <button key={c} onClick={() => { setColor(c); if (suppEnabled) setSuppColor(c); }}
                     className={`h-5 rounded hover:scale-110 transition-all ${color===c?'ring-2 ring-white ring-offset-1 ring-offset-black':''}`}
                     style={{backgroundColor:c}}/>
                 ))}
