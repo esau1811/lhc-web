@@ -110,6 +110,16 @@ export default function SkinForge3D() {
   const [weaponPainted, setWeaponPainted] = useState(false);
   const [paintTarget,  setPaintTarget]  = useState('weapon'); // 'weapon' | 'supp'
 
+  // Sticker state
+  const stickerImgRef  = useRef(null);
+  const stickerDragRef = useRef(null);
+  const stickerInputRef = useRef(null);
+  const [stickerSrc,   setStickerSrc]   = useState(null);
+  const [stickerX,     setStickerX]     = useState(0.5);
+  const [stickerY,     setStickerY]     = useState(0.5);
+  const [stickerScale, setStickerScale] = useState(0.3);
+  const [stickerActive,setStickerActive]= useState(false);
+
   // ---- THREE.JS INIT ----
   useEffect(() => {
     const el = mountRef.current; if (!el) return;
@@ -586,6 +596,60 @@ export default function SkinForge3D() {
     if (suppEnabled) resetSuppCanvas();
   }, [suppEnabled, resetSuppCanvas]);
 
+  // ---- STICKER LOGIC ----
+  const loadSticker = useCallback((file) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      stickerImgRef.current = img;
+      setStickerSrc(url);
+      setStickerActive(true);
+      setStickerX(0.5);
+      setStickerY(0.5);
+      setStickerScale(0.3);
+      // Switch to 2D mode so the user can position the sticker
+      setViewMode('2d');
+    };
+    img.src = url;
+  }, []);
+
+  const stampSticker = useCallback(() => {
+    const tc = tcRef.current; const tt = ttRef.current; const img = stickerImgRef.current;
+    if (!tc || !tt || !img) return;
+    saveHistory();
+    const ctx = tc.getContext('2d');
+    const w = stickerScale * TEX;
+    const h = (img.naturalHeight / img.naturalWidth) * w;
+    const x = stickerX * TEX - w / 2;
+    const y = stickerY * TEX - h / 2;
+    ctx.drawImage(img, x, y, w, h);
+    tt.needsUpdate = true;
+    syncUV2D();
+    setWeaponPainted(true);
+    setStickerActive(false);
+  }, [stickerX, stickerY, stickerScale, syncUV2D, saveHistory]);
+
+  const onStickerPointerDown = useCallback((e) => {
+    e.preventDefault(); e.stopPropagation();
+    const canvasEl = uv2DRef.current; if (!canvasEl) return;
+    const r = canvasEl.getBoundingClientRect();
+    stickerDragRef.current = { sx: e.clientX, sy: e.clientY, ux: stickerX, uy: stickerY, dw: r.width, dh: r.height };
+  }, [stickerX, stickerY]);
+
+  // Window-level events for smooth sticker drag
+  useEffect(() => {
+    const onMove = (e) => {
+      if (!stickerDragRef.current) return;
+      const d = stickerDragRef.current;
+      setStickerX(Math.max(0, Math.min(1, d.ux + (e.clientX - d.sx) / d.dw)));
+      setStickerY(Math.max(0, Math.min(1, d.uy + (e.clientY - d.sy) / d.dh)));
+    };
+    const onUp = () => { stickerDragRef.current = null; };
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
+    return () => { window.removeEventListener('mousemove', onMove); window.removeEventListener('mouseup', onUp); };
+  }, []);
+
   const TOOLS = [
     { id:'brush',  icon:<Paintbrush size={15}/>, label:'Pincel'   },
     { id:'spray',  icon:<Wind size={15}/>,       label:'Spray'    },
@@ -738,15 +802,47 @@ export default function SkinForge3D() {
             {viewMode === '2d' && (
               <div className="absolute inset-0 flex flex-col items-center justify-center bg-[#0a0a0a]"
                 style={{backgroundImage:'repeating-conic-gradient(#1a1a1a 0% 25%, #111 0% 50%)', backgroundSize:'20px 20px'}}>
-                <canvas
-                  ref={uv2DRef}
-                  width={TEX}
-                  height={TEX}
-                  style={{maxWidth:'100%', maxHeight:'100%', objectFit:'contain', cursor:'crosshair', imageRendering:'pixelated', border:'1px solid rgba(255,255,255,0.08)', boxShadow:'0 0 40px rgba(0,0,0,0.8)'}}
-                  onMouseDown={on2DDown} onMouseMove={on2DMove} onMouseUp={onUp} onMouseLeave={onUp}
-                  onTouchStart={onTouch2DDown} onTouchMove={onTouch2DMove} onTouchEnd={onUp}
-                />
-                <div className="mt-2 text-[10px] text-purple-400/70 font-black uppercase tracking-widest">UV MAP — pinta directamente sobre la textura</div>
+                {/* Wrapper sized to the canvas so sticker overlay aligns 1:1 with UV coords */}
+                <div style={{position:'relative', display:'inline-block', lineHeight:0}}>
+                  <canvas
+                    ref={uv2DRef}
+                    width={TEX}
+                    height={TEX}
+                    style={{maxWidth:'100%', maxHeight:'calc(100vh - 180px)', display:'block', cursor: stickerActive ? 'default' : 'crosshair', imageRendering:'pixelated', border:'1px solid rgba(255,255,255,0.08)', boxShadow:'0 0 40px rgba(0,0,0,0.8)'}}
+                    onMouseDown={stickerActive ? undefined : on2DDown}
+                    onMouseMove={stickerActive ? undefined : on2DMove}
+                    onMouseUp={onUp} onMouseLeave={onUp}
+                    onTouchStart={stickerActive ? undefined : onTouch2DDown}
+                    onTouchMove={stickerActive ? undefined : onTouch2DMove}
+                    onTouchEnd={onUp}
+                  />
+                  {/* Sticker overlay — draggable, positioned in UV % coords */}
+                  {stickerActive && stickerSrc && (
+                    <img
+                      src={stickerSrc}
+                      alt="sticker"
+                      draggable={false}
+                      onMouseDown={onStickerPointerDown}
+                      style={{
+                        position: 'absolute',
+                        left: `${stickerX * 100}%`,
+                        top:  `${stickerY * 100}%`,
+                        width: `${stickerScale * 100}%`,
+                        transform: 'translate(-50%, -50%)',
+                        cursor: 'grab',
+                        userSelect: 'none',
+                        outline: '2px dashed rgba(255,255,255,0.7)',
+                        outlineOffset: 2,
+                        borderRadius: 2,
+                        pointerEvents: 'all',
+                        imageRendering: 'auto',
+                      }}
+                    />
+                  )}
+                </div>
+                <div className="mt-2 text-[10px] font-black uppercase tracking-widest" style={{color: stickerActive ? '#facc15' : 'rgba(192,132,252,0.7)' }}>
+                  {stickerActive ? '🖼️ ARRASTRA EL STICKER — ajusta tamaño en el panel derecho — pulsa ✅ SELLAR' : 'UV MAP — pinta directamente sobre la textura'}
+                </div>
               </div>
             )}
           </div>
@@ -836,6 +932,38 @@ export default function SkinForge3D() {
                 })()}
               </div>
             )}
+
+            {/* Sticker / Image */}
+            <div className="bg-white/3 border border-white/8 rounded-xl p-3">
+              <div className="text-[9px] text-zinc-500 font-black uppercase tracking-widest mb-2">🖼️ Sticker / Imagen</div>
+              <label className="w-full flex items-center justify-center gap-2 py-2 bg-white/5 hover:bg-white/10 border border-dashed border-white/20 hover:border-white/40 rounded-lg cursor-pointer transition-all text-[10px] text-zinc-400 hover:text-white">
+                <span>📂 Subir PNG / Sticker</span>
+                <input ref={stickerInputRef} type="file" accept="image/*" className="hidden"
+                  onChange={e => { if (e.target.files[0]) loadSticker(e.target.files[0]); e.target.value = ''; }} />
+              </label>
+              {stickerActive && (
+                <>
+                  <div className="mt-2 text-[9px] text-zinc-500 font-black uppercase tracking-widest">Tamaño</div>
+                  <div className="flex items-center gap-2 mt-1">
+                    <input type="range" min={0.03} max={0.85} step={0.01} value={stickerScale}
+                      onChange={e => setStickerScale(+e.target.value)}
+                      className="flex-1 h-1 rounded accent-yellow-400" />
+                    <span className="text-[9px] font-black text-yellow-400 w-8 text-right">{Math.round(stickerScale * 100)}%</span>
+                  </div>
+                  <div className="flex gap-1.5 mt-2">
+                    <button onClick={stampSticker}
+                      className="flex-1 py-1.5 bg-green-500/20 hover:bg-green-500/40 text-green-400 rounded-lg text-[10px] font-black transition-all border border-green-500/30">
+                      ✅ Sellar
+                    </button>
+                    <button onClick={() => setStickerActive(false)}
+                      className="flex-1 py-1.5 bg-white/5 hover:bg-red-500/20 text-zinc-400 hover:text-red-400 rounded-lg text-[10px] font-black transition-all">
+                      ❌ Cancelar
+                    </button>
+                  </div>
+                  <div className="text-[9px] text-zinc-600 mt-1.5 leading-tight">Arrastra el sticker en la vista UV 2D para posicionarlo</div>
+                </>
+              )}
+            </div>
 
             {/* Color */}
             <div className="bg-white/3 border border-white/8 rounded-xl p-3">
