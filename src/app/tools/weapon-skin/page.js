@@ -5,6 +5,7 @@ import * as THREE from 'three';
 import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader.js';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { Paintbrush, Eraser, Download, RotateCcw, Undo2, ChevronDown, AlertTriangle, Minus, Plus, Droplets, Wind } from 'lucide-react';
+import { HexColorPicker } from 'react-colorful';
 
 const WEAPONS = [
   { id: 'w_pi_combatpistol', name: 'Combat Pistol', cat: 'Pistola' },
@@ -14,12 +15,8 @@ const WEAPONS = [
   { id: 'w_sr_sniperrifle',  name: 'Sniper Rifle',  cat: 'Sniper'  },
 ];
 
-const PRESETS = [
-  '#ffffff','#d4d4d4','#a3a3a3','#737373','#404040','#1a1a1a','#000000',
-  '#ef4444','#dc2626','#b91c1c','#f97316','#ea580c','#eab308','#ca8a04',
-  '#22c55e','#16a34a','#14b8a6','#0891b2','#3b82f6','#2563eb','#6366f1',
-  '#8b5cf6','#a855f7','#ec4899','#db2777','#f43f5e','#78716c','#a16207',
-];
+// Quick-access color swatches below the color wheel
+const SWATCHES = ['#ffffff','#000000','#ef4444','#f97316','#eab308','#22c55e','#3b82f6','#8b5cf6','#ec4899','#78716c'];
 const TEX = 1024;
 
 export default function SkinForge3D() {
@@ -290,7 +287,9 @@ export default function SkinForge3D() {
 
   const onDown = useCallback((e) => {
     if (mode==='rotate') return;
-    e.preventDefault(); paintRef.current = true;
+    e.preventDefault();
+    saveHistory(); // save state BEFORE stroke so undo can restore it
+    paintRef.current = true;
     const uv = getUV(e.clientX, e.clientY); applyPaint(uv);
   }, [mode, getUV, applyPaint]);
 
@@ -300,10 +299,7 @@ export default function SkinForge3D() {
     const uv = getUV(e.clientX, e.clientY); applyPaint(uv);
   }, [mode, getUV, applyPaint]);
 
-  const onUp = useCallback(()=>{
-    if (paintRef.current) saveHistory();
-    paintRef.current=false; lastUVRef.current=null;
-  },[]);
+  const onUp = useCallback(()=>{ paintRef.current=false; lastUVRef.current=null; },[]);
 
   const onTouchDown = useCallback((e)=>{ if(e.touches[0]) onDown({clientX:e.touches[0].clientX,clientY:e.touches[0].clientY,preventDefault:()=>{}}); },[onDown]);
   const onTouchMove = useCallback((e)=>{ e.preventDefault(); if(e.touches[0]) onMove({clientX:e.touches[0].clientX,clientY:e.touches[0].clientY,preventDefault:()=>{}}); },[onMove]);
@@ -459,14 +455,15 @@ export default function SkinForge3D() {
             </button>
             {dropOpen && (
               <div
-                className="absolute top-full mt-1 left-0 bg-[#111] border border-white/10 rounded-xl z-50 w-52 shadow-2xl overflow-hidden"
+                className="absolute top-full mt-1 left-0 bg-[#111] border border-white/10 rounded-xl w-52 shadow-2xl overflow-hidden"
+                style={{zIndex: 9999}}
                 onPointerDown={e=>e.stopPropagation()}>
                 {WEAPONS.map(w=>(
                   <button key={w.id}
                     onPointerDown={(e)=>{ e.stopPropagation(); setWeapon(w); setDropOpen(false); }}
-                    className={`w-full text-left px-3 py-2.5 text-xs hover:bg-white/8 select-none cursor-pointer ${weapon.id===w.id?'text-red-400 bg-red-500/5':''}`}>
-                    <span className="text-zinc-500 text-[9px] mr-1 block">{w.cat}</span>
-                    <span>{w.name}</span>
+                    style={{display:'block', width:'100%', textAlign:'left', padding:'10px 12px', fontSize:'12px', cursor:'pointer', background: weapon.id===w.id ? 'rgba(239,68,68,0.08)' : 'transparent', color: weapon.id===w.id ? '#f87171' : '#d4d4d4', userSelect:'none'}}>
+                    <span style={{display:'block', fontSize:'9px', color:'#737373', marginBottom:2}}>{w.cat}</span>
+                    {w.name}
                   </button>
                 ))}
               </div>
@@ -527,17 +524,18 @@ export default function SkinForge3D() {
 
           {/* Right panel */}
           <div className="w-52 border-l border-white/8 bg-black/20 p-3 flex flex-col gap-3 overflow-y-auto shrink-0">
-            {/* Color */}
+            {/* Color wheel */}
             <div className="bg-white/3 border border-white/8 rounded-xl p-3">
               <div className="text-[9px] text-zinc-500 font-black uppercase tracking-widest mb-2">Color</div>
-              <div className="flex items-center gap-2 mb-2">
-                <input type="color" value={color} onChange={e=>setColor(e.target.value)} className="w-9 h-9 rounded-lg border-0 cursor-pointer bg-transparent"/>
-                <span className="text-[10px] font-mono">{color.toUpperCase()}</span>
+              <HexColorPicker color={color} onChange={setColor} style={{width:'100%', height:140}}/>
+              <div className="flex items-center gap-2 mt-2">
+                <div className="w-6 h-6 rounded-md border border-white/20 shrink-0" style={{backgroundColor:color}}/>
+                <span className="text-[10px] font-mono text-zinc-400">{color.toUpperCase()}</span>
               </div>
-              <div className="grid grid-cols-7 gap-1">
-                {PRESETS.map(c=>(
+              <div className="grid grid-cols-5 gap-1 mt-2">
+                {SWATCHES.map(c=>(
                   <button key={c} onClick={()=>setColor(c)}
-                    className={`w-5 h-5 rounded hover:scale-110 transition-all ${color===c?'ring-2 ring-white ring-offset-1 ring-offset-black':''}`}
+                    className={`h-5 rounded hover:scale-110 transition-all ${color===c?'ring-2 ring-white ring-offset-1 ring-offset-black':''}`}
                     style={{backgroundColor:c}}/>
                 ))}
               </div>
