@@ -8,7 +8,6 @@ const path = require('path');
 const PRUEBA_DIR  = path.join(__dirname, 'prueba');
 const MODELS_DIR  = path.join(__dirname, 'public', 'models');
 
-// Field sizes for each layout element type (number of space-separated values)
 const FIELD_SIZES = {
   Position:      3,
   BlendWeights:  4,
@@ -25,7 +24,6 @@ const FIELD_SIZES = {
   Binormal:      3,
 };
 
-// Weapons we need OBJ files for (already has one for combatpistol)
 const WEAPONS = [
   'w_pi_combatpistol',
   'w_pi_pistol',
@@ -63,69 +61,104 @@ const WEAPONS = [
 
 function parseLayout(layoutBlock) {
   const fields = [];
-  // Match each tag inside the Layout block
   const tagRe = /<(\w+)\s*\/>/g;
   let m;
   while ((m = tagRe.exec(layoutBlock)) !== null) {
     const name = m[1];
-    if (FIELD_SIZES[name] !== undefined) {
-      fields.push({ name, size: FIELD_SIZES[name] });
-    }
+    if (FIELD_SIZES[name] !== undefined) fields.push({ name, size: FIELD_SIZES[name] });
   }
   return fields;
+}
+
+// Build map: shaderIndex → DiffuseSampler texture name (lowercased, no underscores)
+function parseShaderMap(xml) {
+  const map = {};
+  const shadersMatch = xml.match(/<Shaders>([\s\S]*?)<\/Shaders>/);
+  if (!shadersMatch) return map;
+
+  const itemRe = /<Item>([\s\S]*?)<\/Item>/g;
+  let idx = 0;
+  let m;
+  while ((m = itemRe.exec(shadersMatch[1])) !== null) {
+    const block = m[1];
+    const diffuse = block.match(/<Item name="DiffuseSampler"[^>]*>[\s\S]*?<Name>(.*?)<\/Name>/);
+    const texName = diffuse ? diffuse[1].toLowerCase().replace(/_/g, '') : '';
+    map[idx] = texName;
+    idx++;
+  }
+  return map;
+}
+
+// Split XML into Geometry <Item> blocks (each contains ShaderIndex + VertexBuffer + IndexBuffer)
+function parseGeometryItems(xml) {
+  const items = [];
+  // Find all Geometries blocks
+  const geoBlockRe = /<Geometries>([\s\S]*?)<\/Geometries>/g;
+  let gb;
+  while ((gb = geoBlockRe.exec(xml)) !== null) {
+    const itemRe = /<Item>([\s\S]*?)<\/Item>/g;
+    let im;
+    while ((im = itemRe.exec(gb[1])) !== null) {
+      const block = im[1];
+      const siMatch = block.match(/<ShaderIndex value="(\d+)"/);
+      const shaderIndex = siMatch ? parseInt(siMatch[1]) : 0;
+
+      const vbMatch = block.match(/<VertexBuffer>([\s\S]*?)<\/VertexBuffer>/);
+      const ibMatch = block.match(/<IndexBuffer>([\s\S]*?)<\/IndexBuffer>/);
+      if (vbMatch && ibMatch) {
+        items.push({ shaderIndex, vb: vbMatch[1], ib: ibMatch[1] });
+      }
+    }
+  }
+  return items;
 }
 
 function convertXmlToObj(xmlPath, weaponId) {
   const xml = fs.readFileSync(xmlPath, 'utf8');
 
-  // Collect all geometry blocks: each <GeometryInfo> or similar that has VertexBuffer+IndexBuffer pairs
-  // In CodeWalker XML the structure is Geometries > Item > VertexBuffer + IndexBuffer
-  // We extract all VertexBuffer/IndexBuffer pairs in order
+  // Build shader index → texture name map
+  const shaderMap = parseShaderMap(xml);
 
-  const posLines  = [];  // OBJ "v x y z"
-  const uvLines   = [];  // OBJ "vt u v"
-  const faceLines = [];  // OBJ "f v/vt v/vt v/vt"
+  // Weapon key: e.g. "w_pi_heavypistol" → "wpiheavypistol"
+  const weaponKey = weaponId.toLowerCase().replace(/_/g, '');
 
+  // Determine which shader indices use the main weapon diffuse texture
+  const mainShaderIndices = new Set();
+  for (const [idx, texName] of Object.entries(shaderMap)) {
+    if (texName.startsWith(weaponKey)) {
+      mainShaderIndices.add(parseInt(idx));
+    }
+  }
+
+  // If no shader matched (e.g. unusual naming), fall back to including all
+  const filterByShader = mainShaderIndices.size > 0;
+
+  const posLines  = [];
+  const uvLines   = [];
+  const faceLines = [];
   let globalVertexOffset = 0;
 
-  // Split into VertexBuffer sections — each is paired with the following IndexBuffer
-  // We'll find all <VertexBuffer>...</VertexBuffer> and their matching <IndexBuffer>
-  const vbRe = /<VertexBuffer>([\s\S]*?)<\/VertexBuffer>/g;
-  const ibRe = /<IndexBuffer>([\s\S]*?)<\/IndexBuffer>/g;
+  const geoItems = parseGeometryItems(xml);
 
-  const vbBlocks = [];
-  const ibBlocks = [];
-  let vm, im;
-  while ((vm = vbRe.exec(xml)) !== null) vbBlocks.push(vm[1]);
-  while ((im = ibRe.exec(xml)) !== null) ibBlocks.push(im[1]);
+  for (const { shaderIndex, vb, ib } of geoItems) {
+    // Skip geometry that doesn't use the main weapon texture
+    if (filterByShader && !mainShaderIndices.has(shaderIndex)) continue;
 
-  const count = Math.min(vbBlocks.length, ibBlocks.length);
-
-  for (let gi = 0; gi < count; gi++) {
-    const vbContent = vbBlocks[gi];
-    const ibContent = ibBlocks[gi];
-
-    // Parse Layout to know field order
-    const layoutMatch = vbContent.match(/<Layout[^>]*>([\s\S]*?)<\/Layout>/);
+    const layoutMatch = vb.match(/<Layout[^>]*>([\s\S]*?)<\/Layout>/);
     if (!layoutMatch) continue;
     const fields = parseLayout(layoutMatch[1]);
     if (fields.length === 0) continue;
 
-    // Find Position and TexCoord0 field offsets
-    let posOffset   = -1;
-    let uvOffset    = -1;
-    let cursor      = 0;
+    let posOffset = -1, uvOffset = -1, cursor = 0;
     for (const f of fields) {
       if (f.name === 'Position')  posOffset = cursor;
       if (f.name === 'TexCoord0') uvOffset  = cursor;
       cursor += f.size;
     }
+    if (posOffset < 0) continue;
     const totalPerVertex = cursor;
 
-    if (posOffset < 0) continue; // no position data
-
-    // Parse vertex data lines
-    const dataMatch = vbContent.match(/<Data>([\s\S]*?)<\/Data>/);
+    const dataMatch = vb.match(/<Data>([\s\S]*?)<\/Data>/);
     if (!dataMatch) continue;
 
     const dataLines = dataMatch[1].trim().split('\n');
@@ -135,37 +168,27 @@ function convertXmlToObj(xmlPath, weaponId) {
     for (const line of dataLines) {
       const vals = line.trim().split(/\s+/);
       if (vals.length < totalPerVertex) continue;
-
       const x = parseFloat(vals[posOffset]);
       const y = parseFloat(vals[posOffset + 1]);
       const z = parseFloat(vals[posOffset + 2]);
       if (isNaN(x)) continue;
-
       posLines.push(`v ${x} ${y} ${z}`);
-
-      if (uvOffset >= 0 && uvOffset + 1 < vals.length) {
-        const u = parseFloat(vals[uvOffset]);
-        const v = parseFloat(vals[uvOffset + 1]);
-        uvLines.push(`vt ${u} ${v}`);
+      if (uvOffset >= 0) {
+        uvLines.push(`vt ${vals[uvOffset]} ${vals[uvOffset + 1]}`);
       } else {
         uvLines.push(`vt 0 0`);
       }
-
       verticesAdded++;
     }
 
-    // Parse index buffer
-    const idxDataMatch = ibContent.match(/<Data>([\s\S]*?)<\/Data>/);
+    const idxDataMatch = ib.match(/<Data>([\s\S]*?)<\/Data>/);
     if (!idxDataMatch) { globalVertexOffset += verticesAdded; continue; }
 
     const allIndices = idxDataMatch[1].trim().split(/\s+/).map(Number).filter(n => !isNaN(n));
-
-    // Triangles: groups of 3
     for (let i = 0; i + 2 < allIndices.length; i += 3) {
-      const a = allIndices[i]     + vertexStart + 1; // OBJ is 1-based
+      const a = allIndices[i]     + vertexStart + 1;
       const b = allIndices[i + 1] + vertexStart + 1;
       const c = allIndices[i + 2] + vertexStart + 1;
-      // Skip degenerate triangles
       if (a === b || b === c || a === c) continue;
       faceLines.push(`f ${a}/${a} ${b}/${b} ${c}/${c}`);
     }
@@ -185,8 +208,7 @@ function convertXmlToObj(xmlPath, weaponId) {
     ...faceLines,
   ].join('\n');
 
-  const outPath = path.join(MODELS_DIR, `${weaponId}.obj`);
-  fs.writeFileSync(outPath, obj, 'utf8');
+  fs.writeFileSync(path.join(MODELS_DIR, `${weaponId}.obj`), obj, 'utf8');
   return true;
 }
 
@@ -205,7 +227,6 @@ for (const id of WEAPONS) {
     continue;
   }
 
-  // Skip combatpistol — already has a hand-crafted OBJ
   if (id === 'w_pi_combatpistol' && fs.existsSync(objPath)) {
     console.log(`  SKIP     ${id} (already exists)`);
     skip++;
