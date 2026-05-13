@@ -91,13 +91,25 @@ export default function Header() {
             </Link>
             
             {session ? (
-              <div className="hidden md:flex items-center gap-3 bg-white/5 p-1.5 pr-4 rounded-full border border-white/5">
-                <img src={session.user.image} className="w-8 h-8 rounded-full" />
-                <div className="flex flex-col">
-                  <span className="text-[11px] font-black text-white leading-tight uppercase">{session.user.name.split(' ')[0]}</span>
-                  <span className="text-[9px] text-zinc-500 font-bold uppercase tracking-tighter">{t('conectado')}</span>
+              session.user.isInGuild === false ? (
+                // Logged in but not in the guild → prompt to join
+                <a
+                  href="https://discord.gg/lhcds"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hidden md:flex items-center gap-2 bg-[#5865F2]/10 border border-[#5865F2]/30 px-4 py-2 rounded-lg text-[11px] font-black text-[#5865F2] hover:bg-[#5865F2]/20 transition-all"
+                >
+                  {t('unete_discord') || 'Únete al Discord'}
+                </a>
+              ) : (
+                <div className="hidden md:flex items-center gap-3 bg-white/5 p-1.5 pr-4 rounded-full border border-white/5">
+                  <img src={session.user.image} className="w-8 h-8 rounded-full" />
+                  <div className="flex flex-col">
+                    <span className="text-[11px] font-black text-white leading-tight uppercase">{session.user.name.split(' ')[0]}</span>
+                    <span className="text-[9px] text-zinc-500 font-bold uppercase tracking-tighter">{t('conectado')}</span>
+                  </div>
                 </div>
-              </div>
+              )
             ) : (
               <button 
                 onClick={() => signIn('discord')}
