@@ -101,6 +101,8 @@ export default function SkinForge3D() {
   // Suppressor state
   const suppCanvasRef  = useRef(null);
   const suppPaintRef   = useRef(false);
+  const suppMesh3DRef  = useRef(null);
+  const suppTt3DRef    = useRef(null);
   const [suppEnabled,  setSuppEnabled]  = useState(false);
   const [suppStyle,    setSuppStyle]    = useState(0);    // 0 or 1
   const [suppColor,    setSuppColor]    = useState('#888888');
@@ -270,6 +272,67 @@ export default function SkinForge3D() {
       () => { setLoading(false); setStatus('Sin modelo 3D — usa modo UV 2D para pintar'); }
     );
   };
+
+  // ---- SYNC 3D SUPPRESSOR MESH ----
+  useEffect(() => {
+    const scene = sceneRef.current;
+    const parentMesh = meshRef.current;
+    if (!scene) return;
+
+    // Remove existing suppressor mesh if any
+    if (suppMesh3DRef.current) {
+      scene.remove(suppMesh3DRef.current);
+      if (suppMesh3DRef.current.geometry) suppMesh3DRef.current.geometry.dispose();
+      if (suppMesh3DRef.current.material) suppMesh3DRef.current.material.dispose();
+      suppMesh3DRef.current = null;
+    }
+
+    if (!suppEnabled || !parentMesh || !hasModel) return;
+
+    // Construct CanvasTexture for suppressor Live Painting
+    let tt = suppTt3DRef.current;
+    if (!tt && suppCanvasRef.current) {
+      tt = new THREE.CanvasTexture(suppCanvasRef.current);
+      tt.flipY = false;
+      suppTt3DRef.current = tt;
+    } else if (tt) {
+      tt.needsUpdate = true;
+    }
+
+    // Measure weapon to attach perfectly at the muzzle tip
+    const box = new THREE.Box3().setFromObject(parentMesh);
+    const length = box.max.x - box.min.x;
+    const height = box.max.y - box.min.y;
+
+    const isPistol = weapon.id.startsWith('w_pi_');
+    const suppLen = length * (isPistol ? 0.38 : 0.28);
+    const radius  = height * (suppStyle === 1 ? 0.22 : 0.15);
+
+    // Style 1: sleek circular. Style 2: heavier/blocked profile
+    const segments = suppStyle === 1 ? 6 : 32;
+    const geom = new THREE.CylinderGeometry(radius, radius, suppLen, segments);
+    geom.rotateZ(Math.PI / 2);
+
+    const mat = new THREE.MeshStandardMaterial({
+      map: tt || null,
+      color: tt ? 0xffffff : 0xaaaaaa,
+      roughness: 0.4,
+      metalness: 0.6,
+    });
+
+    const mesh = new THREE.Mesh(geom, mat);
+
+    // Tip of weapon barrel is at box.max.x
+    // Align vertically with barrel upper half
+    const muzzleX = box.max.x + suppLen / 2 - suppLen * 0.08;
+    const muzzleY = (box.max.y + box.min.y) / 2 + height * 0.12;
+    const muzzleZ = (box.max.z + box.min.z) / 2;
+
+    mesh.position.set(muzzleX, muzzleY, muzzleZ);
+    scene.add(mesh);
+    suppMesh3DRef.current = mesh;
+
+  }, [suppEnabled, suppStyle, hasModel, weapon.id]);
 
   // ---- PAINT CORE ----
   const applyPaint = useCallback((uv) => {
@@ -472,6 +535,7 @@ export default function SkinForge3D() {
     ctx.beginPath(); ctx.arc(x, y, size / 2, 0, Math.PI * 2); ctx.fill();
     ctx.globalAlpha = 1;
     setSuppPainted(true);
+    if (suppTt3DRef.current) suppTt3DRef.current.needsUpdate = true;
   }, [suppColor, size, opacity]);
 
   const onSuppDown = useCallback((e) => {
@@ -505,6 +569,7 @@ export default function SkinForge3D() {
     ctx.fillText('LIENZO SILENCIADOR (PINTA AQUÍ)', SUPP_W / 2, SUPP_H / 2);
 
     setSuppPainted(false);
+    if (suppTt3DRef.current) suppTt3DRef.current.needsUpdate = true;
   }, []);
 
   // Initialise suppressor canvas when enabled
@@ -719,12 +784,12 @@ export default function SkinForge3D() {
                         height={SUPP_H}
                         style={{
                           width: '100%',
-                          aspectRatio: '4/1',
+                          height: 130,
                           borderRadius: 8,
-                          border: '1px solid rgba(255,255,255,0.1)',
+                          border: '1px solid rgba(255,255,255,0.2)',
                           cursor: 'crosshair',
                           imageRendering: 'pixelated',
-                          background: '#444',
+                          background: '#222',
                         }}
                         onMouseDown={onSuppDown}
                         onMouseMove={onSuppMove}
