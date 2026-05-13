@@ -306,33 +306,33 @@ export default function SkinForge3D() {
 
     const isPistol = weapon.id.startsWith('w_pi_');
     const suppLen = length * (isPistol ? 0.38 : 0.28);
-    const radius  = height * (suppStyle === 1 ? 0.22 : 0.15);
-
-    // Style 1: sleek circular. Style 2: heavier/blocked profile
-    const segments = suppStyle === 1 ? 6 : 32;
+    
+    // Style 0 (Estilo 1): sleek round gunmetal. Style 1 (Estilo 2): tactical ribbed profile.
+    const radius  = height * (suppStyle === 1 ? 0.13 : 0.10);
+    const segments = suppStyle === 1 ? 12 : 32;
     const geom = new THREE.CylinderGeometry(radius, radius, suppLen, segments);
     geom.rotateZ(Math.PI / 2);
 
     const mat = new THREE.MeshStandardMaterial({
-      map: tt || null,
-      color: tt ? 0xffffff : 0xaaaaaa,
-      roughness: 0.4,
-      metalness: 0.6,
+      map: suppPainted ? tt : null,
+      color: suppPainted ? 0xffffff : (suppStyle === 1 ? 0x1a1a1a : 0x262626),
+      roughness: suppPainted ? 0.4 : 0.6,
+      metalness: suppPainted ? 0.6 : 0.8,
     });
 
     const mesh = new THREE.Mesh(geom, mat);
 
-    // Tip of weapon barrel is at box.max.x
-    // Align vertically with barrel upper half
-    const muzzleX = box.max.x + suppLen / 2 - suppLen * 0.08;
-    const muzzleY = (box.max.y + box.min.y) / 2 + height * 0.12;
+    // Pull suppressor leftward (length * 0.22) to attach completely flush against physical muzzle.
+    // GTA V exports include empty collision boxes extending far right of the visible barrel.
+    const muzzleX = box.max.x - length * 0.22 + suppLen / 2;
+    const muzzleY = (box.max.y + box.min.y) / 2 + height * (isPistol ? 0.15 : 0.06);
     const muzzleZ = (box.max.z + box.min.z) / 2;
 
     mesh.position.set(muzzleX, muzzleY, muzzleZ);
     scene.add(mesh);
     suppMesh3DRef.current = mesh;
 
-  }, [suppEnabled, suppStyle, hasModel, weapon.id]);
+  }, [suppEnabled, suppStyle, hasModel, weapon.id, suppPainted]);
 
   // ---- PAINT CORE ----
   const applyPaint = useCallback((uv) => {
@@ -588,7 +588,7 @@ export default function SkinForge3D() {
   const cats = [...new Set(WEAPONS.map(w => w.cat))];
 
   return (
-    <div className="min-h-screen bg-[#050505] text-white flex flex-col">
+    <div className="min-h-screen bg-[#050505] text-white flex flex-col relative z-20">
       <Header/>
       <div className="pt-16 flex-1 flex flex-col" style={{height:'calc(100vh - 64px)'}}>
 
@@ -673,9 +673,9 @@ export default function SkinForge3D() {
           <div className="text-[10px] text-zinc-600 ml-auto truncate shrink-0">{status}</div>
         </div>
 
-        <div className="flex flex-1 overflow-hidden">
+        <div className="flex flex-1 overflow-hidden relative z-20 bg-[#050505]">
           {/* ── LEFT TOOLS ── */}
-          <div className="flex flex-col gap-1.5 p-2 border-r border-white/8 bg-black/20 w-14 items-center shrink-0">
+          <div className="flex flex-col gap-1.5 p-2 border-r border-white/8 bg-[#0a0a0a] w-14 items-center shrink-0 relative z-30">
             {TOOLS.map(t => (
               <button key={t.id} onClick={() => setTool(t.id)} title={t.label}
                 className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all ${tool===t.id?'bg-red-500 text-white shadow-[0_0_10px_rgba(239,68,68,0.4)]':'text-zinc-500 hover:bg-white/5'}`}>
@@ -743,7 +743,7 @@ export default function SkinForge3D() {
           </div>
 
           {/* ── RIGHT PANEL ── */}
-          <div className="w-52 border-l border-white/8 bg-black/20 p-3 flex flex-col gap-3 overflow-y-auto shrink-0">
+          <div className="w-52 border-l border-white/8 bg-[#0a0a0a] p-3 flex flex-col gap-3 overflow-y-auto shrink-0 relative z-30">
 
             {/* ── SILENCIADOR ── */}
             {getSuppOptions(weapon.id) && (
