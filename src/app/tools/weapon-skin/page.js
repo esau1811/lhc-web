@@ -104,6 +104,7 @@ export default function SkinForge3D() {
   const [suppEnabled,  setSuppEnabled]  = useState(false);
   const [suppStyle,    setSuppStyle]    = useState(0);    // 0 or 1
   const [suppColor,    setSuppColor]    = useState('#888888');
+  const [suppPainted,  setSuppPainted]  = useState(false);
   const [paintTarget,  setPaintTarget]  = useState('weapon'); // 'weapon' | 'supp'
 
   // ---- THREE.JS INIT ----
@@ -427,7 +428,7 @@ export default function SkinForge3D() {
       const suppOpts = getSuppOptions(weapon.id);
       const activeSuppName = suppEnabled && suppOpts ? suppOpts[suppStyle] : null;
       let suppPixels = null;
-      if (activeSuppName && suppCanvasRef.current) {
+      if (activeSuppName && suppPainted && suppCanvasRef.current) {
         suppPixels = canvasToB64(suppCanvasRef.current, SUPP_W, SUPP_H);
       }
 
@@ -470,6 +471,7 @@ export default function SkinForge3D() {
     ctx.globalAlpha = opacity / 100;
     ctx.beginPath(); ctx.arc(x, y, size / 2, 0, Math.PI * 2); ctx.fill();
     ctx.globalAlpha = 1;
+    setSuppPainted(true);
   }, [suppColor, size, opacity]);
 
   const onSuppDown = useCallback((e) => {
@@ -480,14 +482,35 @@ export default function SkinForge3D() {
   }, [suppPaint]);
   const onSuppUp = useCallback(() => { suppPaintRef.current = false; }, []);
 
-  // Initialise suppressor canvas when enabled
-  useEffect(() => {
-    if (!suppEnabled || !suppCanvasRef.current) return;
+  const resetSuppCanvas = useCallback(() => {
+    if (!suppCanvasRef.current) return;
     const canvas = suppCanvasRef.current;
     const ctx = canvas.getContext('2d');
-    ctx.fillStyle = '#444444';
+    ctx.fillStyle = '#222222';
     ctx.fillRect(0, 0, SUPP_W, SUPP_H);
-  }, [suppEnabled]);
+
+    ctx.fillStyle = '#2a2a2a';
+    for (let x = 0; x < SUPP_W; x += 40) {
+      ctx.fillRect(x, 0, 20, SUPP_H);
+    }
+
+    ctx.fillStyle = '#111111';
+    ctx.fillRect(0, 0, 20, SUPP_H);
+    ctx.fillRect(SUPP_W - 20, 0, 20, SUPP_H);
+
+    ctx.fillStyle = 'rgba(255,255,255,0.2)';
+    ctx.font = 'bold 24px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('LIENZO SILENCIADOR (PINTA AQUÍ)', SUPP_W / 2, SUPP_H / 2);
+
+    setSuppPainted(false);
+  }, []);
+
+  // Initialise suppressor canvas when enabled
+  useEffect(() => {
+    if (suppEnabled) resetSuppCanvas();
+  }, [suppEnabled, resetSuppCanvas]);
 
   const TOOLS = [
     { id:'brush',  icon:<Paintbrush size={15}/>, label:'Pincel'   },
@@ -718,6 +741,22 @@ export default function SkinForge3D() {
                         ))}
                       </div>
                       <div className="text-[9px] text-zinc-600 mt-1">Color: usa los de arriba o el selector de arma</div>
+
+                      {/* Status indicator */}
+                      <div className="mt-2 pt-2 border-t border-white/5 flex flex-col gap-1">
+                        <div className="flex items-center justify-between text-[9px]">
+                          <span className="text-zinc-500">Textura activa:</span>
+                          <span className={`font-black ${suppPainted ? 'text-yellow-400' : 'text-green-400'}`}>
+                            {suppPainted ? '🎨 PINTADA MANUAL' : '✨ ORIGINAL NATIVA'}
+                          </span>
+                        </div>
+                        {suppPainted && (
+                          <button onClick={resetSuppCanvas}
+                            className="w-full py-1 bg-white/5 hover:bg-red-500/20 hover:text-red-400 text-zinc-400 rounded text-[9px] font-bold transition-all flex items-center justify-center gap-1">
+                            🧹 Limpiar y usar Original
+                          </button>
+                        )}
+                      </div>
                     </>
                   );
                 })()}

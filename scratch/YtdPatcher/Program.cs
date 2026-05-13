@@ -248,8 +248,11 @@ class Program
 
         if (idx < 0)
         {
-            idx = items.Select((t, i) => (t, i)).Where(x => x.t != null)
-                       .OrderByDescending(x => x.t.Width * x.t.Height).First().i;
+            var candidates = items.Select((t, i) => (t, i)).Where(x => x.t != null)
+                                  .OrderByDescending(x => x.t.Width * x.t.Height).ToList();
+            var diffuse = candidates.FirstOrDefault(x => !x.t.Name.EndsWith("_n", StringComparison.OrdinalIgnoreCase) &&
+                                                         !x.t.Name.EndsWith("_s", StringComparison.OrdinalIgnoreCase));
+            idx = diffuse.t != null ? diffuse.i : candidates.First().i;
             Console.WriteLine($"  '{targetName}' no hallada — usando '{items[idx].Name}'");
         }
 
