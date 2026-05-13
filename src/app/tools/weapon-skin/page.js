@@ -172,6 +172,7 @@ export default function SkinForge3D() {
   }, [undo]);
 
   useEffect(() => { if (ctrlRef.current) ctrlRef.current.enabled = (mode === 'rotate' && viewMode === '3d'); }, [mode, viewMode]);
+  useEffect(() => { if (viewMode === '2d') syncUV2D(); }, [viewMode, syncUV2D]);
   useEffect(() => { loadWeapon(weapon.id); }, [weapon.id]);
 
   // ---- LOAD WEAPON ----
@@ -411,7 +412,7 @@ export default function SkinForge3D() {
       <div className="pt-16 flex-1 flex flex-col" style={{height:'calc(100vh - 64px)'}}>
 
         {/* ── TOP BAR ── */}
-        <div className="flex items-center gap-3 px-4 py-2 border-b border-white/8 bg-black/40 shrink-0">
+        <div className="flex items-center gap-3 px-4 py-2 border-b border-white/8 bg-black/40 shrink-0 relative" style={{zIndex:60}}>
           <div className="flex items-center gap-2 bg-yellow-500/10 border border-yellow-500/20 px-2 py-1 rounded-full text-[9px] font-black text-yellow-400 uppercase shrink-0">
             <AlertTriangle size={8}/> LHC SkinForge 3D
           </div>
