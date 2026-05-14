@@ -426,27 +426,29 @@ export default function SkinForge3D() {
   };
 
   // ---- 3D PAINT HANDLERS ----
-  const getUV3D = useCallback((clientX, clientY) => {
+  const getUVs3D = useCallback((clientX, clientY) => {
     const el = mountRef.current; const cam = camRef.current; const mesh = meshRef.current;
-    if (!el || !cam || !mesh) return null;
+    if (!el || !cam || !mesh) return [];
     const r = el.getBoundingClientRect();
     const ndc = new THREE.Vector2(((clientX-r.left)/r.width)*2-1, -((clientY-r.top)/r.height)*2+1);
     const ray = new THREE.Raycaster();
     ray.setFromCamera(ndc, cam);
     const hits = ray.intersectObject(mesh, true);
-    return hits[0]?.uv ?? null;
+    // Return all unique UVs from all intersected layers to ensure full coverage (e.g. for dots)
+    return hits.map(h => h.uv).filter(uv => uv != null);
   }, []);
 
   const on3DDown = useCallback((e) => {
     if (mode==='rotate') return;
     e.preventDefault(); saveHistory(); paintRef.current = true;
-    applyPaint(getUV3D(e.clientX, e.clientY));
-  }, [mode, getUV3D, applyPaint]);
+    getUVs3D(e.clientX, e.clientY).forEach(uv => applyPaint(uv));
+  }, [mode, getUVs3D, applyPaint]);
 
   const on3DMove = useCallback((e) => {
     if (!paintRef.current || mode==='rotate') return;
-    e.preventDefault(); applyPaint(getUV3D(e.clientX, e.clientY));
-  }, [mode, getUV3D, applyPaint]);
+    e.preventDefault(); 
+    getUVs3D(e.clientX, e.clientY).forEach(uv => applyPaint(uv));
+  }, [mode, getUVs3D, applyPaint]);
 
   const onUp = useCallback(() => { paintRef.current = false; lastUVRef.current = null; }, []);
 
@@ -882,12 +884,14 @@ export default function SkinForge3D() {
                 const baseB = targetPixels[tIdx + 2];
                 const baseA = targetPixels[tIdx + 3] / 255.0;
 
-                // Standard Alpha Compositing Source-Over
+                // Robust Alpha Compositing Source-Over
                 const outAlpha = sAlpha + baseA * (1.0 - sAlpha);
-                targetPixels[tIdx]     = Math.min(255, (srcPixels[sIdx]     * sAlpha + baseR * (1.0 - sAlpha)) | 0);
-                targetPixels[tIdx + 1] = Math.min(255, (srcPixels[sIdx + 1] * sAlpha + baseG * (1.0 - sAlpha)) | 0);
-                targetPixels[tIdx + 2] = Math.min(255, (srcPixels[sIdx + 2] * sAlpha + baseB * (1.0 - sAlpha)) | 0);
-                targetPixels[tIdx + 3] = Math.min(255, (outAlpha * 255) | 0);
+                if (outAlpha > 0.001) {
+                  targetPixels[tIdx]     = Math.min(255, (srcPixels[sIdx]     * sAlpha + baseR * baseA * (1.0 - sAlpha)) / outAlpha) | 0;
+                  targetPixels[tIdx + 1] = Math.min(255, (srcPixels[sIdx + 1] * sAlpha + baseG * baseA * (1.0 - sAlpha)) / outAlpha) | 0;
+                  targetPixels[tIdx + 2] = Math.min(255, (srcPixels[sIdx + 2] * sAlpha + baseB * baseA * (1.0 - sAlpha)) / outAlpha) | 0;
+                  targetPixels[tIdx + 3] = Math.min(255, (outAlpha * 255)) | 0;
+                }
               }
             }
           }
