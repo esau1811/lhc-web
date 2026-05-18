@@ -113,11 +113,13 @@ export async function POST(request) {
       }
     }
 
-    // ── Build a CLEAN temp assets dir with ONLY .ytd files ───────────────
-    // Critical: if .ydr files are present in the assets dir, the patcher
-    // packs them into the RPF which (a) breaks the in-game suppressor
-    // position and (b) changes the RPF structure so the weapon texture
-    // no longer loads. We copy only the needed .ytd files to a clean dir.
+    // ── Build a clean temp assets dir that mirrors the original working state ──
+    // The patcher embeds the weapon texture in the RPF correctly only when its
+    // assets dir contains the weapon YTD + suppressor YTD + suppressor YDR
+    // (same structure as when it worked before). We copy those files here
+    // but do NOT pass suppressor args to the command, so the suppressor is
+    // NOT included in the RPF → FiveM uses the native GTA V suppressor
+    // at the correct position.
     const cleanAssetsDir = path.join(tmpDir, `lhc_assets_${tmpId}`);
     fs.mkdirSync(cleanAssetsDir, { recursive: true });
 
@@ -127,19 +129,26 @@ export async function POST(request) {
       fs.copyFileSync(weaponYtdSrc, path.join(cleanAssetsDir, `${weaponName}.ytd`));
     }
 
-    // Copy suppressor base YTD — look in root assets/ first, then silenciadores/
+    // Copy suppressor YTD + YDR so patcher sees same structure as the working state.
+    // YTD/YDR are looked up in silenciadores/ subfolder (their permanent home).
     if (suppName) {
-      const suppYtdSrc = fs.existsSync(path.join(ASSETS_DIR, `${suppName}.ytd`))
-        ? path.join(ASSETS_DIR, `${suppName}.ytd`)
-        : path.join(ASSETS_DIR, 'silenciadores', `${suppName}.ytd`);
-      if (fs.existsSync(suppYtdSrc)) {
-        fs.copyFileSync(suppYtdSrc, path.join(cleanAssetsDir, `${suppName}.ytd`));
+      const silDir = path.join(ASSETS_DIR, 'silenciadores');
+      const rootDir = ASSETS_DIR;
+      for (const ext of ['.ytd', '.ydr', '_hi.ydr']) {
+        const fname = `${suppName}${ext}`;
+        const src = fs.existsSync(path.join(rootDir, fname))
+          ? path.join(rootDir, fname)
+          : path.join(silDir, fname);
+        if (fs.existsSync(src)) {
+          fs.copyFileSync(src, path.join(cleanAssetsDir, fname));
+        }
       }
     }
 
-    // ── Build command ────────────────────────────────────────────────────
-    let cmd = `"${PATCHER_EXE}" "${weaponDdsArg}" "${weaponName}" "${cleanAssetsDir}"`;
-    if (suppName) cmd += ` "${suppDdsArg}" "${suppNameArg}"`;
+    // ── Build command — weapon only, NO suppressor args ──────────────────
+    // The suppressor is intentionally excluded from the RPF so FiveM uses
+    // the native GTA V suppressor model at the correct position.
+    const cmd = `"${PATCHER_EXE}" "${weaponDdsArg}" "${weaponName}" "${cleanAssetsDir}"`;
 
     console.log('[generate-rpf] CMD:', cmd.slice(0, 150));
 
@@ -162,11 +171,6 @@ export async function POST(request) {
     const rpfBytes = fs.readFileSync(rpfPath);
 
 
-    let suppYtdBytes = null;
-    const suppYtdPath = suppName ? path.join(tmpDir, `${suppName}.ytd`) : null;
-    if (suppYtdPath && fs.existsSync(suppYtdPath)) {
-      suppYtdBytes = fs.readFileSync(suppYtdPath);
-    }
 
     // Cleanup
     if (weaponDdsFile) try { fs.unlinkSync(weaponDdsFile); } catch {}
