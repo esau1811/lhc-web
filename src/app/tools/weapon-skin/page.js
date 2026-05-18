@@ -475,8 +475,11 @@ export default function SkinForge3D() {
     const ray = new THREE.Raycaster();
     ray.setFromCamera(ndc, cam);
     const hits = ray.intersectObject(mesh, true);
-    // Return all unique UVs from all intersected layers to ensure full coverage (e.g. for dots)
-    return hits.map(h => h.uv).filter(uv => uv != null);
+    if (hits.length === 0) return [];
+    
+    // Solo devolvemos la primera capa (la visible frontalmente) para evitar que
+    // el rayo atraviese el arma y pinte el lado opuesto como si fuera un espejo.
+    return hits[0].uv ? [hits[0].uv] : [];
   }, []);
 
   const on3DDown = useCallback((e) => {
