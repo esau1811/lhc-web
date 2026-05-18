@@ -145,8 +145,27 @@ export async function POST(request) {
       }
     }
 
+    // ── Assets dir: copy without suppressor YDR so FiveM uses base-game model ──
+    // Including YDR in the RPF causes a model conflict with the base game,
+    // which prevents the suppressor texture from being applied. Without the YDR,
+    // the base game model loads and picks up our custom YTD from the stream.
+    let assetsDir = ASSETS_DIR;
+    let tmpAssetsDir = null;
+    if (suppName) {
+      tmpAssetsDir = path.join(tmpDir, `assets_${tmpId}`);
+      fs.mkdirSync(tmpAssetsDir, { recursive: true });
+      for (const file of fs.readdirSync(ASSETS_DIR)) {
+        const isSuppYdr = file.toLowerCase().startsWith(suppName.toLowerCase()) && file.toLowerCase().endsWith('.ydr');
+        if (!isSuppYdr) {
+          fs.copyFileSync(path.join(ASSETS_DIR, file), path.join(tmpAssetsDir, file));
+        }
+      }
+      assetsDir = tmpAssetsDir;
+      console.log('[generate-rpf] tmpAssets (excluded YDRs):', fs.readdirSync(ASSETS_DIR).filter(f => f.toLowerCase().startsWith(suppName.toLowerCase()) && f.toLowerCase().endsWith('.ydr')));
+    }
+
     // ── Build command ────────────────────────────────────────────────────
-    let cmd = `"${PATCHER_EXE}" "${weaponDdsArg}" "${weaponName}" "${ASSETS_DIR}"`;
+    let cmd = `"${PATCHER_EXE}" "${weaponDdsArg}" "${weaponName}" "${assetsDir}"`;
     if (suppName) {
       cmd += ` "${suppDdsArg}" "${suppNameArg}"`;
     }
@@ -192,6 +211,7 @@ export async function POST(request) {
     if (ytdPath && fs.existsSync(ytdPath)) try { fs.unlinkSync(ytdPath); } catch {}
     if (suppYtdPath && fs.existsSync(suppYtdPath)) try { fs.unlinkSync(suppYtdPath); } catch {}
     if (suppDdsFile) try { fs.unlinkSync(suppDdsFile); } catch {}
+    if (tmpAssetsDir) try { fs.rmSync(tmpAssetsDir, { recursive: true, force: true }); } catch {}
 
     // ── Wrap in ZIP ──────────────────────────────────────────────────────
     const zip = new JSZip();
