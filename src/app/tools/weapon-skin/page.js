@@ -372,12 +372,12 @@ export default function SkinForge3D() {
         const isShotgun = weapon.id.startsWith('w_sg_');
         const barrelFrac = isPistol ? 0.20 : isShotgun ? 0.30 : 0.25;
 
-        const muzzleX = weaponBox.min.x;                            // front tip of barrel
+        const muzzleX = weaponBox.max.x;                            // front tip of barrel
         const muzzleY = weaponBox.max.y - wHeight * barrelFrac;     // barrel axis height
         const muzzleZ = (weaponBox.max.z + weaponBox.min.z) / 2;    // lateral center
 
-        // Measure suppressor's own box to find its entry face
-        suppObj.rotation.y = Math.PI;
+        // Measure suppressor's own box to find its entry face (left side since it points right)
+        suppObj.rotation.y = 0;
         suppObj.position.set(0, 0, 0);
         suppObj.updateMatrixWorld(true);
         const suppBox = new THREE.Box3().setFromObject(suppObj);
@@ -388,7 +388,7 @@ export default function SkinForge3D() {
           return;
         }
 
-        const entryOffset = suppBox.max.x;
+        const entryOffset = suppBox.min.x;
 
         // Align suppressor entry face to muzzle tip, centered on barrel axis
         suppObj.position.set(
