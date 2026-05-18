@@ -346,32 +346,32 @@ export default function SkinForge3D() {
         });
 
         // --- Precise two-pass bounding box alignment ---
-        // After loading, measure the suppressor's own bounding box so we can
-        // pin its entry-end (the end closest to the weapon barrel) exactly
-        // to the weapon's muzzle tip — no magic offsets needed.
-
-        // Step 1: Compute weapon muzzle tip in world space
-        // GTA weapons loaded via OBJ point along the X axis (muzzle = min.x side)
         const weaponBox = new THREE.Box3().setFromObject(parentMesh);
-        const muzzleX   = weaponBox.min.x;                             // tip of barrel
-        const muzzleY   = (weaponBox.max.y + weaponBox.min.y) / 2;    // vertical center
-        const muzzleZ   = (weaponBox.max.z + weaponBox.min.z) / 2;    // lateral center
+        const wHeight   = weaponBox.max.y - weaponBox.min.y;
 
-        // Step 2: Place suppressor at origin temporarily to measure its own box
-        suppObj.rotation.y = Math.PI; // GTA suppressors grow along +X in local space; flip to match barrel
+        // Barrel height varies by weapon category.
+        // Pistols: barrel is near the top of the slide (~20% from top)
+        // Rifles/SMGs/etc: barrel runs through roughly the upper third (~25% from top)
+        const isPistol = weapon.id.startsWith('w_pi_');
+        const isShotgun = weapon.id.startsWith('w_sg_');
+        const barrelFrac = isPistol ? 0.20 : isShotgun ? 0.30 : 0.25;
+
+        const muzzleX = weaponBox.min.x;                            // front tip of barrel
+        const muzzleY = weaponBox.max.y - wHeight * barrelFrac;     // barrel axis height
+        const muzzleZ = (weaponBox.max.z + weaponBox.min.z) / 2;    // lateral center
+
+        // Measure suppressor's own box to find its entry face
+        suppObj.rotation.y = Math.PI;
         suppObj.position.set(0, 0, 0);
         suppObj.updateMatrixWorld(true);
         const suppBox = new THREE.Box3().setFromObject(suppObj);
+        const entryOffset = suppBox.max.x;
 
-        // The entry end of the suppressor (the end that screws onto the barrel)
-        // is at suppBox.max.x (because after the 180° rotation, the thread end is at max.x)
-        const entryOffset = suppBox.max.x; // distance from origin to entry face
-
-        // Step 3: Move suppressor so its entry face touches the muzzle tip
+        // Align suppressor entry face to muzzle tip, centered on barrel axis
         suppObj.position.set(
           muzzleX - entryOffset,
-          muzzleY - (suppBox.max.y + suppBox.min.y) / 2, // vertical center aligned
-          muzzleZ - (suppBox.max.z + suppBox.min.z) / 2  // lateral center aligned
+          muzzleY - (suppBox.max.y + suppBox.min.y) / 2,
+          muzzleZ - (suppBox.max.z + suppBox.min.z) / 2
         );
 
         scene.add(suppObj);
