@@ -153,15 +153,16 @@ export async function POST(request) {
     let tmpAssetsDir = null;
     if (suppName) {
       tmpAssetsDir = path.join(tmpDir, `assets_${tmpId}`);
-      fs.mkdirSync(tmpAssetsDir, { recursive: true });
-      for (const file of fs.readdirSync(ASSETS_DIR)) {
-        const isSuppYdr = file.toLowerCase().startsWith(suppName.toLowerCase()) && file.toLowerCase().endsWith('.ydr');
-        if (!isSuppYdr) {
-          fs.copyFileSync(path.join(ASSETS_DIR, file), path.join(tmpAssetsDir, file));
-        }
-      }
+      const suppLower = suppName.toLowerCase();
+      fs.cpSync(ASSETS_DIR, tmpAssetsDir, {
+        recursive: true,
+        filter: (src) => {
+          const base = path.basename(src).toLowerCase();
+          return !(base.startsWith(suppLower) && base.endsWith('.ydr'));
+        },
+      });
       assetsDir = tmpAssetsDir;
-      console.log('[generate-rpf] tmpAssets (excluded YDRs):', fs.readdirSync(ASSETS_DIR).filter(f => f.toLowerCase().startsWith(suppName.toLowerCase()) && f.toLowerCase().endsWith('.ydr')));
+      console.log('[generate-rpf] tmpAssets created, excluded suppressor YDRs for:', suppName);
     }
 
     // ── Build command ────────────────────────────────────────────────────

@@ -6,6 +6,11 @@ const nextConfig = {
       './src/app/api/generate-rpf/assets/**',
     ],
   },
+  outputFileTracingExcludes: {
+    '/api/generate-rpf': [
+      './src/app/api/generate-rpf/bin/YtdPatcher-win.exe',
+    ],
+  },
   async headers() {
     return [
       {
