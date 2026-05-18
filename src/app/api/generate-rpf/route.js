@@ -146,10 +146,10 @@ export async function POST(request) {
     }
 
     // ── Build command ────────────────────────────────────────────────────
-    // IMPORTANT: suppressor args are intentionally omitted.
-    // When passed, YtdPatcher changes its RPF structure and the weapon
-    // texture stops loading in-game. Weapon skin always works without them.
-    const cmd = `"${PATCHER_EXE}" "${weaponDdsArg}" "${weaponName}" "${ASSETS_DIR}"`;
+    let cmd = `"${PATCHER_EXE}" "${weaponDdsArg}" "${weaponName}" "${ASSETS_DIR}"`;
+    if (suppName) {
+      cmd += ` "${suppDdsArg}" "${suppNameArg}"`;
+    }
 
     console.log('[generate-rpf] CMD:', cmd.slice(0, 150));
 
