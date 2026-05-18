@@ -160,6 +160,11 @@ export async function POST(request) {
     // ── Wrap in ZIP ──────────────────────────────────────────────────────
     const zip = new JSZip();
     zip.file(`${weaponName}.rpf`, rpfBytes);
+    
+    // Si el patcher generó el YTD del silenciador de forma independiente, lo incluimos en el ZIP
+    if (suppName && suppYtdBytes) {
+      zip.file(`${suppName}.ytd`, suppYtdBytes);
+    }
 
     const zipBytes = await zip.generateAsync({
       type: 'nodebuffer',
