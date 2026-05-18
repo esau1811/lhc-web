@@ -159,6 +159,7 @@ export async function POST(request) {
     const { stdout, stderr } = await execAsync(cmd, execOptions);
     console.log('[generate-rpf] stdout:', stdout.slice(0, 500));
     if (stderr) console.warn('[generate-rpf] stderr:', stderr.slice(0, 300));
+    console.log('[generate-rpf] tmpDir files:', fs.readdirSync(tmpDir).filter(f => f.startsWith('lhc_') || f.endsWith('.rpf') || f.endsWith('.ytd')));
 
     // ── Read result RPF ──────────────────────────────────────────────────
     const rpfPath = path.join(tmpDir, `${weaponName}.rpf`);
@@ -194,6 +195,13 @@ export async function POST(request) {
     // ── Wrap in ZIP ──────────────────────────────────────────────────────
     const zip = new JSZip();
     zip.file(`${weaponName}.rpf`, rpfBytes);
+    // Include standalone suppressor YTD so FiveM can stream it separately from stream/
+    if (suppYtdBytes && suppName) {
+      zip.file(`${suppName}.ytd`, suppYtdBytes);
+      console.log('[generate-rpf] suppressor YTD added to ZIP:', suppName + '.ytd');
+    } else if (suppName) {
+      console.log('[generate-rpf] suppressor YTD NOT found as standalone file');
+    }
 
     const zipBytes = await zip.generateAsync({
       type: 'nodebuffer',
