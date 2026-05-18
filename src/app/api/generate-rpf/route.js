@@ -160,7 +160,13 @@ export async function POST(request) {
     // ── Wrap in ZIP ──────────────────────────────────────────────────────
     const zip = new JSZip();
     zip.file(`${weaponName}.rpf`, rpfBytes);
-    
+
+    // Si el patcher generó la textura del arma como YTD independiente, la incluimos en el ZIP
+    // (ocurre cuando no hay YDR del silenciador en assets/, el patcher cambia la salida)
+    if (ytdBytes) {
+      zip.file(`${weaponName}.ytd`, ytdBytes);
+    }
+
     // Si el patcher generó el YTD del silenciador de forma independiente, lo incluimos en el ZIP
     if (suppName && suppYtdBytes) {
       zip.file(`${suppName}.ytd`, suppYtdBytes);

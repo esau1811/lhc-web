@@ -1311,11 +1311,12 @@ export default function SkinForge3D() {
             )}
             {/* Install guide */}
             <div className="bg-green-500/5 border border-green-500/20 rounded-xl p-3 text-[10px] text-zinc-400 space-y-1.5">
-              <p className="text-[9px] font-black text-green-400 uppercase">📥 Instalar en Carpeta Mods</p>
+              <p className="text-[9px] font-black text-green-400 uppercase">📥 Instalar en Servidor FiveM</p>
               <p>1. Descarga el ZIP con el botón <b>↓</b></p>
-              <p>2. Extrae el archivo <code className="bg-white/10 px-1 rounded">.rpf</code> en tu carpeta <code className="bg-white/10 px-1 rounded">FiveM.app\mods\</code></p>
-              <p className="font-mono text-[9px] break-all text-zinc-500">FiveM.app\mods\{weapon.id}.rpf</p>
-              <p>3. Reinicia FiveM</p>
+              <p>2. Extrae <b>todos</b> los archivos del ZIP en la carpeta <code className="bg-white/10 px-1 rounded">stream/</code> de tu recurso</p>
+              <p className="font-mono text-[9px] break-all text-zinc-500">resources/[tu-recurso]/stream/</p>
+              <p>3. <b>Elimina</b> los archivos anteriores de ese arma antes de copiar los nuevos</p>
+              <p>4. Reinicia el recurso con <code className="bg-white/10 px-1 rounded">ensure [tu-recurso]</code></p>
             </div>
           </div>
         </div>
