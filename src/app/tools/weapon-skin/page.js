@@ -161,13 +161,29 @@ export default function SkinForge3D() {
     const animate = () => { raf = requestAnimationFrame(animate); ctrl.update(); renderer.render(scene, cam); };
     animate();
 
-    const onResize = () => {
-      renderer.setSize(el.clientWidth, el.clientHeight);
-      cam.aspect = el.clientWidth/el.clientHeight;
-      cam.updateProjectionMatrix();
+    let resizeTimeout;
+    const resizeObserver = new ResizeObserver(entries => {
+      cancelAnimationFrame(resizeTimeout);
+      resizeTimeout = requestAnimationFrame(() => {
+        for (let entry of entries) {
+          const { width, height } = entry.contentRect;
+          if (width > 0 && height > 0) {
+            renderer.setSize(width, height);
+            cam.aspect = width / height;
+            cam.updateProjectionMatrix();
+          }
+        }
+      });
+    });
+    resizeObserver.observe(el);
+
+    return () => { 
+      resizeObserver.disconnect();
+      cancelAnimationFrame(resizeTimeout);
+      cancelAnimationFrame(raf); 
+      renderer.dispose(); 
+      el.innerHTML=''; 
     };
-    window.addEventListener('resize', onResize);
-    return () => { window.removeEventListener('resize', onResize); cancelAnimationFrame(raf); renderer.dispose(); el.innerHTML=''; };
   }, []);
 
   // ---- 2D CANVAS SYNC ----
@@ -365,6 +381,13 @@ export default function SkinForge3D() {
         suppObj.position.set(0, 0, 0);
         suppObj.updateMatrixWorld(true);
         const suppBox = new THREE.Box3().setFromObject(suppObj);
+
+        // Prevent WebGL NaN crashes if the OBJ file is missing/empty and returns 404 HTML
+        if (suppBox.isEmpty()) {
+          console.warn(`Suppressor OBJ ${suppId} is empty or missing.`);
+          return;
+        }
+
         const entryOffset = suppBox.max.x;
 
         // Align suppressor entry face to muzzle tip, centered on barrel axis
