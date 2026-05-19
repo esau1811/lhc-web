@@ -630,63 +630,12 @@ export default function SkinForge3D() {
     const ctx = tc.getContext('2d');
     const W = TEX, H = TEX;
     ctx.save();
-    if (patType === 'tiger') {
-      ctx.fillStyle = '#c07018'; ctx.fillRect(0,0,W,H);
-      ctx.fillStyle = '#0a0a0a';
-      for (let i = -H; i < W+H; i += 70) {
-        ctx.beginPath(); ctx.moveTo(i,0); ctx.lineTo(i+28,0); ctx.lineTo(i+28+H,H); ctx.lineTo(i+H,H); ctx.closePath(); ctx.fill();
-      }
-    } else if (patType === 'camo') {
-      ctx.fillStyle = '#3a5a22'; ctx.fillRect(0,0,W,H);
-      const blob = ['#1a2a10','#5a7a30','#2a3a18','#8a9a50','#111a08'];
-      for (let i = 0; i < 90; i++) {
-        ctx.fillStyle = blob[i%blob.length];
-        const bx=Math.random()*W, by=Math.random()*H, br=25+Math.random()*90;
-        ctx.beginPath(); ctx.ellipse(bx,by,br,br*0.55,Math.random()*Math.PI,0,Math.PI*2); ctx.fill();
-      }
-    } else if (patType === 'stripes_h') {
-      const sh = 40;
-      for (let y=0; y<H; y+=sh) { ctx.fillStyle=(Math.floor(y/sh)%2===0)?color:'#000'; ctx.fillRect(0,y,W,sh); }
-    } else if (patType === 'stripes_v') {
-      const sw = 40;
-      for (let x=0; x<W; x+=sw) { ctx.fillStyle=(Math.floor(x/sw)%2===0)?color:'#000'; ctx.fillRect(x,0,sw,H); }
-    } else if (patType === 'stripes_d') {
-      ctx.fillStyle='#000'; ctx.fillRect(0,0,W,H);
-      ctx.fillStyle=color;
-      for (let i=-H; i<W+H; i+=60) {
-        ctx.beginPath(); ctx.moveTo(i,0); ctx.lineTo(i+25,0); ctx.lineTo(i+25+H,H); ctx.lineTo(i+H,H); ctx.closePath(); ctx.fill();
-      }
-    } else if (patType === 'carbon') {
-      const g = 20;
-      ctx.fillStyle='#111'; ctx.fillRect(0,0,W,H);
-      for (let x=0; x<W; x+=g) for (let y=0; y<H; y+=g) {
-        const off=((Math.floor(x/g)+Math.floor(y/g))%2)*g/2;
-        const gr=ctx.createLinearGradient(x,y+off,x+g,y+off+g/2);
-        gr.addColorStop(0,'#333'); gr.addColorStop(0.5,'#1e1e1e'); gr.addColorStop(1,'#2a2a2a');
-        ctx.fillStyle=gr; ctx.fillRect(x,y+off,g,g/2);
-      }
-    } else if (patType === 'dots') {
-      ctx.fillStyle='#111'; ctx.fillRect(0,0,W,H);
-      ctx.fillStyle=color;
-      const sp=50, r=12;
-      for (let x=sp/2; x<W; x+=sp) for (let y=sp/2; y<H; y+=sp) {
-        ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2); ctx.fill();
-      }
-    } else if (patType === 'hex') {
-      ctx.fillStyle='#0a0a0a'; ctx.fillRect(0,0,W,H);
-      ctx.strokeStyle=color; ctx.lineWidth=3;
-      const R=32;
-      for (let row=0; row<H/(R*1.5)+2; row++) for (let col=0; col<W/(R*Math.sqrt(3))+2; col++) {
-        const hx=col*R*Math.sqrt(3)+(row%2)*R*Math.sqrt(3)/2, hy=row*R*1.5;
-        ctx.beginPath();
-        for (let a=0;a<6;a++){const ang=Math.PI/180*(60*a-30);a===0?ctx.moveTo(hx+R*Math.cos(ang),hy+R*Math.sin(ang)):ctx.lineTo(hx+R*Math.cos(ang),hy+R*Math.sin(ang));}
-        ctx.closePath(); ctx.stroke();
-      }
-    } else if (patType === 'gradient') {
-      const gr=ctx.createLinearGradient(0,0,W,H);
-      gr.addColorStop(0,color); gr.addColorStop(1,'#000000');
-      ctx.fillStyle=gr; ctx.fillRect(0,0,W,H);
-    }
+    
+    const tile = createPatternTile(patType, color);
+    const pat = ctx.createPattern(tile, 'repeat');
+    ctx.fillStyle = pat;
+    ctx.fillRect(0, 0, W, H);
+    
     ctx.restore();
     tt.needsUpdate = true;
     setWeaponPainted(true);
