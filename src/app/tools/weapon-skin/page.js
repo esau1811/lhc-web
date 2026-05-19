@@ -4,7 +4,7 @@ import Header from '@/components/Header';
 import * as THREE from 'three';
 import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader.js';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
-import { Paintbrush, Eraser, Download, RotateCcw, Undo2, ChevronDown, AlertTriangle, Minus, Plus, Droplets, Wind, Crosshair } from 'lucide-react';
+import { Paintbrush, Eraser, Download, RotateCcw, Undo2, ChevronDown, AlertTriangle, Minus, Plus, Droplets, Wind, Square, Circle, Slash, LayoutGrid } from 'lucide-react';
 import { HexColorPicker } from 'react-colorful';
 
 const WEAPONS = [
@@ -64,7 +64,9 @@ function getSuppOptions(weaponId) {
   return null; // no suppressor for this category
 }
 
-const SWATCHES = ['#ffffff','#000000','#ef4444','#f97316','#eab308','#22c55e','#3b82f6','#8b5cf6','#ec4899','#78716c'];
+const SWATCHES      = ['#ffffff','#000000','#ef4444','#f97316','#eab308','#22c55e','#3b82f6','#8b5cf6','#ec4899','#78716c'];
+const MATTE_COLORS  = ['#1a1a1a','#2e2e2e','#4a4a4a','#6e6e6e','#8c1515','#1a4a1a','#1a2a4a','#4a2a0a','#2d3a15','#7a5c3a'];
+const NEON_COLORS   = ['#ff0033','#ff6600','#ffff00','#00ff88','#00ffff','#0066ff','#cc00ff','#ff00aa','#ff4400','#88ff00'];
 const TEX = 1024;
 const SUPP_W = 1024, SUPP_H = 256; // suppressor texture is 4:1
 
@@ -80,17 +82,22 @@ export default function SkinForge3D() {
   const baseRef    = useRef(null);  // base Image
   const uv2DRef    = useRef(null);  // display canvas for 2D UV mode
   const dropBtnRef = useRef(null);  // weapon selector button ref
-  const paintRef   = useRef(false);
-  const lastUVRef  = useRef(null);
-  const historyRef = useRef([]);
+  const paintRef       = useRef(false);
+  const lastUVRef      = useRef(null);
+  const historyRef     = useRef([]);
+  const shapeStartRef  = useRef(null);   // {x,y} UV coords where shape drag began
+  const shapeSnapRef   = useRef(null);   // ImageData snapshot before shape preview
 
-  const [weapon,    setWeapon]    = useState(WEAPONS[0]);
-  const [tool,      setTool]      = useState('brush');
-  const [color,     setColor]     = useState('#ef4444');
-  const [size,      setSize]      = useState(50);
-  const [opacity,   setOpacity]   = useState(90);
-  const [mode,      setMode]      = useState('paint');  // 'paint' | 'rotate' (3D only)
-  const [viewMode,  setViewMode]  = useState('3d');     // '3d' | '2d'
+  const [weapon,      setWeapon]    = useState(WEAPONS[0]);
+  const [tool,        setTool]      = useState('brush');
+  const [color,       setColor]     = useState('#ef4444');
+  const [size,        setSize]      = useState(50);
+  const [opacity,     setOpacity]   = useState(90);
+  const [mode,        setMode]      = useState('paint');  // 'paint' | 'rotate' (3D only)
+  const [viewMode,    setViewMode]  = useState('3d');     // '3d' | '2d'
+  const [colorTab,    setColorTab]  = useState('palette'); // 'palette'|'matte'|'neon'
+  const [patternType, setPatternType] = useState('tiger');
+  const [shapeFilled, setShapeFilled] = useState(false);
   const [dropOpen,  setDropOpen]  = useState(false);
   const [dropPos,   setDropPos]   = useState({ top: 0, left: 0 });
   const [loading,   setLoading]   = useState(true);
@@ -406,7 +413,7 @@ export default function SkinForge3D() {
 
   }, [suppEnabled, suppStyle, hasModel, weapon.id, suppPainted]);
 
-  // ---- PAINT CORE ----
+  // ---- PAINT CORE (brush / spray / fill / eraser) ----
   const applyPaint = useCallback((uv) => {
     const tc = tcRef.current; const tt = ttRef.current;
     if (!tc || !tt || !uv) return;
@@ -447,6 +454,126 @@ export default function SkinForge3D() {
     setWeaponPainted(true);
   }, [tool, color, size, opacity]);
 
+  // ---- SHAPE TOOLS (line / rect / ellipse) ----
+  const SHAPE_TOOLS = ['line','rect','ellipse'];
+
+  const beginShape = useCallback((uv) => {
+    if (!uv) return;
+    const tc = tcRef.current;
+    if (tc) shapeSnapRef.current = tc.getContext('2d').getImageData(0, 0, TEX, TEX);
+    shapeStartRef.current = uv;
+  }, []);
+
+  const previewShape = useCallback((uv) => {
+    const start = shapeStartRef.current;
+    if (!start || !uv) return;
+    const tc = tcRef.current; const tt = ttRef.current;
+    if (!tc || !tt) return;
+    if (shapeSnapRef.current) tc.getContext('2d').putImageData(shapeSnapRef.current, 0, 0);
+    const ctx = tc.getContext('2d');
+    const x1 = start.x * TEX, y1 = start.y * TEX;
+    const x2 = uv.x * TEX,    y2 = uv.y * TEX;
+    ctx.save();
+    ctx.globalAlpha = opacity / 100;
+    ctx.strokeStyle = color; ctx.fillStyle = color;
+    ctx.lineWidth = Math.max(1, size / 5);
+    ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    ctx.beginPath();
+    if (tool === 'line') {
+      ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+    } else if (tool === 'rect') {
+      if (shapeFilled) ctx.fillRect(x1, y1, x2-x1, y2-y1);
+      else ctx.strokeRect(x1, y1, x2-x1, y2-y1);
+    } else if (tool === 'ellipse') {
+      const rx = Math.abs(x2-x1)/2, ry = Math.abs(y2-y1)/2;
+      const cx = Math.min(x1,x2)+rx, cy = Math.min(y1,y2)+ry;
+      ctx.ellipse(cx, cy, Math.max(1,rx), Math.max(1,ry), 0, 0, Math.PI*2);
+      if (shapeFilled) ctx.fill(); else ctx.stroke();
+    }
+    ctx.restore();
+    tt.needsUpdate = true;
+  }, [tool, color, size, opacity, shapeFilled]);
+
+  const endShape = useCallback(() => {
+    shapeStartRef.current = null;
+    shapeSnapRef.current = null;
+    const tt = ttRef.current; if (tt) tt.needsUpdate = true;
+    setWeaponPainted(true);
+    syncUV2D();
+  }, [syncUV2D]);
+
+  // ---- PATTERN FILL ----
+  const applyPattern = useCallback((patType) => {
+    const tc = tcRef.current; const tt = ttRef.current;
+    if (!tc || !tt) return;
+    saveHistory();
+    const ctx = tc.getContext('2d');
+    const W = TEX, H = TEX;
+    ctx.save();
+    if (patType === 'tiger') {
+      ctx.fillStyle = '#c07018'; ctx.fillRect(0,0,W,H);
+      ctx.fillStyle = '#0a0a0a';
+      for (let i = -H; i < W+H; i += 70) {
+        ctx.beginPath(); ctx.moveTo(i,0); ctx.lineTo(i+28,0); ctx.lineTo(i+28+H,H); ctx.lineTo(i+H,H); ctx.closePath(); ctx.fill();
+      }
+    } else if (patType === 'camo') {
+      ctx.fillStyle = '#3a5a22'; ctx.fillRect(0,0,W,H);
+      const blob = ['#1a2a10','#5a7a30','#2a3a18','#8a9a50','#111a08'];
+      for (let i = 0; i < 90; i++) {
+        ctx.fillStyle = blob[i%blob.length];
+        const bx=Math.random()*W, by=Math.random()*H, br=25+Math.random()*90;
+        ctx.beginPath(); ctx.ellipse(bx,by,br,br*0.55,Math.random()*Math.PI,0,Math.PI*2); ctx.fill();
+      }
+    } else if (patType === 'stripes_h') {
+      const sh = 40;
+      for (let y=0; y<H; y+=sh) { ctx.fillStyle=(Math.floor(y/sh)%2===0)?color:'#000'; ctx.fillRect(0,y,W,sh); }
+    } else if (patType === 'stripes_v') {
+      const sw = 40;
+      for (let x=0; x<W; x+=sw) { ctx.fillStyle=(Math.floor(x/sw)%2===0)?color:'#000'; ctx.fillRect(x,0,sw,H); }
+    } else if (patType === 'stripes_d') {
+      ctx.fillStyle='#000'; ctx.fillRect(0,0,W,H);
+      ctx.fillStyle=color;
+      for (let i=-H; i<W+H; i+=60) {
+        ctx.beginPath(); ctx.moveTo(i,0); ctx.lineTo(i+25,0); ctx.lineTo(i+25+H,H); ctx.lineTo(i+H,H); ctx.closePath(); ctx.fill();
+      }
+    } else if (patType === 'carbon') {
+      const g = 20;
+      ctx.fillStyle='#111'; ctx.fillRect(0,0,W,H);
+      for (let x=0; x<W; x+=g) for (let y=0; y<H; y+=g) {
+        const off=((Math.floor(x/g)+Math.floor(y/g))%2)*g/2;
+        const gr=ctx.createLinearGradient(x,y+off,x+g,y+off+g/2);
+        gr.addColorStop(0,'#333'); gr.addColorStop(0.5,'#1e1e1e'); gr.addColorStop(1,'#2a2a2a');
+        ctx.fillStyle=gr; ctx.fillRect(x,y+off,g,g/2);
+      }
+    } else if (patType === 'dots') {
+      ctx.fillStyle='#111'; ctx.fillRect(0,0,W,H);
+      ctx.fillStyle=color;
+      const sp=50, r=12;
+      for (let x=sp/2; x<W; x+=sp) for (let y=sp/2; y<H; y+=sp) {
+        ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2); ctx.fill();
+      }
+    } else if (patType === 'hex') {
+      ctx.fillStyle='#0a0a0a'; ctx.fillRect(0,0,W,H);
+      ctx.strokeStyle=color; ctx.lineWidth=3;
+      const R=32;
+      for (let row=0; row<H/(R*1.5)+2; row++) for (let col=0; col<W/(R*Math.sqrt(3))+2; col++) {
+        const hx=col*R*Math.sqrt(3)+(row%2)*R*Math.sqrt(3)/2, hy=row*R*1.5;
+        ctx.beginPath();
+        for (let a=0;a<6;a++){const ang=Math.PI/180*(60*a-30);a===0?ctx.moveTo(hx+R*Math.cos(ang),hy+R*Math.sin(ang)):ctx.lineTo(hx+R*Math.cos(ang),hy+R*Math.sin(ang));}
+        ctx.closePath(); ctx.stroke();
+      }
+    } else if (patType === 'gradient') {
+      const gr=ctx.createLinearGradient(0,0,W,H);
+      gr.addColorStop(0,color); gr.addColorStop(1,'#000000');
+      ctx.fillStyle=gr; ctx.fillRect(0,0,W,H);
+    }
+    ctx.restore();
+    tt.needsUpdate = true;
+    setWeaponPainted(true);
+    syncUV2D();
+  }, [color, syncUV2D]);
+
+
   const floodFill = (ctx, sx, sy, fillColor) => {
     const img = ctx.getImageData(0,0,TEX,TEX);
     const d = img.data;
@@ -484,17 +611,29 @@ export default function SkinForge3D() {
 
   const on3DDown = useCallback((e) => {
     if (mode==='rotate') return;
-    e.preventDefault(); saveHistory(); paintRef.current = true;
-    getUVs3D(e.clientX, e.clientY).forEach(uv => applyPaint(uv));
-  }, [mode, getUVs3D, applyPaint]);
+    e.preventDefault();
+    const uvs = getUVs3D(e.clientX, e.clientY);
+    if (SHAPE_TOOLS.includes(tool)) {
+      if (uvs.length > 0) { saveHistory(); paintRef.current = true; beginShape(uvs[0]); }
+    } else {
+      saveHistory(); paintRef.current = true;
+      uvs.forEach(uv => applyPaint(uv));
+    }
+  }, [mode, tool, getUVs3D, applyPaint, beginShape]);
 
   const on3DMove = useCallback((e) => {
     if (!paintRef.current || mode==='rotate') return;
-    e.preventDefault(); 
-    getUVs3D(e.clientX, e.clientY).forEach(uv => applyPaint(uv));
-  }, [mode, getUVs3D, applyPaint]);
+    e.preventDefault();
+    const uvs = getUVs3D(e.clientX, e.clientY);
+    if (SHAPE_TOOLS.includes(tool)) { if (uvs.length > 0) { previewShape(uvs[0]); syncUV2D(); } }
+    else uvs.forEach(uv => applyPaint(uv));
+  }, [mode, tool, getUVs3D, applyPaint, previewShape, syncUV2D]);
 
-  const onUp = useCallback(() => { paintRef.current = false; lastUVRef.current = null; }, []);
+  const onUp = useCallback(() => {
+    paintRef.current = false; lastUVRef.current = null;
+    if (SHAPE_TOOLS.includes(tool)) endShape();
+    syncUV2D();
+  }, [tool, endShape, syncUV2D]);
 
   const onTouch3DDown = useCallback((e) => { if(e.touches[0]) on3DDown({clientX:e.touches[0].clientX,clientY:e.touches[0].clientY,preventDefault:()=>{}}); }, [on3DDown]);
   const onTouch3DMove = useCallback((e) => { e.preventDefault(); if(e.touches[0]) on3DMove({clientX:e.touches[0].clientX,clientY:e.touches[0].clientY,preventDefault:()=>{}}); }, [on3DMove]);
@@ -510,15 +649,22 @@ export default function SkinForge3D() {
   }, []);
 
   const on2DDown = useCallback((e) => {
-    e.preventDefault(); saveHistory(); paintRef.current = true;
-    applyPaint(getUV2D(e.clientX, e.clientY));
-    syncUV2D();
-  }, [getUV2D, applyPaint, syncUV2D]);
+    e.preventDefault();
+    const uv = getUV2D(e.clientX, e.clientY);
+    if (SHAPE_TOOLS.includes(tool)) {
+      if (uv) { saveHistory(); paintRef.current = true; beginShape(uv); }
+    } else {
+      saveHistory(); paintRef.current = true; applyPaint(uv); syncUV2D();
+    }
+  }, [getUV2D, applyPaint, syncUV2D, beginShape, tool]);
 
   const on2DMove = useCallback((e) => {
     if (!paintRef.current) return;
-    e.preventDefault(); applyPaint(getUV2D(e.clientX, e.clientY)); syncUV2D();
-  }, [getUV2D, applyPaint, syncUV2D]);
+    e.preventDefault();
+    const uv = getUV2D(e.clientX, e.clientY);
+    if (SHAPE_TOOLS.includes(tool)) { if (uv) { previewShape(uv); syncUV2D(); } }
+    else { applyPaint(uv); syncUV2D(); }
+  }, [getUV2D, applyPaint, syncUV2D, previewShape, tool]);
 
   const onTouch2DDown = useCallback((e) => { if(e.touches[0]) on2DDown({clientX:e.touches[0].clientX,clientY:e.touches[0].clientY,preventDefault:()=>{}}); }, [on2DDown]);
   const onTouch2DMove = useCallback((e) => { e.preventDefault(); if(e.touches[0]) on2DMove({clientX:e.touches[0].clientX,clientY:e.touches[0].clientY,preventDefault:()=>{}}); }, [on2DMove]);
@@ -942,10 +1088,26 @@ export default function SkinForge3D() {
   }, [disposeSticker]);
 
   const TOOLS = [
-    { id:'brush',  icon:<Paintbrush size={15}/>, label:'Pincel'   },
-    { id:'spray',  icon:<Wind size={15}/>,       label:'Spray'    },
-    { id:'fill',   icon:<Droplets size={15}/>,   label:'Relleno'  },
-    { id:'eraser', icon:<Eraser size={15}/>,     label:'Borrador' },
+    { id:'brush',   icon:<Paintbrush size={14}/>, label:'Pincel'        },
+    { id:'spray',   icon:<Wind size={14}/>,        label:'Spray'         },
+    { id:'line',    icon:<Slash size={14}/>,       label:'Línea recta'   },
+    { id:'rect',    icon:<Square size={14}/>,      label:'Rectángulo'    },
+    { id:'ellipse', icon:<Circle size={14}/>,      label:'Elipse/Círculo'},
+    { id:'fill',    icon:<Droplets size={14}/>,    label:'Relleno'       },
+    { id:'pattern', icon:<LayoutGrid size={14}/>,  label:'Patrón'        },
+    { id:'eraser',  icon:<Eraser size={14}/>,      label:'Borrador'      },
+  ];
+
+  const PATTERNS = [
+    { id:'tiger',     label:'🐯 Tigre'    },
+    { id:'camo',      label:'🌿 Camuflaje'},
+    { id:'stripes_h', label:'━ Rayas H'   },
+    { id:'stripes_v', label:'║ Rayas V'   },
+    { id:'stripes_d', label:'╲ Diagonal'  },
+    { id:'carbon',    label:'⬛ Carbono'  },
+    { id:'dots',      label:'● Puntos'    },
+    { id:'hex',       label:'⬡ Hexágono'  },
+    { id:'gradient',  label:'◧ Gradiente' },
   ];
 
   // Group weapons by category for dropdown
@@ -1150,8 +1312,8 @@ export default function SkinForge3D() {
           {/* ── RIGHT PANEL ── */}
           <div className="w-52 border-l border-white/8 bg-[#0a0a0a] p-3 flex flex-col gap-3 overflow-y-auto shrink-0 relative z-30">
 
-            {/* ── SILENCIADOR ── */}
-            {getSuppOptions(weapon.id) && (
+            {/* suppressor section removed */}
+            {false && (
               <div className={`border rounded-xl p-3 transition-all ${suppEnabled ? 'bg-zinc-800/60 border-zinc-500/40' : 'bg-white/3 border-white/8'}`}>
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-1.5">
@@ -1275,21 +1437,30 @@ export default function SkinForge3D() {
             {/* Color */}
             <div className="bg-white/3 border border-white/8 rounded-xl p-3">
               <div className="text-[9px] text-zinc-500 font-black uppercase tracking-widest mb-2">Color</div>
-              <HexColorPicker color={color} onChange={(c) => { setColor(c); if (suppEnabled) setSuppColor(c); }} style={{width:'100%', height:130}}/>
+              <HexColorPicker color={color} onChange={setColor} style={{width:'100%', height:120}}/>
               <div className="flex items-center gap-2 mt-2">
                 <div className="w-6 h-6 rounded-md border border-white/20 shrink-0" style={{backgroundColor:color}}/>
                 <span className="text-[10px] font-mono text-zinc-400">{color.toUpperCase()}</span>
               </div>
+              {/* Tab selector */}
+              <div className="flex rounded-lg border border-white/10 text-[9px] font-black mt-2">
+                {[['palette','🎨'],['matte','🪨'],['neon','⚡']].map(([id,icon]) => (
+                  <button key={id} onClick={() => setColorTab(id)}
+                    className={`flex-1 py-1 transition-colors rounded-lg ${
+                      colorTab===id ? 'bg-red-500 text-white' : 'text-zinc-500 hover:text-white'
+                    }`}>{icon} {id}</button>
+                ))}
+              </div>
               <div className="grid grid-cols-5 gap-1 mt-2">
-                {SWATCHES.map(c => (
-                  <button key={c} onClick={() => { setColor(c); if (suppEnabled) setSuppColor(c); }}
+                {(colorTab==='matte' ? MATTE_COLORS : colorTab==='neon' ? NEON_COLORS : SWATCHES).map(c => (
+                  <button key={c} onClick={() => setColor(c)}
                     className={`h-5 rounded hover:scale-110 transition-all ${color===c?'ring-2 ring-white ring-offset-1 ring-offset-black':''}`}
                     style={{backgroundColor:c}}/>
                 ))}
               </div>
             </div>
-            {/* Size */}
-            {tool!=='fill' && (
+            {/* Size — hidden for fill & pattern */}
+            {!['fill','pattern'].includes(tool) && (
               <div className="bg-white/3 border border-white/8 rounded-xl p-3">
                 <div className="text-[9px] text-zinc-500 font-black uppercase tracking-widest mb-2">Tamaño</div>
                 <div className="flex items-center gap-2 mb-2">
@@ -1300,8 +1471,39 @@ export default function SkinForge3D() {
                 <input type="range" min={2} max={300} value={size} onChange={e => setSize(+e.target.value)} className="w-full h-1 rounded accent-red-500"/>
               </div>
             )}
+            {/* Shape filled toggle */}
+            {['rect','ellipse'].includes(tool) && (
+              <div className="bg-white/3 border border-white/8 rounded-xl p-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-[9px] text-zinc-500 font-black uppercase tracking-widest">Relleno</span>
+                  <button onClick={() => setShapeFilled(v => !v)}
+                    className={`w-8 h-4 rounded-full transition-all relative ${shapeFilled ? 'bg-red-500' : 'bg-white/10'}`}>
+                    <span className={`absolute top-0.5 w-3 h-3 rounded-full bg-white transition-all ${shapeFilled ? 'left-[18px]' : 'left-0.5'}`}/>
+                  </button>
+                </div>
+              </div>
+            )}
+            {/* Pattern picker */}
+            {tool === 'pattern' && (
+              <div className="bg-white/3 border border-white/8 rounded-xl p-3">
+                <div className="text-[9px] text-zinc-500 font-black uppercase tracking-widest mb-2">Patrón</div>
+                <div className="flex flex-col gap-1">
+                  {PATTERNS.map(p => (
+                    <button key={p.id}
+                      onClick={() => setPatternType(p.id)}
+                      className={`text-left px-2 py-1.5 rounded-lg text-[10px] transition-all ${
+                        patternType===p.id ? 'bg-red-500 text-white font-black' : 'bg-white/5 text-zinc-400 hover:bg-white/10'
+                      }`}>{p.label}</button>
+                  ))}
+                </div>
+                <button onClick={() => applyPattern(patternType)}
+                  className="mt-2 w-full py-2 bg-red-500/20 hover:bg-red-500/40 text-red-400 border border-red-500/30 rounded-lg text-[10px] font-black transition-all">
+                  ✨ Aplicar patrón
+                </button>
+              </div>
+            )}
             {/* Opacity */}
-            {tool!=='eraser' && (
+            {!['eraser','pattern'].includes(tool) && (
               <div className="bg-white/3 border border-white/8 rounded-xl p-3">
                 <div className="flex justify-between text-[9px] text-zinc-500 font-black uppercase tracking-widest mb-2">
                   <span>Opacidad</span><span className="text-white">{opacity}%</span>
@@ -1309,15 +1511,7 @@ export default function SkinForge3D() {
                 <input type="range" min={5} max={100} value={opacity} onChange={e => setOpacity(+e.target.value)} className="w-full h-1 rounded accent-red-500"/>
               </div>
             )}
-            {/* Install guide */}
-            <div className="bg-green-500/5 border border-green-500/20 rounded-xl p-3 text-[10px] text-zinc-400 space-y-1.5">
-              <p className="text-[9px] font-black text-green-400 uppercase">📥 Instalar en Servidor FiveM</p>
-              <p>1. Descarga el ZIP con el botón <b>↓</b></p>
-              <p>2. Extrae <b>todos</b> los archivos del ZIP en la carpeta <code className="bg-white/10 px-1 rounded">stream/</code> de tu recurso</p>
-              <p className="font-mono text-[9px] break-all text-zinc-500">resources/[tu-recurso]/stream/</p>
-              <p>3. <b>Elimina</b> los archivos anteriores de ese arma antes de copiar los nuevos</p>
-              <p>4. Reinicia el recurso con <code className="bg-white/10 px-1 rounded">ensure [tu-recurso]</code></p>
-            </div>
+
           </div>
         </div>
       </div>
