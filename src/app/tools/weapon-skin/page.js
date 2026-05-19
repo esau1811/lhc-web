@@ -1598,8 +1598,8 @@ export default function SkinForge3D() {
                 ))}
               </div>
             </div>
-            {/* Size — hidden for fill & pattern */}
-            {!['fill','pattern'].includes(tool) && (
+            {/* Size — hidden for fill */}
+            {tool !== 'fill' && (
               <div className="bg-white/3 border border-white/8 rounded-xl p-3">
                 <div className="text-[9px] text-zinc-500 font-black uppercase tracking-widest mb-2">Tamaño</div>
                 <div className="flex items-center gap-2 mb-2">
