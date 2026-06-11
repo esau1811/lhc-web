@@ -181,7 +181,9 @@ export async function POST(request) {
     // ── 4. Get the modified custom YTD ────────────────────────────────────────
     const outYtdPath = path.join(outputDir, `${ytdName}.ytd`);
     if (!fs.existsSync(outYtdPath)) {
-      return NextResponse.json({ error: 'El parcheador no logró editar el YTD custom.' }, { status: 500 });
+      return NextResponse.json({ 
+        error: `El parcheador no logró editar el YTD custom.\nLog:\n${stdout}\n${stderr}` 
+      }, { status: 500 });
     }
     
     const modifiedYtdBuf = fs.readFileSync(outYtdPath);
