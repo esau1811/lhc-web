@@ -241,6 +241,7 @@ export default function SkinForge3D() {
   const customRpfFileRef      = useRef(null); // the original File object
   const customRpfWeaponIdRef  = useRef(null); // base weapon id detected (e.g. 'w_pi_combatpistol')
   const customRpfNameRef      = useRef(null); // display name (for ZIP filename)
+  const customRpfYtdNameRef   = useRef(null); // actual YTD name found inside the RPF
 
   // Suppressor state
   const suppCanvasRef  = useRef(null);
@@ -547,10 +548,15 @@ export default function SkinForge3D() {
       const allNames = [...internalNames, ...filenameHints];
       const detected = detectWeaponFromFilenames(allNames);
       setRpfDetected(detected);
+
+      // Find the actual YTD name inside the RPF (the real texture file name)
+      const ytdInternal = internalNames.find(n => n.toLowerCase().endsWith('.ytd'));
+      // Store it so loadCustomRPF can pass it to the export
+      file._ytdName = ytdInternal ? ytdInternal.replace(/\.ytd$/i, '') : null;
+
       if (detected) {
         setRpfCustomName(detected.name);
       } else {
-        // Use RPF filename (stripped) as fallback name
         const fallbackName = file.name.replace(/\.rpf$/i, '').replace(/_/g, ' ');
         setRpfCustomName(fallbackName);
       }
@@ -569,6 +575,8 @@ export default function SkinForge3D() {
     customRpfFileRef.current     = originalFile || null;
     customRpfWeaponIdRef.current = detectedWeaponId || null;
     customRpfNameRef.current     = nameOverride || null;
+    // Also store the actual YTD name found inside the RPF
+    customRpfYtdNameRef.current  = originalFile?._ytdName || detectedWeaponId || null;
     // Open the 2D paint mode. If a known weapon was detected, load its original texture.
     const scene = sceneRef.current;
     if (!scene) return;
@@ -999,6 +1007,9 @@ export default function SkinForge3D() {
         fd.append('height',   String(H));
         fd.append('weaponId', baseWeaponId);
         fd.append('rpfName',  displayName.replace(/[^a-zA-Z0-9_\-]/g, '_'));
+        // Send the actual YTD name found inside the RPF so the server uses the correct filename
+        const ytdName = customRpfYtdNameRef.current || baseWeaponId;
+        fd.append('ytdName', ytdName);
 
         const res = await fetch('/api/patch-rpf', { method: 'POST', body: fd });
         if (!res.ok) {
