@@ -7,7 +7,6 @@ import { promisify }    from 'util';
 import fs               from 'fs';
 import path             from 'path';
 import os               from 'os';
-import JSZip            from 'jszip';
 
 const IS_WINDOWS = process.platform === 'win32';
 const execAsync  = promisify(exec);
@@ -18,12 +17,7 @@ const PATCHER_EXE = path.join(
   IS_WINDOWS ? 'YtdPatcher-win.exe' : 'YtdPatcher-linux'
 );
 
-const ASSETS_DIR = path.join(
-  process.cwd(),
-  'src', 'app', 'api', 'generate-rpf', 'assets'
-);
-
-// ── DDS helpers (identical to generate-rpf/route.js) ────────────────────────
+// ── DDS helpers ──────────────────────────────────────────────────────────────
 
 function buildDdsHeader(w, h, mipCount) {
   const buf = new ArrayBuffer(128);
@@ -91,162 +85,86 @@ function writeDds(pixelsB64, w, h, filePath) {
   fs.writeFileSync(filePath, Buffer.concat(parts));
 }
 
-// ── fxmanifest.lua generator ─────────────────────────────────────────────────
-function buildFxManifest(resourceName) {
-  return `fx_version 'cerulean'
-game 'gta5'
-description 'LHC SkinForge - Custom weapon skin for ${resourceName}'
-version '1.0.0'
-
-files {
-  'stream/**'
-}
-`;
-}
-
 // ── Route handler ─────────────────────────────────────────────────────────────
 
 export async function POST(request) {
+  const reqDir = path.join(os.tmpdir(), `lhc_patch_${Date.now()}`);
+  fs.mkdirSync(reqDir, { recursive: true });
+
   try {
     const formData = await request.formData();
 
-    const rpfFile    = formData.get('rpf');          // original RPF as File
-    const pixels     = formData.get('pixels');       // base64 RGBA
-    const width      = parseInt(formData.get('width')  || '512', 10);
-    const height     = parseInt(formData.get('height') || '512', 10);
-    const weaponId   = formData.get('weaponId')  || 'w_pi_combatpistol';
-    const rpfName    = formData.get('rpfName')   || 'custom_weapon';
-    // ytdName: name of the YTD file inside the user's RPF (detected client-side)
-    // Falls back to the base weapon id if not provided.
-    const ytdNameRaw = formData.get('ytdName')   || weaponId;
-    // Strip path separators and extension so we just have the base name
-    const ytdBaseName = ytdNameRaw
-      .replace(/.*[\\/]/, '')   // strip directory
-      .replace(/\.ytd$/i, '')   // strip extension
-      || weaponId;
+    const rpfFile  = formData.get('rpf');          // user's RPF File
+    const pixels   = formData.get('pixels');       // base64 RGBA painted texture
+    const width    = parseInt(formData.get('width')   || '512', 10);
+    const height   = parseInt(formData.get('height')  || '512', 10);
+    // ytdName: base name of the YTD found inside the RPF (e.g. 'w_pi_combatpistol')
+    // YtdPatcher uses this as both the weapon name and the YTD dictionary key
+    const ytdName  = (formData.get('ytdName') || 'w_pi_combatpistol')
+      .replace(/\.ytd$/i, '')   // strip extension if sent with it
+      .replace(/[^a-zA-Z0-9_\-]/g, '_');
 
     if (!rpfFile || !pixels) {
-      return NextResponse.json(
-        { error: 'Faltan parámetros: rpf y pixels son obligatorios' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Faltan parámetros: rpf y pixels son obligatorios' }, { status: 400 });
     }
 
     if (!fs.existsSync(PATCHER_EXE)) {
-      return NextResponse.json(
-        { error: `YtdPatcher no encontrado: ${PATCHER_EXE}` },
-        { status: 500 }
-      );
+      return NextResponse.json({ error: `YtdPatcher no encontrado: ${PATCHER_EXE}` }, { status: 500 });
     }
 
-    const tmpDir = os.tmpdir();
-    const tmpId  = Date.now();
-
-    // 1. Save original RPF (we include it unchanged in the resource)
-    const origRpfPath = path.join(tmpDir, `lhc_orig_${tmpId}.rpf`);
+    // 1. Save the user's RPF into reqDir using the YTD base name as the filename.
+    //    YtdPatcher looks for [assetsDir]/[weaponName].rpf — so we use the user's
+    //    RPF as the base template instead of the stock game RPF.
+    const rpfDestPath = path.join(reqDir, `${ytdName}.rpf`);
     const rpfAb = await rpfFile.arrayBuffer();
-    fs.writeFileSync(origRpfPath, Buffer.from(rpfAb));
+    fs.writeFileSync(rpfDestPath, Buffer.from(rpfAb));
 
-    // 2. Generate DDS from painted pixels
-    const weaponDdsFile = path.join(tmpDir, `lhc_tex_${tmpId}.dds`);
-    writeDds(pixels, width, height, weaponDdsFile);
+    // 2. Write the painted pixels as a DDS file
+    const ddsPath = path.join(reqDir, `lhc_tex.dds`);
+    writeDds(pixels, width, height, ddsPath);
 
-    // 3. Run YtdPatcher to produce a valid GTA V YTD from the painted texture
-    const cmd = `"${PATCHER_EXE}" "${weaponDdsFile}" "${weaponId}" "${ASSETS_DIR}"`;
-    console.log('[patch-rpf] YtdPatcher cmd:', cmd.slice(0, 200));
+    // 3. Run YtdPatcher:
+    //    args: [ddsFile] [weaponName] [assetsDir]
+    //    It will open [assetsDir]/[weaponName].rpf, replace the texture, and
+    //    write the patched RPF back to [cwd]/[weaponName].rpf
+    const cmd = `"${PATCHER_EXE}" "${ddsPath}" "${ytdName}" "${reqDir}"`;
+    console.log('[patch-rpf] cmd:', cmd.slice(0, 200));
 
-    const execOptions = { maxBuffer: 4 * 1024 * 1024, cwd: tmpDir };
+    const execOptions = { maxBuffer: 8 * 1024 * 1024, cwd: reqDir };
     if (IS_WINDOWS) execOptions.shell = 'cmd.exe';
 
-    let newYtdBuf = null;
-    let ytdReadError = null;
+    const { stdout, stderr } = await execAsync(cmd, execOptions);
+    console.log('[patch-rpf] stdout:', stdout.slice(0, 400));
+    if (stderr) console.warn('[patch-rpf] stderr:', stderr.slice(0, 200));
 
-    try {
-      const { stdout, stderr } = await execAsync(cmd, execOptions);
-      console.log('[patch-rpf] stdout:', stdout.slice(0, 300));
-      if (stderr) console.warn('[patch-rpf] stderr:', stderr.slice(0, 200));
-
-      // Try standalone YTD first
-      const ytdPath = path.join(tmpDir, `${weaponId}.ytd`);
-      if (fs.existsSync(ytdPath)) {
-        newYtdBuf = fs.readFileSync(ytdPath);
-        try { fs.unlinkSync(ytdPath); } catch {}
-      } else {
-        // Fallback: extract YTD bytes from the generated RPF
-        // YTD data starts at the last RSC7 magic ('RSC7') in the generated RPF
-        const genRpfPath = path.join(tmpDir, `${weaponId}.rpf`);
-        if (fs.existsSync(genRpfPath)) {
-          const genRpf = fs.readFileSync(genRpfPath);
-          const RSC7 = Buffer.from([0x52, 0x53, 0x43, 0x37]);
-          let lastPos = -1, searchFrom = 0;
-          while (true) {
-            const p = genRpf.indexOf(RSC7, searchFrom);
-            if (p === -1) break;
-            lastPos = p; searchFrom = p + 1;
-          }
-          if (lastPos !== -1) newYtdBuf = genRpf.slice(lastPos);
-          try { fs.unlinkSync(genRpfPath); } catch {}
-        }
-      }
-    } catch (e) {
-      ytdReadError = e.message;
-      console.error('[patch-rpf] YtdPatcher error:', e.message);
-    }
-
-    // 4. Read original RPF bytes
-    const origRpfBuf = fs.readFileSync(origRpfPath);
-    try { fs.unlinkSync(origRpfPath); } catch {}
-    try { fs.unlinkSync(weaponDdsFile); } catch {}
-
-    if (!newYtdBuf) {
+    // 4. Read the patched RPF (YtdPatcher writes [weaponName].rpf in cwd)
+    const patchedRpfPath = path.join(reqDir, `${ytdName}.rpf`);
+    if (!fs.existsSync(patchedRpfPath)) {
       return NextResponse.json(
-        { error: `No se pudo generar el YTD. ${ytdReadError || 'YtdPatcher no produjo salida.'}` },
+        { error: `YtdPatcher no generó el RPF. Log: ${stdout.slice(-400)}` },
         { status: 500 }
       );
     }
 
-    // 5. Build a proper FiveM resource ZIP
-    //
-    // Structure:
-    //   [rpfName]/
-    //     fxmanifest.lua
-    //     stream/
-    //       [originalRpfFile].rpf   <-- original unchanged (3D model)
-    //       [ytdBaseName].ytd       <-- new painted texture
-    //
-    // FiveM will load both. The YTD overrides the texture for the weapon
-    // while the RPF provides the custom 3D model.
-    //
-    const safeResource = rpfName.replace(/[^a-zA-Z0-9_\-]/g, '_');
-    const safeRpfName  = (rpfFile.name || `${safeResource}.rpf`).replace(/[^a-zA-Z0-9_\-\.]/g, '_');
-    const safeYtdName  = ytdBaseName.replace(/[^a-zA-Z0-9_\-]/g, '_');
+    const patchedRpf = fs.readFileSync(patchedRpfPath);
 
-    const zip = new JSZip();
-    const resourceFolder = zip.folder(safeResource);
-    resourceFolder.file('fxmanifest.lua', buildFxManifest(safeResource));
-    const streamFolder = resourceFolder.folder('stream');
-    streamFolder.file(safeRpfName, origRpfBuf);
-    streamFolder.file(`${safeYtdName}.ytd`, newYtdBuf);
+    // 5. Return the patched RPF directly (same filename as input)
+    const outFilename = (rpfFile.name || `${ytdName}.rpf`).replace(/[^a-zA-Z0-9_\-\.]/g, '_');
 
-    const zipBytes = await zip.generateAsync({
-      type: 'nodebuffer',
-      compression: 'DEFLATE',
-      compressionOptions: { level: 1 },
-    });
-
-    console.log(`[patch-rpf] FiveM resource ZIP built: ${safeResource}/ (rpf=${safeRpfName}, ytd=${safeYtdName}.ytd)`);
-
-    return new NextResponse(zipBytes, {
+    return new NextResponse(patchedRpf, {
       status: 200,
       headers: {
-        'Content-Type':        'application/zip',
-        'Content-Disposition': `attachment; filename="${safeResource}_skin.zip"`,
-        'Content-Length':      zipBytes.length.toString(),
+        'Content-Type':        'application/octet-stream',
+        'Content-Disposition': `attachment; filename="${outFilename}"`,
+        'Content-Length':      patchedRpf.length.toString(),
       },
     });
 
   } catch (err) {
     console.error('[patch-rpf] error:', err.message);
     return NextResponse.json({ error: err.message }, { status: 500 });
+  } finally {
+    // Cleanup temp dir
+    try { fs.rmSync(reqDir, { recursive: true, force: true }); } catch {}
   }
 }

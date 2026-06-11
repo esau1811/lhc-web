@@ -993,22 +993,20 @@ export default function SkinForge3D() {
 
     // ── Custom RPF mode: patch the user's original RPF with the painted texture ──
     if (customRpfFileRef.current) {
-      setStatus('Inyectando skin en tu RPF original...');
+      setStatus('Inyectando skin en tu RPF...');
       try {
         const W = 512, H = 512;
         const b64 = canvasToB64(tc, W, H);
-        const baseWeaponId = customRpfWeaponIdRef.current || 'w_pi_combatpistol';
-        const displayName  = customRpfNameRef.current    || 'custom_weapon';
+        // ytdName: the actual YTD name found inside the RPF (or detected weapon ID as fallback)
+        const ytdName = customRpfYtdNameRef.current
+          || customRpfWeaponIdRef.current
+          || 'w_pi_combatpistol';
 
         const fd = new FormData();
-        fd.append('rpf',      customRpfFileRef.current);
-        fd.append('pixels',   b64);
-        fd.append('width',    String(W));
-        fd.append('height',   String(H));
-        fd.append('weaponId', baseWeaponId);
-        fd.append('rpfName',  displayName.replace(/[^a-zA-Z0-9_\-]/g, '_'));
-        // Send the actual YTD name found inside the RPF so the server uses the correct filename
-        const ytdName = customRpfYtdNameRef.current || baseWeaponId;
+        fd.append('rpf',     customRpfFileRef.current);  // original RPF file
+        fd.append('pixels',  b64);
+        fd.append('width',   String(W));
+        fd.append('height',  String(H));
         fd.append('ytdName', ytdName);
 
         const res = await fetch('/api/patch-rpf', { method: 'POST', body: fd });
@@ -1020,10 +1018,11 @@ export default function SkinForge3D() {
         const blob = await res.blob();
         const url  = URL.createObjectURL(blob);
         const a    = document.createElement('a');
-        a.download = `${displayName.replace(/[^a-zA-Z0-9_\-]/g, '_')}_skin.zip`;
+        // Keep the exact same filename as the original RPF
+        a.download = customRpfFileRef.current.name;
         a.href = url; a.click();
         setTimeout(() => URL.revokeObjectURL(url), 2000);
-        setStatus('✅ ZIP descargado — tu RPF con la skin inyectada');
+        setStatus('✅ RPF descargado — reemplaza el original en stream/');
       } catch (e) {
         setStatus('Error: ' + e.message);
       } finally {
