@@ -6,6 +6,8 @@ import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader.js';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { Paintbrush, Eraser, Download, RotateCcw, Undo2, ChevronDown, AlertTriangle, Minus, Plus, Droplets, Wind, Square, Circle, Slash, LayoutGrid } from 'lucide-react';
 import { HexColorPicker } from 'react-colorful';
+import { extractFilenames, extractFromFilename } from '@/lib/rpfParser';
+import { detectWeaponFromFilenames } from '@/lib/weapons';
 
 const WEAPONS = [
   // Pistolas
@@ -219,13 +221,22 @@ export default function SkinForge3D() {
   const [status,    setStatus]    = useState('Cargando...');
   const [exporting, setExporting] = useState(false);
 
-  // Custom weapon upload state
+  // Custom weapon upload state (OBJ)
   const customObjInputRef  = useRef(null);
   const customPngInputRef  = useRef(null);
   const [customModalOpen,  setCustomModalOpen]  = useState(false);
   const [customObjFile,    setCustomObjFile]    = useState(null);
   const [customPngFile,    setCustomPngFile]    = useState(null);
   const [customWeaponName, setCustomWeaponName] = useState('');
+
+  // RPF custom upload state
+  const rpfInputRef        = useRef(null);
+  const [rpfModalOpen,     setRpfModalOpen]     = useState(false);
+  const [rpfFile,          setRpfFile]          = useState(null);
+  const [rpfDetected,      setRpfDetected]      = useState(null); // { id, name } or null
+  const [rpfCustomName,    setRpfCustomName]    = useState('');
+  const [rpfParsing,       setRpfParsing]       = useState(false);
+  const [rpfParseError,    setRpfParseError]    = useState('');
 
   // Suppressor state
   const suppCanvasRef  = useRef(null);
@@ -515,6 +526,85 @@ export default function SkinForge3D() {
       syncUV2D();
       doLoad();
     }
+  }, [syncUV2D]);
+
+  // ---- LOAD CUSTOM RPF (user-supplied RPF → 2D paint mode) ----
+  const handleRpfFileSelect = useCallback(async (file) => {
+    if (!file) return;
+    setRpfFile(file);
+    setRpfDetected(null);
+    setRpfParseError('');
+    setRpfParsing(true);
+    try {
+      const arrayBuffer = await file.arrayBuffer();
+      const u8 = new Uint8Array(arrayBuffer);
+      const internalNames = extractFilenames(u8);
+      const filenameHints = extractFromFilename(file.name);
+      const allNames = [...internalNames, ...filenameHints];
+      const detected = detectWeaponFromFilenames(allNames);
+      setRpfDetected(detected);
+      if (detected) {
+        setRpfCustomName(detected.name);
+      } else {
+        // Use RPF filename (stripped) as fallback name
+        const fallbackName = file.name.replace(/\.rpf$/i, '').replace(/_/g, ' ');
+        setRpfCustomName(fallbackName);
+      }
+    } catch (err) {
+      console.error('RPF parse error:', err);
+      setRpfParseError('No se pudo analizar el RPF. Verifica que sea un archivo válido.');
+      const fallbackName = file.name.replace(/\.rpf$/i, '').replace(/_/g, ' ');
+      setRpfCustomName(fallbackName);
+    } finally {
+      setRpfParsing(false);
+    }
+  }, []);
+
+  const loadCustomRPF = useCallback((nameOverride) => {
+    // Open the 2D paint mode with a blank/dark canvas using the weapon name from RPF
+    const scene = sceneRef.current;
+    if (!scene) return;
+    setLoading(true); setHasModel(false); setStatus('Cargando RPF custom...');
+    if (meshRef.current) { scene.remove(meshRef.current); meshRef.current = null; }
+    historyRef.current = [];
+
+    const tc = tcRef.current;
+    const ctx = tc.getContext('2d');
+
+    // Paint a default dark texture with weapon name watermark
+    ctx.clearRect(0, 0, TEX, TEX);
+    ctx.fillStyle = '#1a1a1a';
+    ctx.fillRect(0, 0, TEX, TEX);
+    // Subtle grid overlay for reference
+    ctx.strokeStyle = 'rgba(255,255,255,0.04)';
+    ctx.lineWidth = 1;
+    for (let i = 0; i <= TEX; i += 64) {
+      ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, TEX); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(TEX, i); ctx.stroke();
+    }
+    // Watermark with name
+    ctx.fillStyle = 'rgba(255,255,255,0.06)';
+    ctx.font = 'bold 48px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(nameOverride || 'CUSTOM RPF', TEX / 2, TEX / 2);
+    ctx.font = 'bold 20px sans-serif';
+    ctx.fillStyle = 'rgba(255,255,255,0.03)';
+    ctx.fillText('Pinta aquí tu skin — LHC SkinForge', TEX / 2, TEX / 2 + 60);
+
+    baseRef.current = null;
+    syncUV2D();
+
+    // Build a THREE texture so we still have paint sync
+    const tt = new THREE.CanvasTexture(tc);
+    tt.flipY = false;
+    tt.colorSpace = THREE.SRGBColorSpace;
+    ttRef.current = tt;
+
+    setLoading(false);
+    setViewMode('2d');  // Auto-switch to 2D mode — no 3D model from RPF yet
+    setStatus(`🎨 RPF Custom: ${nameOverride || 'desconocido'} — Modo UV 2D`);
+    setWeaponPainted(false);
   }, [syncUV2D]);
 
 
@@ -1380,16 +1470,24 @@ export default function SkinForge3D() {
 
           <div className="text-[10px] text-zinc-600 ml-auto truncate shrink-0">{status}</div>
 
-          {/* Custom weapon upload button */}
+          {/* Custom OBJ weapon upload button */}
           <button
             onClick={() => setCustomModalOpen(true)}
             className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 bg-purple-500/15 hover:bg-purple-500/30 border border-purple-500/30 hover:border-purple-500/60 text-purple-400 hover:text-purple-300 rounded-lg text-[10px] font-black transition-all"
           >
             📂 OBJ Custom
           </button>
+
+          {/* RPF Custom weapon upload button */}
+          <button
+            onClick={() => { setRpfModalOpen(true); setRpfFile(null); setRpfDetected(null); setRpfCustomName(''); setRpfParseError(''); }}
+            className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 bg-orange-500/15 hover:bg-orange-500/30 border border-orange-500/30 hover:border-orange-500/60 text-orange-400 hover:text-orange-300 rounded-lg text-[10px] font-black transition-all"
+          >
+            📦 RPF Custom
+          </button>
         </div>
 
-        {/* ── CUSTOM WEAPON MODAL ── */}
+        {/* ── CUSTOM WEAPON MODAL (OBJ) ── */}
         {customModalOpen && (
           <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4" onClick={() => setCustomModalOpen(false)}>
             <div className="absolute inset-0 bg-black/80 backdrop-blur-sm"/>
@@ -1400,7 +1498,7 @@ export default function SkinForge3D() {
               <div className="flex items-center gap-2 mb-4">
                 <span className="text-xl">🎮</span>
                 <div>
-                  <div className="font-black text-white text-sm">Subir Arma Personalizada</div>
+                  <div className="font-black text-white text-sm">Subir Arma Personalizada (OBJ)</div>
                   <div className="text-[10px] text-zinc-500 mt-0.5">Sube el .obj de tu arma modificada y pinta encima</div>
                 </div>
               </div>
@@ -1478,6 +1576,150 @@ export default function SkinForge3D() {
             </div>
           </div>
         )}
+
+        {/* ── RPF CUSTOM MODAL ── */}
+        {rpfModalOpen && (
+          <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4" onClick={() => setRpfModalOpen(false)}>
+            <div className="absolute inset-0 bg-black/80 backdrop-blur-sm"/>
+            <div
+              className="relative bg-[#111] border border-orange-500/20 rounded-2xl p-6 w-full max-w-md shadow-2xl"
+              onClick={e => e.stopPropagation()}
+            >
+              <div className="flex items-center gap-3 mb-5">
+                <div className="w-10 h-10 bg-orange-500/10 rounded-xl flex items-center justify-center text-xl border border-orange-500/20">📦</div>
+                <div>
+                  <div className="font-black text-white text-sm">Arma Modificada (RPF)</div>
+                  <div className="text-[10px] text-zinc-500 mt-0.5">Sube tu RPF custom y pinta en 2D igual que las armas originales</div>
+                </div>
+              </div>
+
+              {/* RPF file drop zone */}
+              <div className="mb-4">
+                <div className="text-[9px] font-black uppercase tracking-widest text-zinc-400 mb-2">Archivo RPF <span className="text-orange-400">*</span></div>
+                <label
+                  className={`flex flex-col items-center justify-center gap-2 p-6 border-2 border-dashed rounded-2xl cursor-pointer transition-all ${
+                    rpfFile
+                      ? 'border-orange-500/60 bg-orange-500/5'
+                      : 'border-white/15 hover:border-orange-500/40 hover:bg-orange-500/3 bg-white/3'
+                  }`}
+                >
+                  {rpfFile ? (
+                    <>
+                      <span className="text-3xl">✅</span>
+                      <div className="text-center">
+                        <div className="text-[12px] text-orange-300 font-black truncate max-w-[280px]">{rpfFile.name}</div>
+                        <div className="text-[10px] text-zinc-500 mt-0.5">{(rpfFile.size / 1024 / 1024).toFixed(2)} MB</div>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <span className="text-3xl">📦</span>
+                      <div className="text-center">
+                        <div className="text-[12px] text-zinc-400 font-bold">Arrastra tu RPF aquí</div>
+                        <div className="text-[10px] text-zinc-600">o haz click para seleccionar</div>
+                      </div>
+                    </>
+                  )}
+                  <input
+                    ref={rpfInputRef}
+                    type="file"
+                    accept=".rpf"
+                    className="hidden"
+                    onChange={e => { if (e.target.files[0]) handleRpfFileSelect(e.target.files[0]); }}
+                  />
+                </label>
+              </div>
+
+              {/* Parse status */}
+              {rpfParsing && (
+                <div className="mb-4 flex items-center gap-2 p-3 bg-orange-500/5 border border-orange-500/20 rounded-xl">
+                  <div className="w-4 h-4 border-2 border-orange-400 border-t-transparent rounded-full animate-spin shrink-0"/>
+                  <span className="text-[11px] text-orange-300 font-bold">Analizando archivos internos del RPF...</span>
+                </div>
+              )}
+
+              {/* Detection result */}
+              {!rpfParsing && rpfFile && (
+                <div className={`mb-4 p-3 rounded-xl border ${
+                  rpfDetected
+                    ? 'bg-green-500/5 border-green-500/20'
+                    : 'bg-zinc-800/60 border-white/10'
+                }`}>
+                  <div className="text-[9px] font-black uppercase tracking-widest mb-1.5" style={{color: rpfDetected ? '#86efac' : '#737373'}}>
+                    {rpfDetected ? '✅ Arma detectada automáticamente' : '🔍 Arma no reconocida — nombre manual'}
+                  </div>
+                  {rpfDetected && (
+                    <div className="flex items-center gap-2">
+                      <span className="text-[13px] font-black text-white">{rpfDetected.name}</span>
+                      <span className="text-[9px] bg-green-500/20 text-green-400 px-1.5 py-0.5 rounded font-black">AUTO</span>
+                      <span className="text-[9px] text-zinc-600 font-mono">{rpfDetected.id}</span>
+                    </div>
+                  )}
+                  {!rpfDetected && (
+                    <div className="text-[10px] text-zinc-500 leading-tight">No se encontraron armas conocidas en el RPF. Puedes darle un nombre personalizado abajo.</div>
+                  )}
+                </div>
+              )}
+
+              {/* Parse error */}
+              {rpfParseError && (
+                <div className="mb-4 p-3 bg-red-500/10 border border-red-500/20 rounded-xl">
+                  <div className="text-[11px] text-red-400 font-bold">{rpfParseError}</div>
+                </div>
+              )}
+
+              {/* Custom name */}
+              {rpfFile && !rpfParsing && (
+                <div className="mb-5">
+                  <div className="text-[9px] font-black uppercase tracking-widest text-zinc-400 mb-1.5">
+                    Nombre del arma <span className="text-zinc-600">— editable</span>
+                  </div>
+                  <input
+                    type="text"
+                    placeholder="Ej: AK47 Custom de Javi"
+                    value={rpfCustomName}
+                    onChange={e => setRpfCustomName(e.target.value)}
+                    className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-[11px] text-white placeholder:text-zinc-600 outline-none focus:border-orange-500/60"
+                  />
+                  <div className="text-[9px] text-zinc-600 mt-1">Este nombre aparecerá en el editor. El arma se pintará en modo UV 2D.</div>
+                </div>
+              )}
+
+              {/* Info box */}
+              <div className="mb-5 p-3 bg-blue-500/5 border border-blue-500/15 rounded-xl">
+                <div className="text-[9px] text-blue-400 font-black uppercase tracking-widest mb-1">ℹ️ ¿Cómo funciona?</div>
+                <div className="text-[10px] text-zinc-500 leading-relaxed">
+                  El RPF se analiza en tu navegador para detectar el arma. Se abre el editor en <span className="text-purple-400 font-bold">modo UV 2D</span> con un lienzo en blanco sobre el que puedes pintar exactamente igual que con las armas originales del juego.
+                </div>
+              </div>
+
+              <div className="flex gap-2">
+                <button
+                  onClick={() => {
+                    if (!rpfFile) return;
+                    const finalName = rpfCustomName || (rpfDetected?.name) || rpfFile.name.replace(/\.rpf$/i, '');
+                    loadCustomRPF(finalName);
+                    setRpfModalOpen(false);
+                    setRpfFile(null);
+                    setRpfDetected(null);
+                    setRpfCustomName('');
+                  }}
+                  disabled={!rpfFile || rpfParsing}
+                  className="flex-1 py-3 bg-orange-500 hover:bg-orange-400 disabled:bg-white/5 disabled:text-zinc-600 disabled:cursor-not-allowed text-white font-black rounded-xl text-[11px] transition-all flex items-center justify-center gap-2"
+                >
+                  🎨 Abrir en Editor 2D
+                </button>
+                <button
+                  onClick={() => { setRpfModalOpen(false); setRpfFile(null); setRpfDetected(null); setRpfCustomName(''); setRpfParseError(''); }}
+                  className="px-4 py-3 bg-white/5 hover:bg-white/10 text-zinc-400 font-black rounded-xl text-[11px] transition-all"
+                >
+                  Cancelar
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="flex flex-1 overflow-hidden relative z-20 bg-[#050505]">
           {/* ── LEFT TOOLS ── */}
           <div className="flex flex-col gap-1.5 p-2 border-r border-white/8 bg-[#0a0a0a] w-14 items-center shrink-0 relative z-30">
