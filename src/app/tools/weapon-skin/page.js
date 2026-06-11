@@ -997,13 +997,12 @@ export default function SkinForge3D() {
       try {
         const W = 512, H = 512;
         const b64 = canvasToB64(tc, W, H);
-        // ytdName: the actual YTD name found inside the RPF (or detected weapon ID as fallback)
         const ytdName = customRpfYtdNameRef.current
           || customRpfWeaponIdRef.current
           || 'w_pi_combatpistol';
 
         const fd = new FormData();
-        fd.append('rpf',     customRpfFileRef.current);  // original RPF file
+        fd.append('rpf',     customRpfFileRef.current);
         fd.append('pixels',  b64);
         fd.append('width',   String(W));
         fd.append('height',  String(H));
@@ -1015,14 +1014,25 @@ export default function SkinForge3D() {
           setStatus('Error: ' + (err.error || res.statusText));
           return;
         }
+
+        const patchMode = res.headers.get('X-Patch-Mode') || 'rpf-patched';
         const blob = await res.blob();
         const url  = URL.createObjectURL(blob);
         const a    = document.createElement('a');
-        // Keep the exact same filename as the original RPF
-        a.download = customRpfFileRef.current.name;
-        a.href = url; a.click();
-        setTimeout(() => URL.revokeObjectURL(url), 2000);
-        setStatus('✅ RPF descargado — reemplaza el original en stream/');
+
+        if (patchMode === 'ytd-only') {
+          // Fallback: server couldn't inject into RPF — returns standalone YTD
+          a.download = `${ytdName}.ytd`;
+          a.href = url; a.click();
+          setTimeout(() => URL.revokeObjectURL(url), 2000);
+          setStatus('⚠️ YTD descargado — pon este archivo en stream/ junto a tu RPF');
+        } else {
+          // Full patch: same RPF with texture replaced
+          a.download = customRpfFileRef.current.name;
+          a.href = url; a.click();
+          setTimeout(() => URL.revokeObjectURL(url), 2000);
+          setStatus('✅ RPF descargado — reemplaza el original en stream/');
+        }
       } catch (e) {
         setStatus('Error: ' + e.message);
       } finally {
