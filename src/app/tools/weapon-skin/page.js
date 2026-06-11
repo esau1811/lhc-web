@@ -219,6 +219,14 @@ export default function SkinForge3D() {
   const [status,    setStatus]    = useState('Cargando...');
   const [exporting, setExporting] = useState(false);
 
+  // Custom weapon upload state
+  const customObjInputRef  = useRef(null);
+  const customPngInputRef  = useRef(null);
+  const [customModalOpen,  setCustomModalOpen]  = useState(false);
+  const [customObjFile,    setCustomObjFile]    = useState(null);
+  const [customPngFile,    setCustomPngFile]    = useState(null);
+  const [customWeaponName, setCustomWeaponName] = useState('');
+
   // Suppressor state
   const suppCanvasRef  = useRef(null);
   const suppPaintRef   = useRef(false);
@@ -423,7 +431,93 @@ export default function SkinForge3D() {
     );
   };
 
-  // ---- SYNC 3D SUPPRESSOR MESH ----
+  // ---- LOAD CUSTOM WEAPON (user-supplied OBJ + optional PNG) ----
+  const loadCustomWeapon = useCallback((objFile, pngFile, name) => {
+    const scene = sceneRef.current; if (!scene) return;
+    setLoading(true); setHasModel(false); setStatus('Cargando arma personalizada...');
+    if (meshRef.current) { scene.remove(meshRef.current); meshRef.current = null; }
+    historyRef.current = [];
+
+    const tc = tcRef.current;
+    const ctx = tc.getContext('2d');
+    const objUrl = URL.createObjectURL(objFile);
+
+    const doLoad = () => {
+      const tt = new THREE.CanvasTexture(tc);
+      tt.flipY = false;
+      tt.colorSpace = THREE.SRGBColorSpace;
+      ttRef.current = tt;
+
+      setStatus('Cargando modelo 3D personalizado...');
+      new OBJLoader().load(
+        objUrl,
+        (obj) => {
+          obj.traverse(c => {
+            if (c.isMesh) {
+              c.material = new THREE.MeshStandardMaterial({ map: tt, side: THREE.FrontSide, roughness: 0.55, metalness: 0.4 });
+              c.geometry.computeVertexNormals();
+            }
+          });
+          const box = new THREE.Box3().setFromObject(obj);
+          obj.position.sub(box.getCenter(new THREE.Vector3()));
+          sceneRef.current.add(obj);
+          meshRef.current = obj;
+
+          const sphere = box.getBoundingSphere(new THREE.Sphere());
+          const cam = camRef.current;
+          const ctrl = ctrlRef.current;
+          if (cam && ctrl) {
+            const dist = sphere.radius / Math.sin((cam.fov * Math.PI / 180) / 2) * 0.85;
+            cam.position.set(0, sphere.radius * 0.15, dist);
+            cam.near = dist * 0.001;
+            cam.far  = dist * 100;
+            cam.updateProjectionMatrix();
+            ctrl.minDistance = dist * 0.1;
+            ctrl.maxDistance = dist * 10;
+            ctrl.update();
+          }
+
+          setLoading(false); setHasModel(true);
+          setStatus(`🎨 ${name || objFile.name}`);
+          URL.revokeObjectURL(objUrl);
+        },
+        undefined,
+        () => {
+          setLoading(false);
+          setStatus('❌ Error al cargar el OBJ — verifica que sea un archivo válido');
+          URL.revokeObjectURL(objUrl);
+        }
+      );
+    };
+
+    if (pngFile) {
+      const pngUrl = URL.createObjectURL(pngFile);
+      const img = new Image();
+      img.onload = () => {
+        baseRef.current = img;
+        ctx.clearRect(0, 0, TEX, TEX);
+        ctx.drawImage(img, 0, 0, TEX, TEX);
+        syncUV2D();
+        URL.revokeObjectURL(pngUrl);
+        doLoad();
+      };
+      img.onerror = () => {
+        ctx.fillStyle = '#1a1a1a'; ctx.fillRect(0, 0, TEX, TEX);
+        baseRef.current = null;
+        syncUV2D();
+        URL.revokeObjectURL(pngUrl);
+        doLoad();
+      };
+      img.src = pngUrl;
+    } else {
+      ctx.fillStyle = '#1a1a1a'; ctx.fillRect(0, 0, TEX, TEX);
+      baseRef.current = null;
+      syncUV2D();
+      doLoad();
+    }
+  }, [syncUV2D]);
+
+
   useEffect(() => {
     const scene = sceneRef.current;
     const parentMesh = meshRef.current;
@@ -1285,8 +1379,105 @@ export default function SkinForge3D() {
           </div>
 
           <div className="text-[10px] text-zinc-600 ml-auto truncate shrink-0">{status}</div>
+
+          {/* Custom weapon upload button */}
+          <button
+            onClick={() => setCustomModalOpen(true)}
+            className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 bg-purple-500/15 hover:bg-purple-500/30 border border-purple-500/30 hover:border-purple-500/60 text-purple-400 hover:text-purple-300 rounded-lg text-[10px] font-black transition-all"
+          >
+            📂 OBJ Custom
+          </button>
         </div>
 
+        {/* ── CUSTOM WEAPON MODAL ── */}
+        {customModalOpen && (
+          <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4" onClick={() => setCustomModalOpen(false)}>
+            <div className="absolute inset-0 bg-black/80 backdrop-blur-sm"/>
+            <div
+              className="relative bg-[#111] border border-white/10 rounded-2xl p-6 w-full max-w-md shadow-2xl"
+              onClick={e => e.stopPropagation()}
+            >
+              <div className="flex items-center gap-2 mb-4">
+                <span className="text-xl">🎮</span>
+                <div>
+                  <div className="font-black text-white text-sm">Subir Arma Personalizada</div>
+                  <div className="text-[10px] text-zinc-500 mt-0.5">Sube el .obj de tu arma modificada y pinta encima</div>
+                </div>
+              </div>
+
+              {/* OBJ file */}
+              <div className="mb-3">
+                <div className="text-[9px] font-black uppercase tracking-widest text-zinc-400 mb-1.5">Modelo 3D (.obj) <span className="text-red-400">*</span></div>
+                <label className="flex items-center gap-2 p-3 bg-white/5 hover:bg-white/8 border border-dashed border-white/20 hover:border-purple-500/50 rounded-xl cursor-pointer transition-all">
+                  <span className="text-lg">📦</span>
+                  <div className="flex-1 min-w-0">
+                    {customObjFile
+                      ? <span className="text-[11px] text-purple-300 font-bold truncate block">{customObjFile.name}</span>
+                      : <span className="text-[11px] text-zinc-500">Seleccionar archivo .obj...</span>
+                    }
+                  </div>
+                  <input ref={customObjInputRef} type="file" accept=".obj" className="hidden"
+                    onChange={e => { if(e.target.files[0]) setCustomObjFile(e.target.files[0]); }}
+                  />
+                </label>
+              </div>
+
+              {/* PNG file (optional) */}
+              <div className="mb-3">
+                <div className="text-[9px] font-black uppercase tracking-widest text-zinc-400 mb-1.5">Textura base (.png) <span className="text-zinc-600">— opcional</span></div>
+                <label className="flex items-center gap-2 p-3 bg-white/5 hover:bg-white/8 border border-dashed border-white/20 hover:border-blue-500/50 rounded-xl cursor-pointer transition-all">
+                  <span className="text-lg">🖼️</span>
+                  <div className="flex-1 min-w-0">
+                    {customPngFile
+                      ? <span className="text-[11px] text-blue-300 font-bold truncate block">{customPngFile.name}</span>
+                      : <span className="text-[11px] text-zinc-500">Seleccionar textura existente...</span>
+                    }
+                  </div>
+                  <input ref={customPngInputRef} type="file" accept="image/*" className="hidden"
+                    onChange={e => { if(e.target.files[0]) setCustomPngFile(e.target.files[0]); }}
+                  />
+                </label>
+                <div className="text-[9px] text-zinc-600 mt-1 leading-tight">Si tienes ya una skin pintada en el arma, súbela aquí y podrás pintarla encima conservando lo que tiene.</div>
+              </div>
+
+              {/* Weapon name */}
+              <div className="mb-4">
+                <div className="text-[9px] font-black uppercase tracking-widest text-zinc-400 mb-1.5">Nombre identificador <span className="text-zinc-600">— opcional</span></div>
+                <input
+                  type="text"
+                  placeholder="Ej: ak47_custom_javi"
+                  value={customWeaponName}
+                  onChange={e => setCustomWeaponName(e.target.value)}
+                  className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-[11px] text-white placeholder:text-zinc-600 outline-none focus:border-purple-500/60"
+                />
+              </div>
+
+              <div className="flex gap-2">
+                <button
+                  onClick={() => {
+                    if (!customObjFile) return;
+                    loadCustomWeapon(customObjFile, customPngFile, customWeaponName);
+                    setCustomModalOpen(false);
+                    setCustomObjFile(null);
+                    setCustomPngFile(null);
+                    setCustomWeaponName('');
+                    setViewMode('3d');
+                  }}
+                  disabled={!customObjFile}
+                  className="flex-1 py-2.5 bg-purple-500 hover:bg-purple-400 disabled:bg-white/5 disabled:text-zinc-600 disabled:cursor-not-allowed text-white font-black rounded-xl text-[11px] transition-all"
+                >
+                  🚀 Cargar y Pintar
+                </button>
+                <button
+                  onClick={() => { setCustomModalOpen(false); setCustomObjFile(null); setCustomPngFile(null); setCustomWeaponName(''); }}
+                  className="px-4 py-2.5 bg-white/5 hover:bg-white/10 text-zinc-400 font-black rounded-xl text-[11px] transition-all"
+                >
+                  Cancelar
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
         <div className="flex flex-1 overflow-hidden relative z-20 bg-[#050505]">
           {/* ── LEFT TOOLS ── */}
           <div className="flex flex-col gap-1.5 p-2 border-r border-white/8 bg-[#0a0a0a] w-14 items-center shrink-0 relative z-30">
