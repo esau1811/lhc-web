@@ -991,9 +991,9 @@ export default function SkinForge3D() {
     const tc = tcRef.current; if (!tc || exporting) return;
     setExporting(true);
 
-    // ── Custom RPF mode: patch the user's original RPF with the painted texture ──
+    // ── Custom RPF mode ───────────────────────────────────────────────────────
     if (customRpfFileRef.current) {
-      setStatus('Inyectando skin en tu RPF...');
+      setStatus('Generando skin para tu arma modificada...');
       try {
         const W = 512, H = 512;
         const b64 = canvasToB64(tc, W, H);
@@ -1014,25 +1014,14 @@ export default function SkinForge3D() {
           setStatus('Error: ' + (err.error || res.statusText));
           return;
         }
-
-        const patchMode = res.headers.get('X-Patch-Mode') || 'rpf-patched';
         const blob = await res.blob();
         const url  = URL.createObjectURL(blob);
         const a    = document.createElement('a');
-
-        if (patchMode === 'ytd-only') {
-          // Fallback: server couldn't inject into RPF — returns standalone YTD
-          a.download = `${ytdName}.ytd`;
-          a.href = url; a.click();
-          setTimeout(() => URL.revokeObjectURL(url), 2000);
-          setStatus('⚠️ YTD descargado — pon este archivo en stream/ junto a tu RPF');
-        } else {
-          // Full patch: same RPF with texture replaced
-          a.download = customRpfFileRef.current.name;
-          a.href = url; a.click();
-          setTimeout(() => URL.revokeObjectURL(url), 2000);
-          setStatus('✅ RPF descargado — reemplaza el original en stream/');
-        }
+        const zipName = customRpfFileRef.current.name.replace(/\.rpf$/i, '') + '_skin.zip';
+        a.download = zipName;
+        a.href = url; a.click();
+        setTimeout(() => URL.revokeObjectURL(url), 2000);
+        setStatus('✅ ZIP descargado — descomprime ambos archivos en stream/');
       } catch (e) {
         setStatus('Error: ' + e.message);
       } finally {
@@ -1040,6 +1029,7 @@ export default function SkinForge3D() {
       }
       return;
     }
+
 
     // ── Standard weapon mode (sin cambios) ──────────────────────────────────
     setStatus('Generando RPF...');
