@@ -560,8 +560,8 @@ export default function SkinForge3D() {
     }
   }, []);
 
-  const loadCustomRPF = useCallback((nameOverride) => {
-    // Open the 2D paint mode with a blank/dark canvas using the weapon name from RPF
+  const loadCustomRPF = useCallback((nameOverride, detectedWeaponId) => {
+    // Open the 2D paint mode. If a known weapon was detected, load its original texture.
     const scene = sceneRef.current;
     if (!scene) return;
     setLoading(true); setHasModel(false); setStatus('Cargando RPF custom...');
@@ -571,40 +571,65 @@ export default function SkinForge3D() {
     const tc = tcRef.current;
     const ctx = tc.getContext('2d');
 
-    // Paint a default dark texture with weapon name watermark
-    ctx.clearRect(0, 0, TEX, TEX);
-    ctx.fillStyle = '#1a1a1a';
-    ctx.fillRect(0, 0, TEX, TEX);
-    // Subtle grid overlay for reference
-    ctx.strokeStyle = 'rgba(255,255,255,0.04)';
-    ctx.lineWidth = 1;
-    for (let i = 0; i <= TEX; i += 64) {
-      ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, TEX); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(TEX, i); ctx.stroke();
+    const finishLoad = () => {
+      // Build a THREE texture so paint sync works
+      const tt = new THREE.CanvasTexture(tc);
+      tt.flipY = false;
+      tt.colorSpace = THREE.SRGBColorSpace;
+      ttRef.current = tt;
+      setLoading(false);
+      setViewMode('2d');  // Auto-switch to 2D — no 3D model from RPF
+      setStatus(`🎨 RPF Custom: ${nameOverride || 'desconocido'} — Modo UV 2D`);
+      setWeaponPainted(false);
+      syncUV2D();
+    };
+
+    if (detectedWeaponId) {
+      // Load the original weapon PNG texture as the base — same as selecting from the list
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = () => {
+        baseRef.current = img;
+        ctx.clearRect(0, 0, TEX, TEX);
+        ctx.drawImage(img, 0, 0, TEX, TEX);
+        finishLoad();
+      };
+      img.onerror = () => {
+        // Texture not found — fall back to blank canvas with watermark
+        baseRef.current = null;
+        ctx.clearRect(0, 0, TEX, TEX);
+        ctx.fillStyle = '#1a1a1a';
+        ctx.fillRect(0, 0, TEX, TEX);
+        ctx.fillStyle = 'rgba(255,255,255,0.06)';
+        ctx.font = 'bold 48px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(nameOverride || 'CUSTOM RPF', TEX / 2, TEX / 2);
+        finishLoad();
+      };
+      img.src = `/weapons/${detectedWeaponId}.png`;
+    } else {
+      // Unknown weapon — blank dark canvas with name watermark
+      baseRef.current = null;
+      ctx.clearRect(0, 0, TEX, TEX);
+      ctx.fillStyle = '#1a1a1a';
+      ctx.fillRect(0, 0, TEX, TEX);
+      ctx.strokeStyle = 'rgba(255,255,255,0.04)';
+      ctx.lineWidth = 1;
+      for (let i = 0; i <= TEX; i += 64) {
+        ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, TEX); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(TEX, i); ctx.stroke();
+      }
+      ctx.fillStyle = 'rgba(255,255,255,0.08)';
+      ctx.font = 'bold 48px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(nameOverride || 'CUSTOM RPF', TEX / 2, TEX / 2);
+      ctx.font = 'bold 20px sans-serif';
+      ctx.fillStyle = 'rgba(255,255,255,0.04)';
+      ctx.fillText('Pinta aquí tu skin — LHC SkinForge', TEX / 2, TEX / 2 + 60);
+      finishLoad();
     }
-    // Watermark with name
-    ctx.fillStyle = 'rgba(255,255,255,0.06)';
-    ctx.font = 'bold 48px sans-serif';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(nameOverride || 'CUSTOM RPF', TEX / 2, TEX / 2);
-    ctx.font = 'bold 20px sans-serif';
-    ctx.fillStyle = 'rgba(255,255,255,0.03)';
-    ctx.fillText('Pinta aquí tu skin — LHC SkinForge', TEX / 2, TEX / 2 + 60);
-
-    baseRef.current = null;
-    syncUV2D();
-
-    // Build a THREE texture so we still have paint sync
-    const tt = new THREE.CanvasTexture(tc);
-    tt.flipY = false;
-    tt.colorSpace = THREE.SRGBColorSpace;
-    ttRef.current = tt;
-
-    setLoading(false);
-    setViewMode('2d');  // Auto-switch to 2D mode — no 3D model from RPF yet
-    setStatus(`🎨 RPF Custom: ${nameOverride || 'desconocido'} — Modo UV 2D`);
-    setWeaponPainted(false);
   }, [syncUV2D]);
 
 
@@ -1596,12 +1621,21 @@ export default function SkinForge3D() {
               {/* RPF file drop zone */}
               <div className="mb-4">
                 <div className="text-[9px] font-black uppercase tracking-widest text-zinc-400 mb-2">Archivo RPF <span className="text-orange-400">*</span></div>
-                <label
-                  className={`flex flex-col items-center justify-center gap-2 p-6 border-2 border-dashed rounded-2xl cursor-pointer transition-all ${
+                <div
+                  className={`flex flex-col items-center justify-center gap-2 p-6 border-2 border-dashed rounded-2xl cursor-pointer transition-all select-none ${
                     rpfFile
                       ? 'border-orange-500/60 bg-orange-500/5'
-                      : 'border-white/15 hover:border-orange-500/40 hover:bg-orange-500/3 bg-white/3'
+                      : 'border-white/15 hover:border-orange-500/40 bg-white/3'
                   }`}
+                  onClick={() => rpfInputRef.current?.click()}
+                  onDragOver={e => { e.preventDefault(); e.stopPropagation(); }}
+                  onDragEnter={e => { e.preventDefault(); e.stopPropagation(); }}
+                  onDrop={e => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const f = e.dataTransfer.files?.[0];
+                    if (f && f.name.toLowerCase().endsWith('.rpf')) handleRpfFileSelect(f);
+                  }}
                 >
                   {rpfFile ? (
                     <>
@@ -1627,7 +1661,7 @@ export default function SkinForge3D() {
                     className="hidden"
                     onChange={e => { if (e.target.files[0]) handleRpfFileSelect(e.target.files[0]); }}
                   />
-                </label>
+                </div>
               </div>
 
               {/* Parse status */}
@@ -1698,7 +1732,7 @@ export default function SkinForge3D() {
                   onClick={() => {
                     if (!rpfFile) return;
                     const finalName = rpfCustomName || (rpfDetected?.name) || rpfFile.name.replace(/\.rpf$/i, '');
-                    loadCustomRPF(finalName);
+                    loadCustomRPF(finalName, rpfDetected?.id || null);
                     setRpfModalOpen(false);
                     setRpfFile(null);
                     setRpfDetected(null);
