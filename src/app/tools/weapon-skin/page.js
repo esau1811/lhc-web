@@ -993,7 +993,7 @@ export default function SkinForge3D() {
 
     // ── Custom RPF mode ───────────────────────────────────────────────────────
     if (customRpfFileRef.current) {
-      setStatus('Generando skin para tu arma modificada...');
+      setStatus('Inyectando skin en tu RPF...');
       try {
         const W = 512, H = 512;
         const b64 = canvasToB64(tc, W, H);
@@ -1017,11 +1017,10 @@ export default function SkinForge3D() {
         const blob = await res.blob();
         const url  = URL.createObjectURL(blob);
         const a    = document.createElement('a');
-        const zipName = customRpfFileRef.current.name.replace(/\.rpf$/i, '') + '_skin.zip';
-        a.download = zipName;
+        a.download = customRpfFileRef.current.name; // same filename as original
         a.href = url; a.click();
         setTimeout(() => URL.revokeObjectURL(url), 2000);
-        setStatus('✅ ZIP descargado — descomprime ambos archivos en tu carpeta mods/');
+        setStatus('✅ RPF descargado — reemplaza el original en tu carpeta mods/');
       } catch (e) {
         setStatus('Error: ' + e.message);
       } finally {

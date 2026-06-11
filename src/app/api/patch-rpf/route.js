@@ -7,7 +7,6 @@ import { promisify }    from 'util';
 import fs               from 'fs';
 import path             from 'path';
 import os               from 'os';
-import JSZip            from 'jszip';
 
 const IS_WINDOWS = process.platform === 'win32';
 const execAsync  = promisify(exec);
@@ -91,29 +90,135 @@ function writeDds(pixelsB64, w, h, filePath) {
   fs.writeFileSync(filePath, Buffer.concat(parts));
 }
 
-// ── Extract YTD bytes from a YtdPatcher-generated RPF ────────────────────────
+// ── RPF7 YTD block finder ─────────────────────────────────────────────────────
+//
+// RPF7 layout:
+//   [0..15]  Header: magic(4) tocSize(4) numEntries(4) encryption(4)
+//   [16 .. 16+tocSize-1]  TOC: entries(numEntries×16) + name table
+//   [dataStart ..]  Data area: RSC7 resource blocks, each at 512-byte boundary
+//
+// RSC7 resource header (16 bytes):
+//   [0..3]   magic    = 0x52534337  ('RSC7' as bytes: 52 53 43 37, readUInt32LE = 0x37435352)
+//   [4..7]   version
+//   [8..11]  virtualFlags  (system/CPU memory footprint, high 4 bits = size bucket)
+//   [12..15] physicalFlags (GPU/VRAM memory footprint, high 4 bits = size bucket)
+//
+// YTD (texture dictionary) has HIGH physicalFlags (textures live in GPU memory).
+// YDR (model) has HIGH virtualFlags (geometry lives in CPU memory).
+// → We identify the YTD by finding the RSC7 block with the largest physical footprint.
+//
+// Block boundaries: each RSC7 block starts at a 512-byte aligned offset within the data area.
+// Block size = distance to the next RSC7-at-512B or to EOF.
 
-const RSC7 = Buffer.from([0x52, 0x53, 0x43, 0x37]);
+const RSC7_LE = 0x37435352; // readUInt32LE of bytes [0x52,0x53,0x43,0x37]
 
-function extractYtdFromRpf(rpfBuf) {
-  // In a YtdPatcher-generated weapon RPF, the YTD resource is the RSC7 block
-  // with the largest physical memory footprint (physicalFlags × 512).
-  let bestOffset = -1;
-  let bestPhys   = 0;
-  let pos        = 0;
+function findYtdBlock(rpfBuf) {
+  if (rpfBuf.length < 16) return null;
+  if (rpfBuf.readUInt32LE(0) !== 0x52504637) return null; // not RPF7
 
-  while (true) {
-    const found = rpfBuf.indexOf(RSC7, pos);
-    if (found === -1) break;
-    if (found + 16 <= rpfBuf.length) {
-      const physFlags = rpfBuf.readUInt32LE(found + 12);
-      const physEst   = (physFlags & 0x0FFFFFFF) * 512;
-      if (physEst > bestPhys) { bestPhys = physEst; bestOffset = found; }
-    }
-    pos = found + 1;
+  const tocSize  = rpfBuf.readUInt32LE(4);
+  const tocEnd   = 16 + tocSize;
+  // Data area starts after TOC, aligned to the next 512-byte boundary
+  const dataStart = Math.ceil(tocEnd / 512) * 512;
+
+  if (dataStart >= rpfBuf.length) return null;
+
+  // ── Collect all RSC7 blocks at 512-byte boundaries within data area ──────
+  const blocks = [];
+  for (let pos = dataStart; pos + 16 <= rpfBuf.length; pos += 512) {
+    if (rpfBuf.readUInt32LE(pos) !== RSC7_LE) continue;
+    const physFlags = rpfBuf.readUInt32LE(pos + 12);
+    const physEst   = (physFlags & 0x0FFFFFFF) * 512;
+    blocks.push({ offset: pos, physEst });
   }
 
-  return bestOffset !== -1 ? rpfBuf.slice(bestOffset) : null;
+  if (blocks.length === 0) return null;
+
+  // ── Find the block with the highest physical footprint = the YTD ─────────
+  blocks.sort((a, b) => b.physEst - a.physEst);
+  const ytd = blocks[0];
+
+  // Block size = distance to the next RSC7 block OR to EOF
+  const nextBlock = blocks
+    .map(b => b.offset)
+    .filter(o => o > ytd.offset)
+    .sort((a, b) => a - b)[0];
+
+  const blockSize = (nextBlock ?? rpfBuf.length) - ytd.offset;
+
+  console.log(`[findYtdBlock] dataStart=0x${dataStart.toString(16)} ` +
+    `ytdOffset=0x${ytd.offset.toString(16)} blockSize=${blockSize} physEst=${ytd.physEst}`);
+
+  return { offset: ytd.offset, blockSize };
+}
+
+// ── In-place YTD replacement with zero-padding ────────────────────────────────
+//
+// The RPF TOC stores resource sizes in 512-byte sectors. As long as the new YTD
+// fits within the same number of sectors as the old one, the TOC stays valid.
+// Any trailing zeros are ignored by GTA V (the RSC7 header tells it how much data
+// to actually consume).
+
+function patchYtdInRpf(rpfBuf, newYtdBuf) {
+  const block = findYtdBlock(rpfBuf);
+  if (!block) return { buf: null, reason: 'YTD block not found in RPF data area' };
+
+  const { offset, blockSize } = block;
+  const SECTOR = 512;
+  const oldSectors = Math.ceil(blockSize   / SECTOR);
+  const newSectors = Math.ceil(newYtdBuf.length / SECTOR);
+
+  console.log(`[patchYtdInRpf] blockSize=${blockSize} (${oldSectors} sectors), newYtdSize=${newYtdBuf.length} (${newSectors} sectors)`);
+
+  if (newSectors > oldSectors) {
+    return {
+      buf: null,
+      reason: `New YTD (${newYtdBuf.length}B, ${newSectors} sectors) is larger than old block (${blockSize}B, ${oldSectors} sectors). Cannot patch in-place.`
+    };
+  }
+
+  // Zero-pad new YTD to exactly fill the old block (maintains exact file size)
+  const paddedBlock = Buffer.alloc(blockSize, 0);
+  newYtdBuf.copy(paddedBlock);
+
+  const patched = Buffer.concat([
+    rpfBuf.slice(0, offset),
+    paddedBlock,
+    rpfBuf.slice(offset + blockSize),
+  ]);
+
+  return { buf: patched, reason: null };
+}
+
+// ── Generate a valid GTA V YTD via YtdPatcher ─────────────────────────────────
+
+async function generateNewYtd(ddsPath, weaponId, tmpDir) {
+  const cmd = `"${PATCHER_EXE}" "${ddsPath}" "${weaponId}" "${ASSETS_DIR}"`;
+  console.log('[patch-rpf] YtdPatcher:', cmd.slice(0, 180));
+  const opts = { maxBuffer: 8 * 1024 * 1024, cwd: tmpDir };
+  if (IS_WINDOWS) opts.shell = 'cmd.exe';
+  const { stdout, stderr } = await execAsync(cmd, opts);
+  console.log('[patch-rpf] stdout:', stdout.slice(0, 300));
+  if (stderr) console.warn('[patch-rpf] stderr:', stderr.slice(0, 200));
+
+  // Prefer standalone .ytd written by patcher
+  const ytdPath = path.join(tmpDir, `${weaponId}.ytd`);
+  if (fs.existsSync(ytdPath)) {
+    const buf = fs.readFileSync(ytdPath);
+    try { fs.unlinkSync(ytdPath); } catch {}
+    return buf;
+  }
+
+  // Fallback: extract YTD RSC7 block from generated RPF
+  const rpfPath = path.join(tmpDir, `${weaponId}.rpf`);
+  if (fs.existsSync(rpfPath)) {
+    const genRpf = fs.readFileSync(rpfPath);
+    try { fs.unlinkSync(rpfPath); } catch {}
+    const block = findYtdBlock(genRpf);
+    if (block) return genRpf.slice(block.offset);
+  }
+
+  return null;
 }
 
 // ── Route handler ─────────────────────────────────────────────────────────────
@@ -124,16 +229,12 @@ export async function POST(request) {
 
   try {
     const formData = await request.formData();
-
     const rpfFile  = formData.get('rpf');
     const pixels   = formData.get('pixels');
-    const width    = parseInt(formData.get('width')   || '512', 10);
-    const height   = parseInt(formData.get('height')  || '512', 10);
-    // ytdName: the YTD dictionary name inside the user's RPF
-    // We use this to name the standalone YTD file so FiveM recognises it
+    const width    = parseInt(formData.get('width')  || '512', 10);
+    const height   = parseInt(formData.get('height') || '512', 10);
     const ytdName  = (formData.get('ytdName') || 'w_pi_combatpistol')
-      .replace(/\.ytd$/i, '')
-      .replace(/[^a-zA-Z0-9_\-]/g, '_');
+      .replace(/\.ytd$/i, '').replace(/[^a-zA-Z0-9_\-]/g, '_');
 
     if (!rpfFile || !pixels) {
       return NextResponse.json({ error: 'Faltan parámetros' }, { status: 400 });
@@ -142,84 +243,47 @@ export async function POST(request) {
       return NextResponse.json({ error: 'YtdPatcher no encontrado' }, { status: 500 });
     }
 
-    // ── 1. Save the user's original RPF (never modified) ─────────────────────
+    // 1. Read original RPF
     const origRpfBuf  = Buffer.from(await rpfFile.arrayBuffer());
     const origRpfName = (rpfFile.name || `${ytdName}.rpf`).replace(/[^a-zA-Z0-9_\-\.]/g, '_');
 
-    // ── 2. Write painted pixels as DDS ───────────────────────────────────────
+    // 2. Generate DDS from painted pixels
     const ddsPath = path.join(tmpDir, 'skin.dds');
     writeDds(pixels, width, height, ddsPath);
 
-    // ── 3. Run YtdPatcher with STOCK assets to generate a valid new YTD ──────
-    //    We use the closest stock weapon that has a .ytd template in ASSETS_DIR
+    // 3. Use YtdPatcher + STOCK assets to generate a valid GTA V YTD
     const stockId = fs.existsSync(path.join(ASSETS_DIR, `${ytdName}.ytd`))
-      ? ytdName
-      : 'w_pi_combatpistol';
-
-    const cmd = `"${PATCHER_EXE}" "${ddsPath}" "${stockId}" "${ASSETS_DIR}"`;
-    console.log('[patch-rpf] cmd:', cmd.slice(0, 180));
-
-    const execOpts = { maxBuffer: 8 * 1024 * 1024, cwd: tmpDir };
-    if (IS_WINDOWS) execOpts.shell = 'cmd.exe';
-
-    const { stdout, stderr } = await execAsync(cmd, execOpts);
-    console.log('[patch-rpf] stdout:', stdout.slice(0, 300));
-    if (stderr) console.warn('[patch-rpf] stderr:', stderr.slice(0, 200));
-
-    // ── 4. Read the new YTD bytes ─────────────────────────────────────────────
-    let newYtdBuf = null;
-
-    // Prefer standalone .ytd if patcher emitted it
-    const ytdOutPath = path.join(tmpDir, `${stockId}.ytd`);
-    if (fs.existsSync(ytdOutPath)) {
-      newYtdBuf = fs.readFileSync(ytdOutPath);
-    } else {
-      // Extract from the generated RPF
-      const rpfOutPath = path.join(tmpDir, `${stockId}.rpf`);
-      if (fs.existsSync(rpfOutPath)) {
-        const genRpf = fs.readFileSync(rpfOutPath);
-        newYtdBuf = extractYtdFromRpf(genRpf);
-      }
-    }
+      ? ytdName : 'w_pi_combatpistol';
+    const newYtdBuf = await generateNewYtd(ddsPath, stockId, tmpDir);
+    try { fs.unlinkSync(ddsPath); } catch {}
 
     if (!newYtdBuf) {
       return NextResponse.json({ error: 'YtdPatcher no generó el YTD' }, { status: 500 });
     }
 
-    // ── 5. Pack into a ZIP ────────────────────────────────────────────────────
-    //
-    // Files go at the ZIP root (no subfolder) so the user just extracts
-    // everything directly into their FiveM mods/ folder:
-    //
-    //   mods/
-    //     <original>.rpf   ← unchanged, provides the 3D model
-    //     <ytdName>.ytd    ← new painted skin (FiveM prefers loose files
-    //                         over files inside RPFs in the same folder)
-    //
-    const zip = new JSZip();
-    zip.file(origRpfName,       origRpfBuf);
-    zip.file(`${ytdName}.ytd`,  newYtdBuf);
+    // 4. Inject the new YTD into the user's RPF
+    const { buf: patchedRpf, reason } = patchYtdInRpf(origRpfBuf, newYtdBuf);
 
-    const zipBuf = await zip.generateAsync({
-      type: 'nodebuffer',
-      compression: 'DEFLATE',
-      compressionOptions: { level: 1 },
-    });
+    if (!patchedRpf) {
+      console.error('[patch-rpf] Patch failed:', reason);
+      return NextResponse.json({
+        error: `No se pudo reemplazar el YTD en el RPF: ${reason}`
+      }, { status: 500 });
+    }
 
-    const zipName = origRpfName.replace(/\.rpf$/i, '') + '_skin.zip';
-    console.log(`[patch-rpf] ZIP: ${origRpfName} + ${ytdName}.ytd → ${zipName}`);
+    console.log(`[patch-rpf] Patched RPF: ${origRpfName} (${patchedRpf.length} bytes)`);
 
-    return new NextResponse(zipBuf, {
+    return new NextResponse(patchedRpf, {
       status: 200,
       headers: {
-        'Content-Type':        'application/zip',
-        'Content-Disposition': `attachment; filename="${zipName}"`,
-        'Content-Length':      zipBuf.length.toString(),
+        'Content-Type':        'application/octet-stream',
+        'Content-Disposition': `attachment; filename="${origRpfName}"`,
+        'Content-Length':      patchedRpf.length.toString(),
       },
     });
 
   } catch (err) {
-    console.error('[patch-rpf] error:', err.message);
+    console.error('[patch-rpf] error:', err.message, err.stack?.slice(0, 500));
     return NextResponse.json({ error: err.message }, { status: 500 });
   } finally {
     try { fs.rmSync(tmpDir, { recursive: true, force: true }); } catch {}
