@@ -188,15 +188,17 @@ export async function POST(request) {
 
     // ── 5. Pack into a ZIP ────────────────────────────────────────────────────
     //
-    //  stream/
-    //    <original>.rpf   ← unchanged, provides the 3D model
-    //    <ytdName>.ytd    ← new painted texture (FiveM prefers loose files
-    //                        over files inside RPFs in the same stream folder)
+    // Files go at the ZIP root (no subfolder) so the user just extracts
+    // everything directly into their FiveM mods/ folder:
+    //
+    //   mods/
+    //     <original>.rpf   ← unchanged, provides the 3D model
+    //     <ytdName>.ytd    ← new painted skin (FiveM prefers loose files
+    //                         over files inside RPFs in the same folder)
     //
     const zip = new JSZip();
-    const streamFolder = zip.folder('stream');
-    streamFolder.file(origRpfName,        origRpfBuf);
-    streamFolder.file(`${ytdName}.ytd`,   newYtdBuf);
+    zip.file(origRpfName,       origRpfBuf);
+    zip.file(`${ytdName}.ytd`,  newYtdBuf);
 
     const zipBuf = await zip.generateAsync({
       type: 'nodebuffer',
@@ -205,7 +207,7 @@ export async function POST(request) {
     });
 
     const zipName = origRpfName.replace(/\.rpf$/i, '') + '_skin.zip';
-    console.log(`[patch-rpf] ZIP: stream/${origRpfName} + stream/${ytdName}.ytd → ${zipName}`);
+    console.log(`[patch-rpf] ZIP: ${origRpfName} + ${ytdName}.ytd → ${zipName}`);
 
     return new NextResponse(zipBuf, {
       status: 200,

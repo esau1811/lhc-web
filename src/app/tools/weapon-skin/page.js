@@ -1021,7 +1021,7 @@ export default function SkinForge3D() {
         a.download = zipName;
         a.href = url; a.click();
         setTimeout(() => URL.revokeObjectURL(url), 2000);
-        setStatus('✅ ZIP descargado — descomprime ambos archivos en stream/');
+        setStatus('✅ ZIP descargado — descomprime ambos archivos en tu carpeta mods/');
       } catch (e) {
         setStatus('Error: ' + e.message);
       } finally {
