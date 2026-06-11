@@ -179,14 +179,28 @@ export async function POST(request) {
     if (stderr) console.warn('[patch-rpf] YtdPatcher stderr:', stderr.slice(0, 200));
 
     // ── 4. Get the modified custom YTD ────────────────────────────────────────
+    let modifiedYtdBuf = null;
     const outYtdPath = path.join(outputDir, `${ytdName}.ytd`);
-    if (!fs.existsSync(outYtdPath)) {
+    
+    if (fs.existsSync(outYtdPath)) {
+      modifiedYtdBuf = fs.readFileSync(outYtdPath);
+    } else {
+      // Si el parcheador no saca el .ytd suelto (p. ej. en Linux), sacamos el YTD modificado del RPF generado
+      const outRpfPath = path.join(outputDir, `${ytdName}.rpf`);
+      if (fs.existsSync(outRpfPath)) {
+        const genRpf = fs.readFileSync(outRpfPath);
+        const outBlock = findYtdBlock(genRpf);
+        if (outBlock) {
+          modifiedYtdBuf = genRpf.slice(outBlock.offset, outBlock.offset + outBlock.blockSize);
+        }
+      }
+    }
+
+    if (!modifiedYtdBuf) {
       return NextResponse.json({ 
-        error: `El parcheador no logró editar el YTD custom.\nLog:\n${stdout}\n${stderr}` 
+        error: `El parcheador no logró generar ni YTD ni RPF modificado.\nLog:\n${stdout}\n${stderr}` 
       }, { status: 500 });
     }
-    
-    const modifiedYtdBuf = fs.readFileSync(outYtdPath);
 
     // ── 5. Inject the modified YTD back into the user's RPF ───────────────────
     const SECTOR = 512;
