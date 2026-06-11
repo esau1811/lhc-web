@@ -85,15 +85,52 @@ function writeDds(pixelsB64, w, h, filePath) {
   fs.writeFileSync(filePath, Buffer.concat(parts));
 }
 
+// ── RPF7 YTD block finder ─────────────────────────────────────────────────────
+
+const RSC7_LE = 0x37435352; // readUInt32LE of bytes [0x52,0x53,0x43,0x37]
+
+function findYtdBlock(rpfBuf) {
+  if (rpfBuf.length < 16) return null;
+  if (rpfBuf.readUInt32LE(0) !== 0x52504637) return null; // not RPF7
+
+  const tocSize  = rpfBuf.readUInt32LE(4);
+  const tocEnd   = 16 + tocSize;
+  const dataStart = Math.ceil(tocEnd / 512) * 512;
+
+  if (dataStart >= rpfBuf.length) return null;
+
+  const blocks = [];
+  for (let pos = dataStart; pos + 16 <= rpfBuf.length; pos += 512) {
+    if (rpfBuf.readUInt32LE(pos) !== RSC7_LE) continue;
+    const physFlags = rpfBuf.readUInt32LE(pos + 12);
+    const physEst   = (physFlags & 0x0FFFFFFF) * 512;
+    blocks.push({ offset: pos, physEst });
+  }
+
+  if (blocks.length === 0) return null;
+
+  blocks.sort((a, b) => b.physEst - a.physEst);
+  const ytd = blocks[0];
+
+  const nextBlock = blocks
+    .map(b => b.offset)
+    .filter(o => o > ytd.offset)
+    .sort((a, b) => a - b)[0];
+
+  const blockSize = (nextBlock ?? rpfBuf.length) - ytd.offset;
+
+  return { offset: ytd.offset, blockSize };
+}
+
 // ── Route handler ─────────────────────────────────────────────────────────────
 
 export async function POST(request) {
   const tmpDir = path.join(os.tmpdir(), `lhc_patch_${Date.now()}_${Math.random().toString(36).slice(2)}`);
-  const inputDir  = path.join(tmpDir, 'input');
-  const outputDir = path.join(tmpDir, 'output');
+  const inputAssetsDir = path.join(tmpDir, 'assets');
+  const outputDir      = path.join(tmpDir, 'output');
 
   try {
-    fs.mkdirSync(inputDir, { recursive: true });
+    fs.mkdirSync(inputAssetsDir, { recursive: true });
     fs.mkdirSync(outputDir, { recursive: true });
 
     const formData = await request.formData();
@@ -114,19 +151,26 @@ export async function POST(request) {
     const origRpfName = (rpfFile.name || `${ytdName}.rpf`).replace(/[^a-zA-Z0-9_\-\.]/g, '_');
     const origRpfBuf  = Buffer.from(await rpfFile.arrayBuffer());
 
-    // 1. Put the user's custom RPF in the input directory, named exactly as the YtdPatcher expects it
-    const inputRpfPath = path.join(inputDir, `${ytdName}.rpf`);
-    fs.writeFileSync(inputRpfPath, origRpfBuf);
+    // ── 1. Extract the actual custom YTD from the user's RPF ──────────────────
+    const block = findYtdBlock(origRpfBuf);
+    if (!block) {
+      return NextResponse.json({ error: 'No se encontró el bloque YTD en el RPF' }, { status: 500 });
+    }
 
-    // 2. Write the DDS skin to tmpDir
+    const customYtdBuf = origRpfBuf.slice(block.offset, block.offset + block.blockSize);
+    
+    // Save it to inputAssetsDir so YtdPatcher uses the CUSTOM YTD as its base
+    const inputYtdPath = path.join(inputAssetsDir, `${ytdName}.ytd`);
+    fs.writeFileSync(inputYtdPath, customYtdBuf);
+
+    // ── 2. Write the painted DDS skin ─────────────────────────────────────────
     const ddsPath = path.join(tmpDir, 'skin.dds');
     writeDds(pixels, width, height, ddsPath);
 
-    // 3. Run YtdPatcher using the user's inputDir as the ASSETS folder
-    const cmd = `"${PATCHER_EXE}" "${ddsPath}" "${ytdName}" "${inputDir}"`;
+    // ── 3. Run YtdPatcher to modify the custom YTD ────────────────────────────
+    const cmd = `"${PATCHER_EXE}" "${ddsPath}" "${ytdName}" "${inputAssetsDir}"`;
     console.log('[patch-rpf] YtdPatcher CMD:', cmd.slice(0, 200));
 
-    // Execute in outputDir, so the generated files go there
     const execOpts = { maxBuffer: 8 * 1024 * 1024, cwd: outputDir };
     if (IS_WINDOWS) execOpts.shell = 'cmd.exe';
 
@@ -134,17 +178,37 @@ export async function POST(request) {
     console.log('[patch-rpf] YtdPatcher stdout:', stdout.slice(0, 300));
     if (stderr) console.warn('[patch-rpf] YtdPatcher stderr:', stderr.slice(0, 200));
 
-    // 4. Read the output RPF (YtdPatcher generates it properly formatted)
-    const outRpfPath = path.join(outputDir, `${ytdName}.rpf`);
-    if (!fs.existsSync(outRpfPath)) {
-      console.error('[patch-rpf] Error: RPF not found at', outRpfPath);
-      return NextResponse.json({ error: 'El parcheador no logró generar el RPF.' }, { status: 500 });
+    // ── 4. Get the modified custom YTD ────────────────────────────────────────
+    const outYtdPath = path.join(outputDir, `${ytdName}.ytd`);
+    if (!fs.existsSync(outYtdPath)) {
+      return NextResponse.json({ error: 'El parcheador no logró editar el YTD custom.' }, { status: 500 });
+    }
+    
+    const modifiedYtdBuf = fs.readFileSync(outYtdPath);
+
+    // ── 5. Inject the modified YTD back into the user's RPF ───────────────────
+    const SECTOR = 512;
+    const oldSectors = Math.ceil(block.blockSize / SECTOR);
+    const newSectors = Math.ceil(modifiedYtdBuf.length / SECTOR);
+
+    if (newSectors > oldSectors) {
+      return NextResponse.json({ 
+        error: `La nueva textura hace que el archivo sea demasiado grande (${newSectors} vs ${oldSectors} sectores). No cabe en el hueco original.` 
+      }, { status: 500 });
     }
 
-    const patchedRpf = fs.readFileSync(outRpfPath);
-    console.log(`[patch-rpf] Patched RPF successfully: ${patchedRpf.length} bytes`);
+    // Zero-pad to maintain exact original RPF file size and valid TOC
+    const paddedBlock = Buffer.alloc(block.blockSize, 0);
+    modifiedYtdBuf.copy(paddedBlock);
 
-    // Return the perfectly formatted RPF straight back to the user
+    const patchedRpf = Buffer.concat([
+      origRpfBuf.slice(0, block.offset),
+      paddedBlock,
+      origRpfBuf.slice(block.offset + block.blockSize),
+    ]);
+
+    console.log(`[patch-rpf] Injection successful! Original RPF patched.`);
+
     return new NextResponse(patchedRpf, {
       status: 200,
       headers: {
@@ -155,7 +219,7 @@ export async function POST(request) {
     });
 
   } catch (err) {
-    console.error('[patch-rpf] error:', err.message, err.stack?.slice(0, 500));
+    console.error('[patch-rpf] error:', err.message);
     return NextResponse.json({ error: err.message }, { status: 500 });
   } finally {
     try { fs.rmSync(tmpDir, { recursive: true, force: true }); } catch {}
