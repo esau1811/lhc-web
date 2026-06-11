@@ -230,13 +230,17 @@ export default function SkinForge3D() {
   const [customWeaponName, setCustomWeaponName] = useState('');
 
   // RPF custom upload state
-  const rpfInputRef        = useRef(null);
-  const [rpfModalOpen,     setRpfModalOpen]     = useState(false);
-  const [rpfFile,          setRpfFile]          = useState(null);
-  const [rpfDetected,      setRpfDetected]      = useState(null); // { id, name } or null
-  const [rpfCustomName,    setRpfCustomName]    = useState('');
-  const [rpfParsing,       setRpfParsing]       = useState(false);
-  const [rpfParseError,    setRpfParseError]    = useState('');
+  const rpfInputRef           = useRef(null);
+  const [rpfModalOpen,        setRpfModalOpen]     = useState(false);
+  const [rpfFile,             setRpfFile]          = useState(null);
+  const [rpfDetected,         setRpfDetected]      = useState(null); // { id, name } or null
+  const [rpfCustomName,       setRpfCustomName]    = useState('');
+  const [rpfParsing,          setRpfParsing]       = useState(false);
+  const [rpfParseError,       setRpfParseError]    = useState('');
+  // Persisted across modal close so exportRPF can use them
+  const customRpfFileRef      = useRef(null); // the original File object
+  const customRpfWeaponIdRef  = useRef(null); // base weapon id detected (e.g. 'w_pi_combatpistol')
+  const customRpfNameRef      = useRef(null); // display name (for ZIP filename)
 
   // Suppressor state
   const suppCanvasRef  = useRef(null);
@@ -560,7 +564,11 @@ export default function SkinForge3D() {
     }
   }, []);
 
-  const loadCustomRPF = useCallback((nameOverride, detectedWeaponId) => {
+  const loadCustomRPF = useCallback((nameOverride, detectedWeaponId, originalFile) => {
+    // Store refs so exportRPF can send the original RPF to /api/patch-rpf
+    customRpfFileRef.current     = originalFile || null;
+    customRpfWeaponIdRef.current = detectedWeaponId || null;
+    customRpfNameRef.current     = nameOverride || null;
     // Open the 2D paint mode. If a known weapon was detected, load its original texture.
     const scene = sceneRef.current;
     if (!scene) return;
@@ -973,10 +981,50 @@ export default function SkinForge3D() {
   // ---- EXPORT RPF ----
   const exportRPF = async () => {
     const tc = tcRef.current; if (!tc || exporting) return;
-    setExporting(true); setStatus('Generando RPF...');
+    setExporting(true);
+
+    // ── Custom RPF mode: patch the user's original RPF with the painted texture ──
+    if (customRpfFileRef.current) {
+      setStatus('Inyectando skin en tu RPF original...');
+      try {
+        const W = 512, H = 512;
+        const b64 = canvasToB64(tc, W, H);
+        const baseWeaponId = customRpfWeaponIdRef.current || 'w_pi_combatpistol';
+        const displayName  = customRpfNameRef.current    || 'custom_weapon';
+
+        const fd = new FormData();
+        fd.append('rpf',      customRpfFileRef.current);
+        fd.append('pixels',   b64);
+        fd.append('width',    String(W));
+        fd.append('height',   String(H));
+        fd.append('weaponId', baseWeaponId);
+        fd.append('rpfName',  displayName.replace(/[^a-zA-Z0-9_\-]/g, '_'));
+
+        const res = await fetch('/api/patch-rpf', { method: 'POST', body: fd });
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({ error: res.statusText }));
+          setStatus('Error: ' + (err.error || res.statusText));
+          return;
+        }
+        const blob = await res.blob();
+        const url  = URL.createObjectURL(blob);
+        const a    = document.createElement('a');
+        a.download = `${displayName.replace(/[^a-zA-Z0-9_\-]/g, '_')}_skin.zip`;
+        a.href = url; a.click();
+        setTimeout(() => URL.revokeObjectURL(url), 2000);
+        setStatus('✅ ZIP descargado — tu RPF con la skin inyectada');
+      } catch (e) {
+        setStatus('Error: ' + e.message);
+      } finally {
+        setExporting(false);
+      }
+      return;
+    }
+
+    // ── Standard weapon mode (sin cambios) ──────────────────────────────────
+    setStatus('Generando RPF...');
     try {
       const W = weapon.texW || 512, H = weapon.texH || 512;
-      // Siempre exportamos los píxeles del lienzo principal del arma para garantizar que el archivo YTD generado contenga la textura base nativa completa y evitar que el arma se vea negra en el juego.
       const b64 = canvasToB64(tc, W, H);
 
       // Suppressor
@@ -1003,8 +1051,8 @@ export default function SkinForge3D() {
       });
       if (!res.ok) { const err = await res.json(); setStatus('Error: ' + (err.error || res.statusText)); return; }
       const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement('a');
       a.download = `${weapon.id}_skin.zip`; a.href = url; a.click();
       setTimeout(() => URL.revokeObjectURL(url), 2000);
       setStatus('ZIP descargado — extrae en FiveM.app/');
@@ -1481,7 +1529,7 @@ export default function SkinForge3D() {
                       <div style={{padding:'6px 12px 2px', fontSize:9, color:'#555', fontWeight:900, textTransform:'uppercase', letterSpacing:2, borderTop:'1px solid rgba(255,255,255,0.06)'}}>{cat}</div>
                       {WEAPONS.filter(w => w.cat === cat).map(w => (
                         <button key={w.id}
-                          onClick={() => { setWeapon(w); setDropOpen(false); }}
+                          onClick={() => { setWeapon(w); setDropOpen(false); customRpfFileRef.current = null; customRpfWeaponIdRef.current = null; customRpfNameRef.current = null; }}
                           style={{display:'block', width:'100%', textAlign:'left', padding:'7px 12px 7px 16px', fontSize:12, cursor:'pointer', background:weapon.id===w.id?'rgba(239,68,68,0.1)':'transparent', color:weapon.id===w.id?'#f87171':'#d4d4d4', userSelect:'none', border:'none', outline:'none'}}>
                           {w.name}
                         </button>
@@ -1732,7 +1780,7 @@ export default function SkinForge3D() {
                   onClick={() => {
                     if (!rpfFile) return;
                     const finalName = rpfCustomName || (rpfDetected?.name) || rpfFile.name.replace(/\.rpf$/i, '');
-                    loadCustomRPF(finalName, rpfDetected?.id || null);
+                    loadCustomRPF(finalName, rpfDetected?.id || null, rpfFile);
                     setRpfModalOpen(false);
                     setRpfFile(null);
                     setRpfDetected(null);
