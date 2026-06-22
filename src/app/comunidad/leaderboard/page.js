@@ -3,30 +3,32 @@ import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { Trophy, TrendingUp, Crosshair } from 'lucide-react';
+import { useLang } from '@/components/LangProvider';
 
-function rankTier(elo) {
-  if (elo >= 1800) return { name: 'Diamond',  color: '#5eead4' };
-  if (elo >= 1600) return { name: 'Platinum', color: '#a78bfa' };
-  if (elo >= 1400) return { name: 'Gold',     color: '#fbbf24' };
-  if (elo >= 1200) return { name: 'Silver',   color: '#94a3b8' };
-  return                  { name: 'Bronze',   color: '#b45309' };
+function rankTier(elo, t) {
+  if (elo >= 1800) return { name: t('c_rank_diamond'),  color: '#5eead4' };
+  if (elo >= 1600) return { name: t('c_rank_platinum'), color: '#a78bfa' };
+  if (elo >= 1400) return { name: t('c_rank_gold'),     color: '#fbbf24' };
+  if (elo >= 1200) return { name: t('c_rank_silver'),   color: '#94a3b8' };
+  return                  { name: t('c_rank_bronze'),   color: '#b45309' };
 }
 
 const CARD_BG  = '#111114';
 const ROW_HOVER = '#16161a';
-const TABS = [
-  { id: 'elo',  label: 'ELO Ranking',  icon: <Trophy size={13} /> },
-  { id: 'wins', label: 'Win Ranking',  icon: <TrendingUp size={13} /> },
-  { id: 'kd',   label: 'K/D Ranking',  icon: <Crosshair size={13} /> },
-];
 
 export default function LeaderboardPage() {
+  const { t } = useLang();
   const [teams,   setTeams]   = useState([]);
   const [tab,     setTab]     = useState('elo');
   const [loading, setLoading] = useState(true);
 
+  const TABS = [
+    { id: 'elo',  labelKey: 'c_lb_elo',  icon: <Trophy size={13} /> },
+    { id: 'wins', labelKey: 'c_lb_wins', icon: <TrendingUp size={13} /> },
+    { id: 'kd',   labelKey: 'c_lb_kd',   icon: <Crosshair size={13} /> },
+  ];
+
   useEffect(() => {
-    setLoading(true);
     fetch('/api/community/teams').then(r => r.json()).then(d => { setTeams(Array.isArray(d) ? d : []); setLoading(false); });
   }, []);
 
@@ -41,41 +43,38 @@ export default function LeaderboardPage() {
     <div className="space-y-8">
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
         <div className="text-xs font-black uppercase tracking-widest text-cyan-500 mb-2 flex items-center gap-2">
-          <span className="w-2 h-2 rounded-full bg-cyan-500 animate-pulse inline-block" /> LIVE RANKINGS
+          <span className="w-2 h-2 rounded-full bg-cyan-500 animate-pulse inline-block" /> {t('c_lb_live')}
         </div>
-        <h1 className="text-5xl md:text-6xl font-black uppercase tracking-tight mb-2 text-white">LEADERBOARD</h1>
-        <p className="text-zinc-400 text-sm">Rankings competitivos actualizados tras cada partida.</p>
+        <h1 className="text-5xl md:text-6xl font-black uppercase tracking-tight mb-2 text-white">{t('c_lb_title')}</h1>
+        <p className="text-zinc-400 text-sm">{t('c_lb_desc')}</p>
       </motion.div>
 
-      {/* Tabs */}
       <div className="flex gap-2 flex-wrap">
-        {TABS.map(t => (
-          <button key={t.id} onClick={() => setTab(t.id)}
+        {TABS.map(tb => (
+          <button key={tb.id} onClick={() => setTab(tb.id)}
             className="flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-black uppercase tracking-wider transition-all"
-            style={tab === t.id
+            style={tab === tb.id
               ? { background: 'rgba(6,182,212,0.12)', color: '#22d3ee', border: '1px solid rgba(6,182,212,0.3)' }
               : { background: '#111114', color: '#71717a', border: '1px solid rgba(255,255,255,0.07)' }}>
-            {t.icon}{t.label}
+            {tb.icon}{t(tb.labelKey)}
           </button>
         ))}
       </div>
 
-      {/* Table */}
       <div className="rounded-xl overflow-hidden" style={{ background: CARD_BG, border: '1px solid rgba(255,255,255,0.07)' }}>
-        {/* Header row */}
         <div className="grid gap-4 px-6 py-3 border-b text-[10px] font-black uppercase tracking-widest text-zinc-600"
           style={{ gridTemplateColumns: '40px 1fr 90px 55px 55px 70px 70px 80px', borderColor: 'rgba(255,255,255,0.05)' }}>
-          <div>#</div><div>Equipo</div><div className="text-right">ELO</div>
+          <div>#</div><div>{t('c_lb_team')}</div><div className="text-right">ELO</div>
           <div className="text-right">V</div><div className="text-right">D</div>
-          <div className="text-right">K/D</div><div className="text-right">Win%</div><div className="text-right">Racha</div>
+          <div className="text-right">K/D</div><div className="text-right">Win%</div><div className="text-right">{t('c_stat_streak')}</div>
         </div>
 
         {loading ? (
           <div className="py-20 flex justify-center"><div className="w-6 h-6 border-2 border-cyan-500/30 border-t-cyan-500 rounded-full animate-spin" /></div>
         ) : sorted.length === 0 ? (
-          <div className="py-20 text-center text-zinc-600 text-sm">Aún no hay equipos registrados</div>
+          <div className="py-20 text-center text-zinc-600 text-sm">{t('c_lb_no_teams')}</div>
         ) : sorted.map((team, i) => {
-          const rank   = rankTier(team.elo);
+          const rank   = rankTier(team.elo, t);
           const total  = team.wins + team.losses;
           const winPct = total > 0 ? Math.round((team.wins / total) * 100) : 0;
           const kd     = team.deaths > 0 ? (team.kills / team.deaths).toFixed(2) : team.kills;
@@ -85,7 +84,7 @@ export default function LeaderboardPage() {
           return (
             <motion.div key={team.id} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.025 }}>
               <Link href={`/comunidad/teams/${team.id}`}>
-                <div className="grid gap-4 px-6 py-4 border-b items-center transition-colors duration-150 cursor-pointer group"
+                <div className="grid gap-4 px-6 py-4 border-b items-center cursor-pointer group"
                   style={{ gridTemplateColumns: '40px 1fr 90px 55px 55px 70px 70px 80px', borderColor: 'rgba(255,255,255,0.04)' }}
                   onMouseEnter={e => e.currentTarget.style.background = ROW_HOVER}
                   onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>

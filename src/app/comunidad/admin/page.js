@@ -3,7 +3,8 @@ import { useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { ShieldCheck, Plus, Check, X, Image as ImageIcon } from 'lucide-react';
+import { ShieldCheck, Plus, Check, X } from 'lucide-react';
+import { useLang } from '@/components/LangProvider';
 
 const CARD_BG    = '#111114';
 const CARD_HOVER = '#16161a';
@@ -18,6 +19,7 @@ const SELECT_STYLE = { ...INPUT_STYLE, appearance: 'none', WebkitAppearance: 'no
 export default function AdminPage() {
   const { data: session } = useSession();
   const router = useRouter();
+  const { t } = useLang();
   const [tab,       setTab]       = useState('tickets');
   const [tickets,   setTickets]   = useState([]);
   const [teams,     setTeams]     = useState([]);
@@ -37,14 +39,14 @@ export default function AdminPage() {
   };
   useEffect(load, []);
 
-  const startResolve = (t) => {
-    setResolving(t.id);
-    setResolve({ winner_team_id: t.team_a_id.toString(), loser_team_id: t.team_b_id.toString(), winner_kills: '', loser_kills: '', notes: '' });
+  const startResolve = (tk) => {
+    setResolving(tk.id);
+    setResolve({ winner_team_id: tk.team_a_id.toString(), loser_team_id: tk.team_b_id.toString(), winner_kills: '', loser_kills: '', notes: '' });
     setResStatus('');
   };
 
   const submitResolve = async () => {
-    setResStatus('Procesando...');
+    setResStatus(t('c_processing'));
     try {
       const res = await fetch('/api/community/admin/resolve', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -52,39 +54,35 @@ export default function AdminPage() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Error');
-      setResStatus('✅ Resuelto');
-      setResolving(null);
-      load();
+      setResStatus('✅ ' + t('c_status_resolved'));
+      setResolving(null); load();
     } catch (e) { setResStatus('❌ ' + e.message); }
   };
 
   const createTeam = async () => {
-    if (!newTeam.name) { setTeamMsg('❌ Nombre requerido'); return; }
+    if (!newTeam.name) { setTeamMsg('❌ ' + t('c_admin_team_name')); return; }
     setTeamMsg('...');
     const res = await fetch('/api/community/teams', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(newTeam) });
     const d = await res.json();
     if (!res.ok) { setTeamMsg('❌ ' + d.error); return; }
-    setTeamMsg('✅ Creado: ' + d.name);
-    setNewTeam({ name: '', tag: '', logo_url: '' });
-    load();
+    setTeamMsg('✅ ' + d.name); setNewTeam({ name: '', tag: '', logo_url: '' }); load();
   };
 
   const registerPlayer = async () => {
-    if (!newPlayer.discord_id || !newPlayer.discord_name) { setPlayerMsg('❌ Discord ID y nombre requeridos'); return; }
+    if (!newPlayer.discord_id || !newPlayer.discord_name) { setPlayerMsg('❌ ' + t('c_admin_discord_id') + ' + ' + t('c_admin_discord_name')); return; }
     setPlayerMsg('...');
     const res = await fetch('/api/community/players', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(newPlayer) });
     const d = await res.json();
     if (!res.ok) { setPlayerMsg('❌ ' + d.error); return; }
-    setPlayerMsg('✅ Registrado: ' + d.discord_name);
-    setNewPlayer({ discord_id: '', discord_name: '', discord_avatar: '', team_id: '' });
+    setPlayerMsg('✅ ' + d.discord_name); setNewPlayer({ discord_id: '', discord_name: '', discord_avatar: '', team_id: '' });
   };
 
   if (!session?.user?.isAdmin) return null;
 
   const TABS = [
-    { id: 'tickets', label: `Tickets (${tickets.length})` },
-    { id: 'teams',   label: 'Crear Equipo' },
-    { id: 'players', label: 'Registrar Jugador' },
+    { id: 'tickets', label: t('c_admin_tickets') + ` (${tickets.length})` },
+    { id: 'teams',   label: t('c_admin_create_team') },
+    { id: 'players', label: t('c_admin_reg_player') },
   ];
 
   return (

@@ -4,6 +4,7 @@ import { useSession, signIn } from 'next-auth/react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import Header from '@/components/Header';
+import { useLang } from '@/components/LangProvider';
 import { motion } from 'framer-motion';
 import { Trophy, Users, User, Clock, Ticket, ShieldCheck } from 'lucide-react';
 
@@ -13,22 +14,23 @@ const DiscordIcon = () => (
   </svg>
 );
 
-const navLinks = [
-  { name: 'Inicio',      href: '/comunidad',            icon: <Trophy size={13} /> },
-  { name: 'Leaderboard', href: '/comunidad/leaderboard', icon: <Trophy size={13} /> },
-  { name: 'Equipos',     href: '/comunidad/teams',       icon: <Users size={13} /> },
-  { name: 'Jugadores',   href: '/comunidad/players',     icon: <User size={13} /> },
-  { name: 'Partidas',    href: '/comunidad/partidas',    icon: <Clock size={13} /> },
-  { name: 'Ticket',      href: '/comunidad/tickets',     icon: <Ticket size={13} /> },
-];
-
 export default function ComunidadLayout({ children }) {
   const { data: session, status } = useSession();
   const pathname = usePathname();
+  const { t } = useLang();
+
+  const navLinks = [
+    { key: 'c_nav_home',        href: '/comunidad',            icon: <Trophy size={13} /> },
+    { key: 'c_nav_leaderboard', href: '/comunidad/leaderboard', icon: <Trophy size={13} /> },
+    { key: 'c_nav_teams',       href: '/comunidad/teams',       icon: <Users size={13} /> },
+    { key: 'c_nav_players',     href: '/comunidad/players',     icon: <User size={13} /> },
+    { key: 'c_nav_matches',     href: '/comunidad/partidas',    icon: <Clock size={13} /> },
+    { key: 'c_nav_ticket',      href: '/comunidad/tickets',     icon: <Ticket size={13} /> },
+  ];
 
   if (status === 'loading') {
     return (
-      <div className="min-h-screen bg-[#050505] text-white flex items-center justify-center">
+      <div className="min-h-screen text-white flex items-center justify-center" style={{ background: '#050505' }}>
         <div className="w-8 h-8 border-2 border-cyan-500/30 border-t-cyan-500 rounded-full animate-spin" />
       </div>
     );
@@ -36,22 +38,25 @@ export default function ComunidadLayout({ children }) {
 
   if (!session) {
     return (
-      <div className="min-h-screen bg-[#050505] text-white">
+      <div className="min-h-screen text-white" style={{ background: '#050505' }}>
         <Header />
         <main className="max-w-xl mx-auto px-6 pt-36 pb-20 flex flex-col items-center text-center">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }} className="w-full">
             <div className="relative mx-auto w-24 h-24 mb-8">
               <div className="absolute inset-0 bg-cyan-500/10 rounded-full blur-xl animate-pulse" />
-              <div className="relative w-24 h-24 bg-[#111] rounded-full border border-white/10 flex items-center justify-center">
+              <div className="relative w-24 h-24 rounded-full border border-white/10 flex items-center justify-center" style={{ background: '#111' }}>
                 <img src="/logo.png" alt="LHC" className="w-14 h-14 object-contain opacity-80" />
               </div>
             </div>
             <div className="text-xs font-black uppercase tracking-widest text-cyan-500 mb-3">LHC Comunidad</div>
-            <h1 className="text-3xl font-black uppercase tracking-tight mb-3">ACCESO RESTRINGIDO</h1>
-            <p className="text-zinc-500 mb-8 font-medium">Para acceder a la sección de comunidad debes iniciar sesión con Discord.</p>
+            <h1 className="text-3xl font-black uppercase tracking-tight mb-3">{t('c_restricted_title')}</h1>
+            <p className="text-zinc-500 mb-8 font-medium">{t('c_restricted_desc')}</p>
             <button onClick={() => signIn('discord')}
-              className="flex items-center justify-center gap-3 w-full bg-[#5865F2] hover:bg-[#4752c4] text-white font-black py-4 px-8 rounded-xl transition-all text-sm">
-              <DiscordIcon /> Iniciar sesión con Discord
+              className="flex items-center justify-center gap-3 w-full text-white font-black py-4 px-8 rounded-xl transition-all text-sm"
+              style={{ background: '#5865F2' }}
+              onMouseEnter={e => e.currentTarget.style.background = '#4752c4'}
+              onMouseLeave={e => e.currentTarget.style.background = '#5865F2'}>
+              <DiscordIcon /> {t('c_login_with_discord')}
             </button>
           </motion.div>
         </main>
@@ -65,38 +70,34 @@ export default function ComunidadLayout({ children }) {
     <div className="min-h-screen text-white" style={{ background: '#050505' }}>
       <Header />
 
-      {/* Sub-nav — fully opaque, no particles bleed */}
-      <div className="fixed top-[72px] left-0 right-0 z-40 border-b border-white/5"
-        style={{ background: '#09090b' }}>
+      {/* Sub-nav — fully opaque */}
+      <div className="fixed top-[72px] left-0 right-0 z-40 border-b border-white/5" style={{ background: '#09090b' }}>
         <div className="max-w-[1400px] mx-auto px-6">
           <div className="flex items-center gap-1 overflow-x-auto py-2" style={{ scrollbarWidth: 'none' }}>
             {navLinks.map(link => (
               <Link key={link.href} href={link.href}
-                className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-[11px] font-black uppercase tracking-wider whitespace-nowrap transition-all
-                  ${pathname === link.href
-                    ? 'text-cyan-400 border border-cyan-500/30'
-                    : 'text-zinc-500 hover:text-white border border-transparent hover:border-white/10'
-                  }`}
-                style={pathname === link.href ? { background: 'rgba(6,182,212,0.1)' } : {}}>
-                {link.icon}{link.name}
+                className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-[11px] font-black uppercase tracking-wider whitespace-nowrap transition-all border"
+                style={pathname === link.href
+                  ? { background: 'rgba(6,182,212,0.1)', color: '#22d3ee', borderColor: 'rgba(6,182,212,0.3)' }
+                  : { color: '#71717a', borderColor: 'transparent' }}
+                onMouseEnter={e => { if (pathname !== link.href) { e.currentTarget.style.color = '#fff'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)'; }}}
+                onMouseLeave={e => { if (pathname !== link.href) { e.currentTarget.style.color = '#71717a'; e.currentTarget.style.borderColor = 'transparent'; }}}>
+                {link.icon}{t(link.key)}
               </Link>
             ))}
             {isAdmin && (
               <Link href="/comunidad/admin"
-                className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-[11px] font-black uppercase tracking-wider whitespace-nowrap transition-all ml-auto border
-                  ${pathname === '/comunidad/admin'
-                    ? 'text-red-400 border-red-500/30'
-                    : 'text-red-500/60 hover:text-red-400 border-transparent hover:border-red-500/20'
-                  }`}
-                style={pathname === '/comunidad/admin' ? { background: 'rgba(239,68,68,0.1)' } : {}}>
-                <ShieldCheck size={13} /> Admin
+                className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-[11px] font-black uppercase tracking-wider whitespace-nowrap transition-all ml-auto border"
+                style={pathname === '/comunidad/admin'
+                  ? { background: 'rgba(239,68,68,0.1)', color: '#f87171', borderColor: 'rgba(239,68,68,0.3)' }
+                  : { color: 'rgba(239,68,68,0.6)', borderColor: 'transparent' }}>
+                <ShieldCheck size={13} /> {t('c_nav_admin')}
               </Link>
             )}
           </div>
         </div>
       </div>
 
-      {/* Page content — solid background so particles don't bleed into cards */}
       <main className="max-w-[1400px] mx-auto px-6 pt-36 pb-20">
         {children}
       </main>
