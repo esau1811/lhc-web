@@ -101,11 +101,6 @@ export default function ComunidadLayout({ children }) {
       <main className="max-w-[1400px] mx-auto px-6 pt-36 pb-20">
         {children}
       </main>
-
-      {/* DEBUG OVERLAY - REMOVE LATER */}
-      <div className="fixed bottom-0 left-0 bg-red-600 text-white text-xs p-2 z-[9999] font-mono">
-        DEBUG: ID={session?.user?.discordId} | IS_ADMIN={String(isAdmin)}
-      </div>
     </div>
   );
 }
