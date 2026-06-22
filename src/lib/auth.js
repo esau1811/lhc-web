@@ -1,4 +1,5 @@
 import DiscordProvider from 'next-auth/providers/discord';
+import { getDb } from '@/lib/communityDb';
 
 export const authOptions = {
   providers: [
@@ -13,12 +14,27 @@ export const authOptions = {
     }),
   ],
   callbacks: {
-    async signIn({ account, user }) {
-      // Always allow sign in — guild check is done in jwt callback
-      // Returning a URL string from signIn breaks the OAuth flow
+    async signIn({ account, user, profile }) {
+      // Auto-register player in DB to capture global Discord name and avatar
+      if (profile?.id) {
+        try {
+          const db = getDb();
+          const existing = db.prepare('SELECT id FROM players WHERE discord_id = ?').get(profile.id);
+          if (existing) {
+            db.prepare('UPDATE players SET discord_name = ?, discord_avatar = ? WHERE discord_id = ?')
+              .run(user.name, user.image, profile.id);
+          } else {
+            // New users default to the 'Global' server (server_id = 1) if it exists
+            db.prepare('INSERT INTO players (discord_id, discord_name, discord_avatar, server_id) VALUES (?, ?, ?, 1)')
+              .run(profile.id, user.name, user.image);
+          }
+        } catch (e) {
+          console.error('Auto-registration error:', e);
+        }
+      }
       return true;
     },
-    async jwt({ token, account, profile }) {
+    async jwt({ token, account, profile, user }) {
       if (account) {
         token.discordId = profile?.id;
         token.accessToken = account.access_token;
