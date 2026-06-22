@@ -47,9 +47,11 @@ export const authOptions = {
         token.isAdmin = false;
         if (botToken && adminRoleId && profile?.id) {
           try {
+            // Limpiamos el token por si el usuario puso "Bot " en la variable de entorno
+            const cleanBotToken = botToken.replace(/^Bot\s+/i, '').trim();
             const memberRes = await fetch(
               `https://discord.com/api/guilds/${targetGuildId}/members/${profile.id}`,
-              { headers: { Authorization: `Bot ${botToken}` } }
+              { headers: { Authorization: `Bot ${cleanBotToken}` } }
             );
             if (memberRes.ok) {
               const member = await memberRes.json();
