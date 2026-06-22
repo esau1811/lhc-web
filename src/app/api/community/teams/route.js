@@ -40,12 +40,10 @@ export async function POST(request) {
     if (!name) return NextResponse.json({ error: 'name required' }, { status: 400 });
 
     if (logo_file && typeof logo_file === 'object') {
-      await mkdir(UPLOAD_DIR, { recursive: true });
-      const ext = logo_file.name?.split('.').pop() || 'jpg';
-      const filename = `team_${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
-      logo_url = `/uploads/teams/${filename}`;
       const bytes = await logo_file.arrayBuffer();
-      await writeFile(path.join(UPLOAD_DIR, filename), Buffer.from(bytes));
+      const buffer = Buffer.from(bytes);
+      const mimeType = logo_file.type || 'image/png';
+      logo_url = `data:${mimeType};base64,${buffer.toString('base64')}`;
     }
 
     const db = getDb();

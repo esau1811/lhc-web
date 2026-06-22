@@ -27,8 +27,23 @@ export async function POST(request) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.isAdmin) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   try {
-    const { discord_id, discord_name, discord_avatar, team_id, server_id } = await request.json();
+    const formData = await request.formData();
+    const discord_id = formData.get('discord_id');
+    const discord_name = formData.get('discord_name');
+    let discord_avatar = formData.get('discord_avatar');
+    const team_id = formData.get('team_id') || null;
+    const server_id = formData.get('server_id') || 1;
+    const avatar_file = formData.get('discord_avatar_file');
+
     if (!discord_id || !discord_name) return NextResponse.json({ error: 'discord_id and discord_name required' }, { status: 400 });
+
+    if (avatar_file && typeof avatar_file === 'object') {
+      const bytes = await avatar_file.arrayBuffer();
+      const buffer = Buffer.from(bytes);
+      const mimeType = avatar_file.type || 'image/png';
+      discord_avatar = `data:${mimeType};base64,${buffer.toString('base64')}`;
+    }
+
     const db = getDb();
     const existing = db.prepare(`SELECT * FROM players WHERE discord_id = ?`).get(discord_id);
     if (existing) {

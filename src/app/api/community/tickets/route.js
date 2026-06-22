@@ -76,12 +76,10 @@ export async function POST(request) {
     // Save image
     let image_path = null;
     if (image && typeof image === 'object') {
-      await mkdir(UPLOAD_DIR, { recursive: true });
-      const ext      = image.name?.split('.').pop() || 'jpg';
-      const filename = `ticket_${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
-      image_path     = `/uploads/tickets/${filename}`;
       const bytes    = await image.arrayBuffer();
-      await writeFile(path.join(UPLOAD_DIR, filename), Buffer.from(bytes));
+      const buffer   = Buffer.from(bytes);
+      const mimeType = image.type || 'image/png';
+      image_path     = `data:${mimeType};base64,${buffer.toString('base64')}`;
     }
 
     const result = db.prepare(`

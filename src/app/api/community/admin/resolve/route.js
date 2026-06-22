@@ -78,7 +78,7 @@ export async function POST(request) {
     `).run(resolverPlayer?.id || null, ticket_id);
 
     // Delete image and clip after resolution
-    if (ticket.image_path) {
+    if (ticket.image_path && !ticket.image_path.startsWith('data:')) {
       try {
         await unlink(path.join(process.cwd(), 'public', ticket.image_path));
       } catch (_) { /* imagen ya borrada o no existe */ }

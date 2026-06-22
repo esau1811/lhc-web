@@ -39,7 +39,7 @@ export default function AdminPage() {
   const [teamMsg,   setTeamMsg]   = useState('');
 
   // New player
-  const [newPlayer, setNewPlayer] = useState({ discord_id: '', discord_name: '', discord_avatar: '', team_id: '' });
+  const [newPlayer, setNewPlayer] = useState({ discord_id: '', discord_name: '', discord_avatar: '', discord_avatar_file: null, team_id: '' });
   const [playerMsg, setPlayerMsg] = useState('');
 
   // New server
@@ -117,10 +117,18 @@ export default function AdminPage() {
   const registerPlayer = async () => {
     if (!newPlayer.discord_id || !newPlayer.discord_name) { setPlayerMsg('❌ ID y Nombre requeridos'); return; }
     setPlayerMsg('...');
-    const res = await fetch('/api/community/players', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...newPlayer, server_id: serverId }) });
+    const formData = new FormData();
+    formData.append('discord_id', newPlayer.discord_id);
+    formData.append('discord_name', newPlayer.discord_name);
+    if (newPlayer.discord_avatar_file) formData.append('discord_avatar_file', newPlayer.discord_avatar_file);
+    else if (newPlayer.discord_avatar) formData.append('discord_avatar', newPlayer.discord_avatar);
+    if (newPlayer.team_id) formData.append('team_id', newPlayer.team_id);
+    formData.append('server_id', serverId);
+
+    const res = await fetch('/api/community/players', { method: 'POST', body: formData });
     const d = await res.json();
     if (!res.ok) { setPlayerMsg('❌ ' + d.error); return; }
-    setPlayerMsg('✅ ' + d.discord_name); setNewPlayer({ discord_id: '', discord_name: '', discord_avatar: '', team_id: '' });
+    setPlayerMsg('✅ ' + d.discord_name); setNewPlayer({ discord_id: '', discord_name: '', discord_avatar: '', discord_avatar_file: null, team_id: '' });
   };
 
   const createServer = async () => {
@@ -346,7 +354,6 @@ export default function AdminPage() {
           {[
             { label: 'Discord ID *',     key: 'discord_id',     placeholder: '498521626988773386' },
             { label: 'Nombre Discord *', key: 'discord_name',   placeholder: 'usuario#0000' },
-            { label: 'URL Avatar',       key: 'discord_avatar', placeholder: 'https://cdn.discordapp.com/...' },
           ].map(f => (
             <div key={f.key}>
               <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-2 block">{f.label}</label>
@@ -357,6 +364,21 @@ export default function AdminPage() {
                 onBlur={e => e.target.style.borderColor = 'rgba(255,255,255,0.08)'} />
             </div>
           ))}
+
+          <div>
+            <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-2 block">Avatar (opcional)</label>
+            <div className="flex gap-2">
+              <input type="file" accept="image/*"
+                onChange={e => setNewPlayer(p => ({ ...p, discord_avatar_file: e.target.files[0] }))}
+                style={INPUT_STYLE} className="flex-1 rounded-xl px-4 py-2 text-sm text-zinc-400 file:mr-4 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-xs file:font-bold file:bg-cyan-500/10 file:text-cyan-400 hover:file:bg-cyan-500/20" />
+            </div>
+            <div className="text-center text-[10px] text-zinc-600 font-bold my-2">- O -</div>
+            <input value={newPlayer.discord_avatar} placeholder="https://cdn.discordapp.com/..."
+                onChange={e => setNewPlayer(p => ({ ...p, discord_avatar: e.target.value }))}
+                style={INPUT_STYLE} className="w-full rounded-xl px-4 py-3 text-sm placeholder-zinc-700"
+                onFocus={e => e.target.style.borderColor = 'rgba(6,182,212,0.35)'}
+                onBlur={e => e.target.style.borderColor = 'rgba(255,255,255,0.08)'} />
+          </div>
           <div>
             <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-2 block">Equipo</label>
             <div className="relative">
