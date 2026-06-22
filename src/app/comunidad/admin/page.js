@@ -3,11 +3,11 @@ import { useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { ShieldCheck, Plus, Check, X } from 'lucide-react';
+import { ShieldCheck, Plus, Check, X, ExternalLink, Server, Film } from 'lucide-react';
 import { useLang } from '@/components/LangProvider';
+import { useServer } from '@/components/ServerProvider';
 
 const CARD_BG    = '#111114';
-const CARD_HOVER = '#16161a';
 const INPUT_STYLE = {
   background: '#0d0d10',
   border: '1px solid rgba(255,255,255,0.08)',
@@ -20,70 +20,122 @@ export default function AdminPage() {
   const { data: session } = useSession();
   const router = useRouter();
   const { t } = useLang();
+  const { serverId, serverName } = useServer();
+
   const [tab,       setTab]       = useState('tickets');
   const [tickets,   setTickets]   = useState([]);
   const [teams,     setTeams]     = useState([]);
+  const [players,   setPlayers]   = useState([]);
+  const [servers,   setServers]   = useState([]);
+
+  // Ticket resolution state
   const [resolving, setResolving] = useState(null);
-  const [resolve,   setResolve]   = useState({ winner_team_id: '', loser_team_id: '', winner_kills: '', loser_kills: '', notes: '' });
+  const [resolve,   setResolve]   = useState({ winner_team_id: '', loser_team_id: '', notes: '' });
+  const [playerStats, setPlayerStats] = useState({}); // { playerId: { kills, deaths } }
   const [resStatus, setResStatus] = useState('');
+
+  // New team
   const [newTeam,   setNewTeam]   = useState({ name: '', tag: '', logo_url: '' });
   const [teamMsg,   setTeamMsg]   = useState('');
+
+  // New player
   const [newPlayer, setNewPlayer] = useState({ discord_id: '', discord_name: '', discord_avatar: '', team_id: '' });
   const [playerMsg, setPlayerMsg] = useState('');
+
+  // New server
+  const [newServer,  setNewServer]  = useState({ name: '', logo_url: '' });
+  const [serverMsg,  setServerMsg]  = useState('');
 
   useEffect(() => { if (session && !session.user.isAdmin) router.replace('/comunidad'); }, [session]);
 
   const load = () => {
-    fetch('/api/community/tickets').then(r => r.json()).then(d => setTickets(Array.isArray(d) ? d : []));
-    fetch('/api/community/teams').then(r => r.json()).then(d => setTeams(Array.isArray(d) ? d : []));
+    fetch(`/api/community/tickets`).then(r => r.json()).then(d => setTickets(Array.isArray(d) ? d : []));
+    fetch(`/api/community/teams?server_id=${serverId}`).then(r => r.json()).then(d => setTeams(Array.isArray(d) ? d : []));
+    fetch(`/api/community/players?server_id=${serverId}`).then(r => r.json()).then(d => setPlayers(Array.isArray(d) ? d : []));
+    fetch(`/api/community/servers`).then(r => r.json()).then(d => setServers(Array.isArray(d) ? d : []));
   };
-  useEffect(load, []);
+  useEffect(load, [serverId]);
 
   const startResolve = (tk) => {
-    setResolving(tk.id);
-    setResolve({ winner_team_id: tk.team_a_id.toString(), loser_team_id: tk.team_b_id.toString(), winner_kills: '', loser_kills: '', notes: '' });
+    setResolving(tk);
+    const initial = {};
+    // Pre-populate player stats for players in both teams
+    const teamAPlayers = players.filter(p => p.team_id === tk.team_a_id);
+    const teamBPlayers = players.filter(p => p.team_id === tk.team_b_id);
+    [...teamAPlayers, ...teamBPlayers].forEach(p => { initial[p.id] = { kills: '', deaths: '' }; });
+    setPlayerStats(initial);
+    setResolve({ winner_team_id: tk.team_a_id.toString(), loser_team_id: tk.team_b_id.toString(), notes: '' });
     setResStatus('');
   };
 
   const submitResolve = async () => {
-    setResStatus(t('c_processing'));
+    setResStatus('Procesando...');
     try {
+      const stats = Object.entries(playerStats).map(([pid, s]) => ({
+        player_id: parseInt(pid),
+        kills: parseInt(s.kills) || 0,
+        deaths: parseInt(s.deaths) || 0,
+        team_id: players.find(p => p.id === parseInt(pid))?.team_id,
+      }));
+      const winner_kills = stats.filter(s => s.team_id === parseInt(resolve.winner_team_id)).reduce((a, s) => a + s.kills, 0);
+      const loser_kills  = stats.filter(s => s.team_id === parseInt(resolve.loser_team_id)).reduce((a, s) => a + s.kills, 0);
       const res = await fetch('/api/community/admin/resolve', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ticket_id: resolving, ...resolve, winner_kills: +resolve.winner_kills, loser_kills: +resolve.loser_kills }),
+        body: JSON.stringify({
+          ticket_id: resolving.id,
+          winner_team_id: parseInt(resolve.winner_team_id),
+          loser_team_id: parseInt(resolve.loser_team_id),
+          winner_kills, loser_kills,
+          notes: resolve.notes,
+          player_stats: stats,
+        }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Error');
-      setResStatus('✅ ' + t('c_status_resolved'));
-      setResolving(null); load();
+      setResStatus('✅ Resuelto correctamente');
+      setResolving(null);
+      load();
     } catch (e) { setResStatus('❌ ' + e.message); }
   };
 
   const createTeam = async () => {
-    if (!newTeam.name) { setTeamMsg('❌ ' + t('c_admin_team_name')); return; }
+    if (!newTeam.name) { setTeamMsg('❌ Nombre requerido'); return; }
     setTeamMsg('...');
-    const res = await fetch('/api/community/teams', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(newTeam) });
+    const res = await fetch('/api/community/teams', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...newTeam, server_id: serverId }) });
     const d = await res.json();
     if (!res.ok) { setTeamMsg('❌ ' + d.error); return; }
     setTeamMsg('✅ ' + d.name); setNewTeam({ name: '', tag: '', logo_url: '' }); load();
   };
 
   const registerPlayer = async () => {
-    if (!newPlayer.discord_id || !newPlayer.discord_name) { setPlayerMsg('❌ ' + t('c_admin_discord_id') + ' + ' + t('c_admin_discord_name')); return; }
+    if (!newPlayer.discord_id || !newPlayer.discord_name) { setPlayerMsg('❌ ID y Nombre requeridos'); return; }
     setPlayerMsg('...');
-    const res = await fetch('/api/community/players', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(newPlayer) });
+    const res = await fetch('/api/community/players', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...newPlayer, server_id: serverId }) });
     const d = await res.json();
     if (!res.ok) { setPlayerMsg('❌ ' + d.error); return; }
     setPlayerMsg('✅ ' + d.discord_name); setNewPlayer({ discord_id: '', discord_name: '', discord_avatar: '', team_id: '' });
   };
 
+  const createServer = async () => {
+    if (!newServer.name) { setServerMsg('❌ Nombre requerido'); return; }
+    setServerMsg('...');
+    const res = await fetch('/api/community/servers', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(newServer) });
+    const d = await res.json();
+    if (!res.ok) { setServerMsg('❌ ' + d.error); return; }
+    setServerMsg('✅ ' + d.name); setNewServer({ name: '', logo_url: '' }); load();
+  };
+
   if (!session?.user?.isAdmin) return null;
 
   const TABS = [
-    { id: 'tickets', label: t('c_admin_tickets') + ` (${tickets.length})` },
-    { id: 'teams',   label: t('c_admin_create_team') },
-    { id: 'players', label: t('c_admin_reg_player') },
+    { id: 'tickets', label: `Tickets (${tickets.length})` },
+    { id: 'teams',   label: 'Crear Equipo' },
+    { id: 'players', label: 'Registrar Jugador' },
+    { id: 'servers', label: 'Servidores' },
   ];
+
+  const teamAPlayers = resolving ? players.filter(p => p.team_id === resolving.team_a_id) : [];
+  const teamBPlayers = resolving ? players.filter(p => p.team_id === resolving.team_b_id) : [];
 
   return (
     <div className="space-y-8">
@@ -94,19 +146,19 @@ export default function AdminPage() {
         </div>
         <div>
           <h1 className="text-4xl font-black uppercase tracking-tight text-white">Panel Admin</h1>
-          <p className="text-zinc-500 text-sm">Gestiona tickets, equipos y jugadores.</p>
+          <p className="text-zinc-500 text-sm">Gestiona tickets, equipos y jugadores — <span className="text-amber-400 font-bold">{serverName}</span></p>
         </div>
       </motion.div>
 
       {/* Tabs */}
       <div className="flex gap-2 flex-wrap">
-        {TABS.map(t => (
-          <button key={t.id} onClick={() => setTab(t.id)}
+        {TABS.map(tb => (
+          <button key={tb.id} onClick={() => setTab(tb.id)}
             className="px-4 py-2 rounded-lg text-xs font-black uppercase tracking-wider transition-all"
-            style={tab === t.id
+            style={tab === tb.id
               ? { background: 'rgba(239,68,68,0.1)', color: '#f87171', border: '1px solid rgba(239,68,68,0.25)' }
               : { background: CARD_BG, color: '#71717a', border: '1px solid rgba(255,255,255,0.07)' }}>
-            {t.label}
+            {tb.label}
           </button>
         ))}
       </div>
@@ -119,61 +171,96 @@ export default function AdminPage() {
               style={{ background: CARD_BG, border: '1px solid rgba(255,255,255,0.07)' }}>
               No hay tickets pendientes
             </div>
-          ) : tickets.map(t => (
-            <div key={t.id} className="rounded-xl p-5 space-y-4"
+          ) : tickets.map(tk => (
+            <div key={tk.id} className="rounded-xl p-5 space-y-4"
               style={{ background: CARD_BG, border: '1px solid rgba(255,255,255,0.07)' }}>
               <div className="flex items-start justify-between gap-4 flex-wrap">
                 <div>
                   <div className="text-[10px] text-zinc-600 font-bold mb-1">
-                    Ticket #{t.id} · {new Date(t.created_at).toLocaleString('es-ES')}
+                    Ticket #{tk.id} · {new Date(tk.created_at).toLocaleString('es-ES')}
                   </div>
-                  <div className="font-black text-white">{t.team_a_name} <span className="text-zinc-600">vs</span> {t.team_b_name}</div>
-                  <div className="text-xs text-zinc-500 mt-1">Enviado por: <span className="text-zinc-300">{t.submitter_name}</span></div>
+                  <div className="font-black text-white">{tk.team_a_name} <span className="text-zinc-600">vs</span> {tk.team_b_name}</div>
+                  <div className="text-xs text-zinc-500 mt-1">Enviado por: <span className="text-zinc-300">{tk.submitter_name}</span></div>
                 </div>
-                {resolving !== t.id && (
-                  <button onClick={() => startResolve(t)}
-                    className="flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-black transition-all"
-                    style={{ background: 'rgba(6,182,212,0.1)', color: '#22d3ee', border: '1px solid rgba(6,182,212,0.25)' }}>
-                    <Check size={13} /> Resolver
-                  </button>
-                )}
+                <div className="flex gap-2 items-center flex-wrap">
+                  {tk.clip_url && (
+                    <a href={tk.clip_url} target="_blank" rel="noopener noreferrer"
+                      className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-black transition-all"
+                      style={{ background: 'rgba(168,85,247,0.1)', color: '#a855f7', border: '1px solid rgba(168,85,247,0.25)' }}>
+                      <Film size={12} /> Ver Clip
+                    </a>
+                  )}
+                  {resolving?.id !== tk.id && (
+                    <button onClick={() => startResolve(tk)}
+                      className="flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-black transition-all"
+                      style={{ background: 'rgba(6,182,212,0.1)', color: '#22d3ee', border: '1px solid rgba(6,182,212,0.25)' }}>
+                      <Check size={13} /> Resolver
+                    </button>
+                  )}
+                </div>
               </div>
 
-              {t.image_path && (
+              {tk.image_path && (
                 <div className="rounded-xl overflow-hidden" style={{ border: '1px solid rgba(255,255,255,0.08)' }}>
-                  <img src={t.image_path} alt="Ticket" className="w-full max-h-72 object-contain" style={{ background: '#0d0d10' }} />
+                  <img src={tk.image_path} alt="Ticket" className="w-full max-h-72 object-contain" style={{ background: '#0d0d10' }} />
                 </div>
               )}
 
-              {resolving === t.id && (
-                <div className="rounded-xl p-4 space-y-3" style={{ background: '#0d0d10', border: '1px solid rgba(255,255,255,0.08)' }}>
-                  <div className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-3">Resolver Partida</div>
+              {resolving?.id === tk.id && (
+                <div className="rounded-xl p-4 space-y-4" style={{ background: '#0d0d10', border: '1px solid rgba(255,255,255,0.08)' }}>
+                  <div className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Resolver Partida</div>
+
+                  {/* Winner / Loser */}
                   <div className="grid grid-cols-2 gap-3">
                     {[
-                      { label: 'Equipo Ganador', key: 'winner_team_id', select: true },
-                      { label: 'Equipo Perdedor', key: 'loser_team_id', select: true },
-                      { label: 'Kills Ganador', key: 'winner_kills', type: 'number' },
-                      { label: 'Kills Perdedor', key: 'loser_kills', type: 'number' },
+                      { label: 'Equipo Ganador', key: 'winner_team_id' },
+                      { label: 'Equipo Perdedor', key: 'loser_team_id' },
                     ].map(f => (
                       <div key={f.key}>
                         <label className="text-[10px] text-zinc-600 font-bold uppercase tracking-wider block mb-1">{f.label}</label>
-                        {f.select ? (
-                          <select value={resolve[f.key]}
-                            onChange={e => setResolve(r => ({ ...r, [f.key]: e.target.value }))}
-                            style={{ ...SELECT_STYLE, background: '#111114' }}
-                            className="w-full rounded-lg px-3 py-2 text-xs">
-                            {teams.map(tm => <option key={tm.id} value={tm.id} style={{ background: '#111' }}>{tm.name}</option>)}
-                          </select>
-                        ) : (
-                          <input type={f.type || 'text'} min="0"
-                            value={resolve[f.key]}
-                            onChange={e => setResolve(r => ({ ...r, [f.key]: e.target.value }))}
-                            style={{ ...INPUT_STYLE, background: '#111114' }}
-                            className="w-full rounded-lg px-3 py-2 text-xs" />
-                        )}
+                        <select value={resolve[f.key]}
+                          onChange={e => setResolve(r => ({ ...r, [f.key]: e.target.value }))}
+                          style={{ ...SELECT_STYLE, background: '#111114' }}
+                          className="w-full rounded-lg px-3 py-2 text-xs">
+                          {teams.map(tm => <option key={tm.id} value={tm.id} style={{ background: '#111' }}>{tm.name}</option>)}
+                        </select>
                       </div>
                     ))}
                   </div>
+
+                  {/* Individual player K/D */}
+                  {(teamAPlayers.length > 0 || teamBPlayers.length > 0) && (
+                    <div className="space-y-3">
+                      <div className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Kills y Muertes por Jugador</div>
+                      {[
+                        { label: tk.team_a_name, players: teamAPlayers },
+                        { label: tk.team_b_name, players: teamBPlayers },
+                      ].map(group => (
+                        <div key={group.label} className="space-y-2">
+                          <div className="text-[10px] font-bold text-zinc-600 uppercase">{group.label}</div>
+                          {group.players.map(p => (
+                            <div key={p.id} className="flex items-center gap-3">
+                              {p.discord_avatar && <img src={p.discord_avatar} className="w-6 h-6 rounded-full flex-shrink-0" />}
+                              <span className="text-xs text-zinc-300 flex-1 truncate">{p.discord_name}</span>
+                              <div className="flex gap-2">
+                                <input type="number" min="0" placeholder="Kills"
+                                  value={playerStats[p.id]?.kills || ''}
+                                  onChange={e => setPlayerStats(s => ({ ...s, [p.id]: { ...s[p.id], kills: e.target.value } }))}
+                                  style={{ ...INPUT_STYLE, background: '#111114', width: 64 }}
+                                  className="rounded-lg px-2 py-1 text-xs text-center" />
+                                <input type="number" min="0" placeholder="Muertes"
+                                  value={playerStats[p.id]?.deaths || ''}
+                                  onChange={e => setPlayerStats(s => ({ ...s, [p.id]: { ...s[p.id], deaths: e.target.value } }))}
+                                  style={{ ...INPUT_STYLE, background: '#111114', width: 64 }}
+                                  className="rounded-lg px-2 py-1 text-xs text-center" />
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
                   <input placeholder="Notas opcionales..."
                     value={resolve.notes}
                     onChange={e => setResolve(r => ({ ...r, notes: e.target.value }))}
@@ -202,6 +289,7 @@ export default function AdminPage() {
       {/* ── CREATE TEAM ── */}
       {tab === 'teams' && (
         <div className="max-w-md space-y-4">
+          <div className="text-xs text-amber-400 font-bold">Creando en: {serverName}</div>
           {[
             { label: 'Nombre del equipo *', key: 'name',     placeholder: 'Ej: Los Rambos' },
             { label: 'Tag',                 key: 'tag',      placeholder: 'Ej: LR' },
@@ -228,10 +316,11 @@ export default function AdminPage() {
       {/* ── REGISTER PLAYER ── */}
       {tab === 'players' && (
         <div className="max-w-md space-y-4">
+          <div className="text-xs text-amber-400 font-bold">Registrando en: {serverName}</div>
           {[
-            { label: 'Discord ID *',      key: 'discord_id',     placeholder: '123456789012345678' },
-            { label: 'Nombre Discord *',  key: 'discord_name',   placeholder: 'usuario#0000' },
-            { label: 'URL Avatar',        key: 'discord_avatar', placeholder: 'https://cdn.discordapp.com/...' },
+            { label: 'Discord ID *',     key: 'discord_id',     placeholder: '498521626988773386' },
+            { label: 'Nombre Discord *', key: 'discord_name',   placeholder: 'usuario#0000' },
+            { label: 'URL Avatar',       key: 'discord_avatar', placeholder: 'https://cdn.discordapp.com/...' },
           ].map(f => (
             <div key={f.key}>
               <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-2 block">{f.label}</label>
@@ -261,6 +350,52 @@ export default function AdminPage() {
             style={{ background: 'rgba(6,182,212,0.1)', color: '#22d3ee', border: '1px solid rgba(6,182,212,0.25)' }}>
             <Plus size={14} /> Registrar Jugador
           </button>
+        </div>
+      )}
+
+      {/* ── SERVERS ── */}
+      {tab === 'servers' && (
+        <div className="space-y-6">
+          {/* Existing servers */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+            {servers.map(srv => (
+              <div key={srv.id} className="flex items-center gap-3 rounded-xl p-4"
+                style={{ background: CARD_BG, border: '1px solid rgba(255,255,255,0.07)' }}>
+                <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+                  style={{ background: 'rgba(251,191,36,0.1)', border: '1px solid rgba(251,191,36,0.2)' }}>
+                  <Server size={14} className="text-amber-400" />
+                </div>
+                <div>
+                  <div className="text-sm font-black text-white">{srv.name}</div>
+                  <div className="text-[10px] text-zinc-600">ID {srv.id}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Create server form */}
+          <div className="max-w-md space-y-4">
+            <div className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Crear Nuevo Servidor</div>
+            {[
+              { label: 'Nombre del Servidor *', key: 'name',     placeholder: 'Ej: PAQUITORP' },
+              { label: 'Logo URL (opcional)',   key: 'logo_url', placeholder: 'https://...' },
+            ].map(f => (
+              <div key={f.key}>
+                <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-2 block">{f.label}</label>
+                <input value={newServer[f.key]} placeholder={f.placeholder}
+                  onChange={e => setNewServer(p => ({ ...p, [f.key]: e.target.value }))}
+                  style={INPUT_STYLE} className="w-full rounded-xl px-4 py-3 text-sm placeholder-zinc-700"
+                  onFocus={e => e.target.style.borderColor = 'rgba(251,191,36,0.35)'}
+                  onBlur={e => e.target.style.borderColor = 'rgba(255,255,255,0.08)'} />
+              </div>
+            ))}
+            {serverMsg && <div className="text-xs font-bold text-zinc-400">{serverMsg}</div>}
+            <button onClick={createServer}
+              className="flex items-center gap-2 px-6 py-3 rounded-xl text-xs font-black transition-all"
+              style={{ background: 'rgba(251,191,36,0.1)', color: '#fbbf24', border: '1px solid rgba(251,191,36,0.25)' }}>
+              <Plus size={14} /> Crear Servidor
+            </button>
+          </div>
         </div>
       )}
     </div>

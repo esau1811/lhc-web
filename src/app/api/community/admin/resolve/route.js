@@ -11,7 +11,7 @@ export async function POST(request) {
   if (!session?.user?.isAdmin) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
   try {
-    const { ticket_id, winner_team_id, loser_team_id, winner_kills, loser_kills, notes } = await request.json();
+    const { ticket_id, winner_team_id, loser_team_id, winner_kills, loser_kills, notes, player_stats } = await request.json();
     if (!ticket_id || !winner_team_id || !loser_team_id) {
       return NextResponse.json({ error: 'Faltan datos requeridos' }, { status: 400 });
     }
@@ -42,11 +42,11 @@ export async function POST(request) {
       WHERE id = ?
     `).run(loserNew, loser_kills || 0, winner_kills || 0, loseStreak, loser_team_id);
 
-    // Update player stats (all players in each team)
-    db.prepare(`UPDATE players SET wins = wins + 1,   kills = kills + ? WHERE team_id = ?`).run(Math.round((winner_kills || 0) / Math.max(1, db.prepare(`SELECT COUNT(*) as c FROM players WHERE team_id = ?`).get(winner_team_id)?.c || 1)), winner_team_id);
-    db.prepare(`UPDATE players SET losses = losses + 1, kills = kills + ? WHERE team_id = ?`).run(Math.round((loser_kills  || 0) / Math.max(1, db.prepare(`SELECT COUNT(*) as c FROM players WHERE team_id = ?`).get(loser_team_id)?.c  || 1)), loser_team_id);
+    // Update player wins/losses for all players in each team
+    db.prepare(`UPDATE players SET wins = wins + 1 WHERE team_id = ?`).run(winner_team_id);
+    db.prepare(`UPDATE players SET losses = losses + 1 WHERE team_id = ?`).run(loser_team_id);
 
-    // Insert match record
+    // Insert match record (MUST be before player_stats insert)
     const matchResult = db.prepare(`
       INSERT INTO matches (winner_team_id, loser_team_id, winner_kills, loser_kills,
         winner_elo_before, loser_elo_before, winner_elo_after, loser_elo_after, notes)
@@ -59,6 +59,17 @@ export async function POST(request) {
       notes || null
     );
 
+    // Save individual player stats if provided
+    if (Array.isArray(player_stats) && player_stats.length > 0) {
+      const insertStat = db.prepare(`INSERT INTO player_match_stats (match_id, player_id, team_id, kills, deaths) VALUES (?, ?, ?, ?, ?)`);
+      const updatePlayer = db.prepare(`UPDATE players SET kills = kills + ?, deaths = deaths + ? WHERE id = ?`);
+      for (const stat of player_stats) {
+        if (!stat.player_id) continue;
+        insertStat.run(matchResult.lastInsertRowid, stat.player_id, stat.team_id, stat.kills || 0, stat.deaths || 0);
+        updatePlayer.run(stat.kills || 0, stat.deaths || 0, stat.player_id);
+      }
+    }
+
     // Resolve ticket and delete image
     const resolverPlayer = db.prepare(`SELECT id FROM players WHERE discord_id = ?`).get(session.user.discordId);
     db.prepare(`
@@ -66,11 +77,13 @@ export async function POST(request) {
       WHERE id = ?
     `).run(resolverPlayer?.id || null, ticket_id);
 
+    // Delete image and clip after resolution
     if (ticket.image_path) {
       try {
         await unlink(path.join(process.cwd(), 'public', ticket.image_path));
       } catch (_) { /* imagen ya borrada o no existe */ }
     }
+    // clip_url is just a URL so nothing to delete from filesystem
 
     const match = db.prepare(`
       SELECT m.*,

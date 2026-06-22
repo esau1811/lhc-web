@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { Search, User } from 'lucide-react';
 import { useLang } from '@/components/LangProvider';
+import { useServer } from '@/components/ServerProvider';
 
 const CARD_BG   = '#111114';
 const CARD_HOVER = '#16161a';
@@ -20,13 +21,14 @@ function roleBadge(role) {
 
 export default function PlayersPage() {
   const { t } = useLang();
+  const { serverId } = useServer();
   const [players, setPlayers] = useState([]);
   const [query,   setQuery]   = useState('');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     setLoading(true);
-    const url = query ? `/api/community/players?q=${encodeURIComponent(query)}` : '/api/community/players';
+    const url = query ? `/api/community/players?q=${encodeURIComponent(query)}&server_id=${serverId}` : `/api/community/players?server_id=${serverId}`;
     const timer = setTimeout(() => {
       fetch(url).then(r => r.json()).then(d => { setPlayers(Array.isArray(d) ? d : []); setLoading(false); });
     }, 300);

@@ -2,11 +2,13 @@
 
 import { useSession, signIn } from 'next-auth/react';
 import { usePathname } from 'next/navigation';
+import { useEffect, useState, useRef } from 'react';
 import Link from 'next/link';
 import Header from '@/components/Header';
 import { useLang } from '@/components/LangProvider';
-import { motion } from 'framer-motion';
-import { Trophy, Users, User, Clock, Ticket, ShieldCheck } from 'lucide-react';
+import { useServer } from '@/components/ServerProvider';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Trophy, Users, User, Clock, Ticket, ShieldCheck, Server, ChevronDown, Check } from 'lucide-react';
 
 const DiscordIcon = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
@@ -18,6 +20,21 @@ export default function ComunidadLayout({ children }) {
   const { data: session, status } = useSession();
   const pathname = usePathname();
   const { t } = useLang();
+  const { serverId, serverName, setServer } = useServer();
+  const [servers, setServers] = useState([]);
+  const [serverOpen, setServerOpen] = useState(false);
+  const serverRef = useRef(null);
+
+  useEffect(() => {
+    fetch('/api/community/servers').then(r => r.json()).then(d => setServers(Array.isArray(d) ? d : []));
+  }, []);
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    const handler = (e) => { if (serverRef.current && !serverRef.current.contains(e.target)) setServerOpen(false); };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
 
   const navLinks = [
     { key: 'c_nav_home',        href: '/comunidad',            icon: <Trophy size={13} /> },
@@ -70,10 +87,46 @@ export default function ComunidadLayout({ children }) {
     <div className="min-h-screen text-white" style={{ background: '#050505' }}>
       <Header />
 
-      {/* Sub-nav — fully opaque */}
+      {/* Sub-nav */}
       <div className="fixed top-[72px] left-0 right-0 z-40 border-b border-white/5" style={{ background: '#09090b' }}>
         <div className="max-w-[1400px] mx-auto px-6">
           <div className="flex items-center gap-1 overflow-x-auto py-2" style={{ scrollbarWidth: 'none' }}>
+
+            {/* Server selector */}
+            <div className="relative flex-shrink-0 mr-2" ref={serverRef}>
+              <button
+                onClick={() => setServerOpen(o => !o)}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-[11px] font-black uppercase tracking-wider whitespace-nowrap transition-all border"
+                style={{ background: 'rgba(251,191,36,0.08)', color: '#fbbf24', borderColor: 'rgba(251,191,36,0.2)' }}>
+                <Server size={11} />
+                {serverName}
+                <ChevronDown size={11} className={`transition-transform ${serverOpen ? 'rotate-180' : ''}`} />
+              </button>
+
+              <AnimatePresence>
+                {serverOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -8, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: -8, scale: 0.95 }}
+                    transition={{ duration: 0.15 }}
+                    className="absolute left-0 top-full mt-1 min-w-[180px] rounded-xl overflow-hidden z-50 shadow-2xl"
+                    style={{ background: '#111114', border: '1px solid rgba(255,255,255,0.1)' }}>
+                    {servers.map(srv => (
+                      <button
+                        key={srv.id}
+                        onClick={() => { setServer({ id: srv.id, name: srv.name }); setServerOpen(false); }}
+                        className="w-full flex items-center justify-between gap-2 px-4 py-2.5 text-xs font-bold text-left transition-colors hover:bg-white/5"
+                        style={{ color: srv.id === serverId ? '#fbbf24' : '#a1a1aa' }}>
+                        {srv.name}
+                        {srv.id === serverId && <Check size={11} />}
+                      </button>
+                    ))}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+
             {navLinks.map(link => (
               <Link key={link.href} href={link.href}
                 className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-[11px] font-black uppercase tracking-wider whitespace-nowrap transition-all border"
@@ -104,3 +157,4 @@ export default function ComunidadLayout({ children }) {
     </div>
   );
 }
+

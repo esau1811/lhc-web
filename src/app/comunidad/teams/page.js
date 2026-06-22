@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { Search, Users } from 'lucide-react';
 import { useLang } from '@/components/LangProvider';
+import { useServer } from '@/components/ServerProvider';
 
 function rankTier(elo, t) {
   if (elo >= 1800) return { name: t('c_rank_diamond'),  color: '#5eead4' };
@@ -18,13 +19,14 @@ const CARD_HOVER = '#16161a';
 
 export default function TeamsPage() {
   const { t } = useLang();
+  const { serverId } = useServer();
   const [teams,   setTeams]   = useState([]);
   const [query,   setQuery]   = useState('');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     setLoading(true);
-    const url = query ? `/api/community/teams?q=${encodeURIComponent(query)}` : '/api/community/teams';
+    const url = query ? `/api/community/teams?q=${encodeURIComponent(query)}&server_id=${serverId}` : `/api/community/teams?server_id=${serverId}`;
     const timer = setTimeout(() => {
       fetch(url).then(r => r.json()).then(d => { setTeams(Array.isArray(d) ? d : []); setLoading(false); });
     }, 300);

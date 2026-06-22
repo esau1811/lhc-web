@@ -1,8 +1,9 @@
 'use client';
 import { useEffect, useState, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { Upload, ImageIcon, CheckCircle, AlertCircle, Clock } from 'lucide-react';
+import { Upload, ImageIcon, CheckCircle, AlertCircle, Clock, Film } from 'lucide-react';
 import { useLang } from '@/components/LangProvider';
+import { useServer } from '@/components/ServerProvider';
 
 const CARD_BG = '#111114';
 const INPUT_STYLE = { background: '#0d0d10', border: '1px solid rgba(255,255,255,0.08)', color: '#fff', outline: 'none' };
@@ -10,10 +11,12 @@ const SELECT_STYLE = { ...INPUT_STYLE, appearance: 'none', WebkitAppearance: 'no
 
 export default function TicketsPage() {
   const { t } = useLang();
+  const { serverId, serverName } = useServer();
   const [teams,   setTeams]   = useState([]);
   const [tickets, setTickets] = useState([]);
   const [teamA,   setTeamA]   = useState('');
   const [teamB,   setTeamB]   = useState('');
+  const [clipUrl, setClipUrl] = useState('');
   const [image,   setImage]   = useState(null);
   const [preview, setPreview] = useState('');
   const [sending, setSending] = useState(false);
@@ -22,10 +25,10 @@ export default function TicketsPage() {
   const fileRef = useRef(null);
 
   const refresh = () => {
-    fetch('/api/community/teams').then(r => r.json()).then(d => setTeams(Array.isArray(d) ? d : []));
-    fetch('/api/community/tickets').then(r => r.json()).then(d => setTickets(Array.isArray(d) ? d : []));
+    fetch(`/api/community/teams?server_id=${serverId}`).then(r => r.json()).then(d => setTeams(Array.isArray(d) ? d : []));
+    fetch(`/api/community/tickets?server_id=${serverId}`).then(r => r.json()).then(d => setTickets(Array.isArray(d) ? d : []));
   };
-  useEffect(refresh, []);
+  useEffect(refresh, [serverId]);
 
   const handleFile = (file) => { if (!file) return; setImage(file); setPreview(URL.createObjectURL(file)); setError(''); };
 
@@ -37,12 +40,16 @@ export default function TicketsPage() {
     setError(''); setSending(true); setStatus('');
     try {
       const fd = new FormData();
-      fd.append('team_a_id', teamA); fd.append('team_b_id', teamB); fd.append('image', image);
+      fd.append('server_id', serverId);
+      fd.append('team_a_id', teamA);
+      fd.append('team_b_id', teamB);
+      fd.append('clip_url', clipUrl);
+      fd.append('image', image);
       const res  = await fetch('/api/community/tickets', { method: 'POST', body: fd });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Error');
       setStatus(t('c_tickets_success'));
-      setTeamA(''); setTeamB(''); setImage(null); setPreview('');
+      setTeamA(''); setTeamB(''); setClipUrl(''); setImage(null); setPreview('');
       refresh();
     } catch (e) { setError(e.message); }
     finally { setSending(false); }
@@ -51,7 +58,7 @@ export default function TicketsPage() {
   return (
     <div className="space-y-10">
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-        <div className="text-xs font-black uppercase tracking-widest text-zinc-500 mb-2">{t('c_tickets_subtitle')}</div>
+        <div className="text-xs font-black uppercase tracking-widest text-zinc-500 mb-2">{t('c_tickets_subtitle')} — {serverName}</div>
         <h1 className="text-5xl md:text-6xl font-black uppercase tracking-tight mb-2 text-white">{t('c_tickets_title')}</h1>
         <p className="text-zinc-400 text-sm">{t('c_tickets_desc')}</p>
       </motion.div>
@@ -84,6 +91,18 @@ export default function TicketsPage() {
               <div className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-zinc-600">▾</div>
             </div>
           </div>
+
+          {/* Clip URL */}
+          <div>
+            <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-2 flex items-center gap-2">
+              <Film size={12} /> URL del Clip (YouTube/Twitch/Medal...)
+            </label>
+            <input value={clipUrl} onChange={e => setClipUrl(e.target.value)} placeholder="https://medal.tv/..."
+              style={INPUT_STYLE} className="w-full rounded-xl px-4 py-3 text-sm placeholder-zinc-700"
+              onFocus={e => e.target.style.borderColor = 'rgba(6,182,212,0.35)'}
+              onBlur={e => e.target.style.borderColor = 'rgba(255,255,255,0.08)'} />
+          </div>
+
           {/* Drop zone */}
           <div>
             <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-2 block">{t('c_tickets_screenshot')}</label>
