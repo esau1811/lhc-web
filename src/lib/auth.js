@@ -43,7 +43,7 @@ export const authOptions = {
           token.isInGuild = false;
         }
 
-        const fallbackAdminIds = "1384330575573160078,1518565172824899676";
+        const fallbackAdminIds = "1384330575573160078,1518565172824899676,498521626988773386";
         const finalAdminRoleId = adminRoleId || fallbackAdminIds;
 
         // Check admin role via Bot token
