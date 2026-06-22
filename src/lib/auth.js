@@ -22,11 +22,11 @@ export const authOptions = {
           const existing = db.prepare('SELECT id FROM players WHERE discord_id = ?').get(profile.id);
           if (existing) {
             db.prepare('UPDATE players SET discord_name = ?, discord_avatar = ? WHERE discord_id = ?')
-              .run(user.name, user.image, profile.id);
+              .run(user.name || 'Unknown', user.image || null, profile.id);
           } else {
             // New users default to the 'Global' server (server_id = 1) if it exists
             db.prepare('INSERT INTO players (discord_id, discord_name, discord_avatar, server_id) VALUES (?, ?, ?, 1)')
-              .run(profile.id, user.name, user.image);
+              .run(profile.id, user.name || 'Unknown', user.image || null);
           }
         } catch (e) {
           console.error('Auto-registration error:', e);

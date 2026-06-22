@@ -5,12 +5,15 @@ import fs from 'fs';
 const DB_DIR  = path.join(process.cwd(), 'data');
 const DB_PATH = path.join(DB_DIR, 'community.db');
 
-if (!fs.existsSync(DB_DIR)) fs.mkdirSync(DB_DIR, { recursive: true });
-
 let _db = null;
 
 export function getDb() {
   if (_db) return _db;
+  
+  if (!fs.existsSync(DB_DIR)) {
+    fs.mkdirSync(DB_DIR, { recursive: true });
+  }
+
   _db = new Database(DB_PATH);
   _db.pragma('journal_mode = WAL');
   _db.pragma('foreign_keys = ON');
