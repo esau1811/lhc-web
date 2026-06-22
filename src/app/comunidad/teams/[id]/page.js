@@ -6,7 +6,18 @@ import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 import { useLang } from '@/components/LangProvider';
 
-function rankTier(elo, t) {
+function rankTier(team, t) {
+  if (team && team.manual_rank) {
+    const r = team.manual_rank.toLowerCase();
+    if (r === 'master') return { name: 'Maestro', color: '#f43f5e' };
+    if (r === 'diamond') return { name: t('c_rank_diamond'), color: '#5eead4' };
+    if (r === 'platinum') return { name: t('c_rank_platinum'), color: '#a78bfa' };
+    if (r === 'gold') return { name: t('c_rank_gold'), color: '#fbbf24' };
+    if (r === 'silver') return { name: t('c_rank_silver'), color: '#94a3b8' };
+    if (r === 'bronze') return { name: t('c_rank_bronze'), color: '#b45309' };
+    return { name: team.manual_rank, color: '#fff' };
+  }
+  const elo = team?.elo || (typeof team === 'number' ? team : 0);
   if (elo >= 1800) return { name: t('c_rank_diamond'),  color: '#5eead4' };
   if (elo >= 1600) return { name: t('c_rank_platinum'), color: '#a78bfa' };
   if (elo >= 1400) return { name: t('c_rank_gold'),     color: '#fbbf24' };
@@ -32,8 +43,8 @@ export default function TeamProfilePage() {
   if (loading) return <div className="py-32 flex justify-center"><div className="w-8 h-8 border-2 border-cyan-500/30 border-t-cyan-500 rounded-full animate-spin" /></div>;
   if (error)   return <div className="py-32 text-center text-red-400">{error}</div>;
 
-  const { team, players, matches } = data;
-  const rank   = rankTier(team.elo, t);
+  const { team, players, matches, has_kd } = data;
+  const rank   = rankTier(team, t);
   const total  = team.wins + team.losses;
   const winPct = total > 0 ? Math.round((team.wins / total) * 100) : 0;
   const kd     = team.deaths > 0 ? (team.kills / team.deaths).toFixed(2) : team.kills;
@@ -68,7 +79,7 @@ export default function TeamProfilePage() {
         {[
           { labelKey: 'c_team_wins',    value: team.wins,    color: '#22c55e' },
           { labelKey: 'c_team_losses',  value: team.losses,  color: '#ef4444' },
-          { labelKey: 'c_lb_kd',        value: kd,           color: '#94a3b8' },
+          ...(has_kd ? [{ labelKey: 'c_lb_kd', value: kd, color: '#94a3b8' }] : []),
           { labelKey: 'c_team_winrate', value: `${winPct}%`, color: '#06b6d4' },
         ].map(s => (
           <div key={s.labelKey} className="rounded-xl p-4 text-center" style={{ background: CARD_BG, border: '1px solid rgba(255,255,255,0.07)' }}>
@@ -77,6 +88,63 @@ export default function TeamProfilePage() {
           </div>
         ))}
       </div>
+
+      {(() => {
+        const eloHistory = [];
+        const rev = [...matches].reverse();
+        if (rev.length > 0) {
+          const first = rev[0];
+          eloHistory.push(first.winner_team_id === team.id ? first.winner_elo_before : first.loser_elo_before);
+          rev.forEach(m => eloHistory.push(m.winner_team_id === team.id ? m.winner_elo_after : m.loser_elo_after));
+        } else {
+          eloHistory.push(team.elo, team.elo);
+        }
+        
+        const maxElo = Math.max(...eloHistory) + 20;
+        const minElo = Math.max(0, Math.min(...eloHistory) - 20);
+        const range = maxElo - minElo || 1;
+        
+        const svgW = 800;
+        const svgH = 120;
+        const pts = eloHistory.map((e, i) => {
+          const x = (i / (eloHistory.length - 1)) * svgW;
+          const y = svgH - ((e - minElo) / range) * svgH;
+          return `${x},${y}`;
+        }).join(' ');
+
+        return (
+          <div className="rounded-xl p-6" style={{ background: CARD_BG, border: '1px solid rgba(255,255,255,0.07)' }}>
+            <h2 className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-6">Progresión ELO</h2>
+            <div className="relative w-full h-[120px]">
+              <svg viewBox={`0 0 ${svgW} ${svgH}`} preserveAspectRatio="none" className="w-full h-full overflow-visible">
+                {/* Grid lines */}
+                <line x1="0" y1="0" x2={svgW} y2="0" stroke="rgba(255,255,255,0.05)" strokeDasharray="4 4" />
+                <line x1="0" y1={svgH/2} x2={svgW} y2={svgH/2} stroke="rgba(255,255,255,0.05)" strokeDasharray="4 4" />
+                <line x1="0" y1={svgH} x2={svgW} y2={svgH} stroke="rgba(255,255,255,0.05)" strokeDasharray="4 4" />
+                
+                {/* Line */}
+                <polyline points={pts} fill="none" stroke={rank.color} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+                
+                {/* Points */}
+                {eloHistory.map((e, i) => {
+                  const x = (i / (eloHistory.length - 1)) * svgW;
+                  const y = svgH - ((e - minElo) / range) * svgH;
+                  return (
+                    <g key={i} className="group cursor-crosshair">
+                      <circle cx={x} cy={y} r="5" fill={CARD_BG} stroke={rank.color} strokeWidth="2" className="transition-all group-hover:r-6 group-hover:fill-current" />
+                      <text x={x} y={y - 12} fill="#fff" fontSize="12" fontWeight="900" textAnchor="middle" className="opacity-0 group-hover:opacity-100 transition-opacity">{e}</text>
+                    </g>
+                  );
+                })}
+              </svg>
+            </div>
+            <div className="flex justify-between text-[9px] text-zinc-600 font-bold mt-2 uppercase tracking-wider">
+              <span>{rev.length > 0 ? 'Hace ' + rev.length + ' Partidas' : 'Inicio'}</span>
+              <span>Actual ({team.elo})</span>
+            </div>
+          </div>
+        );
+      })()}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         <div>
@@ -97,7 +165,7 @@ export default function TeamProfilePage() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="font-black text-sm text-white truncate group-hover:text-cyan-400 transition-colors">{p.discord_name}</div>
-                      <div className="text-[10px] text-zinc-600">{p.wins}V {p.losses}D · {p.kills}K</div>
+                      <div className="text-[10px] text-zinc-600">{p.wins}V {p.losses}D {has_kd ? `· ${p.kills}K` : ''}</div>
                     </div>
                     <div className="text-zinc-600 text-xs">→</div>
                   </div>

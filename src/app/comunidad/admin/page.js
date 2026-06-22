@@ -30,7 +30,7 @@ export default function AdminPage() {
 
   // Ticket resolution state
   const [resolving, setResolving] = useState(null);
-  const [resolve,   setResolve]   = useState({ winner_team_id: '', loser_team_id: '', notes: '' });
+  const [resolve,   setResolve]   = useState({ winner_team_id: '', loser_team_id: '', points_won: '', points_lost: '', notes: '' });
   const [playerStats, setPlayerStats] = useState({}); // { playerId: { kills, deaths } }
   const [resStatus, setResStatus] = useState('');
 
@@ -43,8 +43,12 @@ export default function AdminPage() {
   const [playerMsg, setPlayerMsg] = useState('');
 
   // New server
-  const [newServer,  setNewServer]  = useState({ name: '', logo_url: '', logo_file: null });
+  const [newServer,  setNewServer]  = useState({ name: '', logo_url: '', logo_file: null, has_kd: true });
   const [serverMsg,  setServerMsg]  = useState('');
+
+  // Manage teams
+  const [manageTeam, setManageTeam] = useState({ team_id: '', points_delta: '', manual_rank: '' });
+  const [manageTeamMsg, setManageTeamMsg] = useState('');
 
   useEffect(() => { if (session && !session.user.isAdmin) router.replace('/comunidad'); }, [session]);
 
@@ -64,27 +68,34 @@ export default function AdminPage() {
     const teamBPlayers = players.filter(p => p.team_id === tk.team_b_id);
     [...teamAPlayers, ...teamBPlayers].forEach(p => { initial[p.id] = { kills: '', deaths: '' }; });
     setPlayerStats(initial);
-    setResolve({ winner_team_id: tk.team_a_id.toString(), loser_team_id: tk.team_b_id.toString(), notes: '' });
+    setResolve({ winner_team_id: tk.team_a_id.toString(), loser_team_id: tk.team_b_id.toString(), points_won: '', points_lost: '', notes: '' });
     setResStatus('');
   };
 
   const submitResolve = async () => {
     setResStatus('Procesando...');
     try {
-      const stats = Object.entries(playerStats).map(([pid, s]) => ({
+      const currentServer = servers.find(s => s.id === Number(serverId));
+      const hasKd = currentServer ? Boolean(currentServer.has_kd) : true;
+      
+      const stats = hasKd ? Object.entries(playerStats).map(([pid, s]) => ({
         player_id: parseInt(pid),
         kills: parseInt(s.kills) || 0,
         deaths: parseInt(s.deaths) || 0,
         team_id: players.find(p => p.id === parseInt(pid))?.team_id,
-      }));
+      })) : [];
+      
       const winner_kills = stats.filter(s => s.team_id === parseInt(resolve.winner_team_id)).reduce((a, s) => a + s.kills, 0);
       const loser_kills  = stats.filter(s => s.team_id === parseInt(resolve.loser_team_id)).reduce((a, s) => a + s.kills, 0);
+      
       const res = await fetch('/api/community/admin/resolve', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ticket_id: resolving.id,
           winner_team_id: parseInt(resolve.winner_team_id),
           loser_team_id: parseInt(resolve.loser_team_id),
+          points_won: parseInt(resolve.points_won) || 0,
+          points_lost: parseInt(resolve.points_lost) || 0,
           winner_kills, loser_kills,
           notes: resolve.notes,
           player_stats: stats,
@@ -136,6 +147,7 @@ export default function AdminPage() {
     setServerMsg('...');
     const formData = new FormData();
     formData.append('name', newServer.name);
+    formData.append('has_kd', newServer.has_kd);
     if (newServer.logo_file) formData.append('logo_file', newServer.logo_file);
     else if (newServer.logo_url) formData.append('logo_url', newServer.logo_url);
 
@@ -149,6 +161,7 @@ export default function AdminPage() {
 
   const TABS = [
     { id: 'tickets', label: `Tickets (${tickets.length})` },
+    { id: 'manage',  label: 'Gestionar Equipos' },
     { id: 'teams',   label: 'Crear Equipo' },
     { id: 'players', label: 'Registrar Jugador' },
     { id: 'servers', label: 'Servidores' },
@@ -156,6 +169,8 @@ export default function AdminPage() {
 
   const teamAPlayers = resolving ? players.filter(p => p.team_id === resolving.team_a_id) : [];
   const teamBPlayers = resolving ? players.filter(p => p.team_id === resolving.team_b_id) : [];
+  const currentServer = servers.find(s => s.id === Number(serverId));
+  const serverHasKd = currentServer ? Boolean(currentServer.has_kd) : true;
 
   return (
     <div className="space-y-8">
@@ -248,8 +263,28 @@ export default function AdminPage() {
                     ))}
                   </div>
 
+                  {/* Points Input */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-[10px] text-zinc-600 font-bold uppercase tracking-wider block mb-1">Puntos Ganados (+)</label>
+                      <input type="number" min="0" placeholder="Ej: 25"
+                        value={resolve.points_won}
+                        onChange={e => setResolve(r => ({ ...r, points_won: e.target.value }))}
+                        style={{ ...INPUT_STYLE, background: '#111114' }}
+                        className="w-full rounded-lg px-3 py-2 text-xs" />
+                    </div>
+                    <div>
+                      <label className="text-[10px] text-zinc-600 font-bold uppercase tracking-wider block mb-1">Puntos Perdidos (-)</label>
+                      <input type="number" min="0" placeholder="Ej: 10"
+                        value={resolve.points_lost}
+                        onChange={e => setResolve(r => ({ ...r, points_lost: e.target.value }))}
+                        style={{ ...INPUT_STYLE, background: '#111114' }}
+                        className="w-full rounded-lg px-3 py-2 text-xs" />
+                    </div>
+                  </div>
+
                   {/* Individual player K/D */}
-                  {(teamAPlayers.length > 0 || teamBPlayers.length > 0) && (
+                  {serverHasKd && (teamAPlayers.length > 0 || teamBPlayers.length > 0) && (
                     <div className="space-y-3">
                       <div className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Kills y Muertes por Jugador</div>
                       {[
@@ -303,6 +338,76 @@ export default function AdminPage() {
               )}
             </div>
           ))}
+        </div>
+      )}
+
+      {/* ── MANAGE TEAMS ── */}
+      {tab === 'manage' && (
+        <div className="max-w-md space-y-4">
+          <div className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Editar Puntos y Rangos</div>
+          
+          <div>
+            <label className="text-[10px] text-zinc-600 font-bold uppercase tracking-wider block mb-1">Seleccionar Equipo</label>
+            <div className="relative">
+              <select value={manageTeam.team_id} onChange={e => setManageTeam(m => ({ ...m, team_id: e.target.value }))}
+                style={{ ...SELECT_STYLE }} className="w-full rounded-xl px-4 py-3 text-sm"
+                onFocus={e => e.target.style.borderColor = 'rgba(6,182,212,0.35)'}
+                onBlur={e => e.target.style.borderColor = 'rgba(255,255,255,0.08)'}>
+                <option value="" style={{ background: '#111' }}>Elige un equipo...</option>
+                {teams.map(t => <option key={t.id} value={t.id} style={{ background: '#111' }}>{t.name} ({t.elo} pts)</option>)}
+              </select>
+              <div className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-zinc-600">▾</div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-[10px] text-zinc-600 font-bold uppercase tracking-wider block mb-1">Puntos a Sumar/Restar</label>
+              <input type="number" placeholder="Ej: +50 o -20"
+                value={manageTeam.points_delta}
+                onChange={e => setManageTeam(m => ({ ...m, points_delta: e.target.value }))}
+                style={{ ...INPUT_STYLE, background: '#111114' }}
+                className="w-full rounded-lg px-3 py-2 text-xs" />
+            </div>
+            <div>
+              <label className="text-[10px] text-zinc-600 font-bold uppercase tracking-wider block mb-1">Rango Manual</label>
+              <div className="relative">
+                <select value={manageTeam.manual_rank} onChange={e => setManageTeam(m => ({ ...m, manual_rank: e.target.value }))}
+                  style={{ ...SELECT_STYLE, background: '#111114' }} className="w-full rounded-lg px-3 py-2 text-xs">
+                  <option value="" style={{ background: '#111' }}>Automático (Puntos)</option>
+                  <option value="Bronze" style={{ background: '#111' }}>Bronce</option>
+                  <option value="Silver" style={{ background: '#111' }}>Plata</option>
+                  <option value="Gold" style={{ background: '#111' }}>Oro</option>
+                  <option value="Platinum" style={{ background: '#111' }}>Platino</option>
+                  <option value="Diamond" style={{ background: '#111' }}>Diamante</option>
+                  <option value="Master" style={{ background: '#111' }}>Maestro</option>
+                </select>
+                <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-zinc-600">▾</div>
+              </div>
+            </div>
+          </div>
+          
+          {manageTeamMsg && <div className="text-xs font-bold text-zinc-400">{manageTeamMsg}</div>}
+          
+          <button onClick={async () => {
+            if (!manageTeam.team_id) { setManageTeamMsg('❌ Selecciona un equipo'); return; }
+            setManageTeamMsg('...');
+            try {
+              const res = await fetch('/api/community/admin/manage-teams', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(manageTeam)
+              });
+              const data = await res.json();
+              if (!res.ok) throw new Error(data.error);
+              setManageTeamMsg('✅ Equipo actualizado');
+              setManageTeam({ team_id: '', points_delta: '', manual_rank: '' });
+              load();
+            } catch (e) { setManageTeamMsg('❌ ' + e.message); }
+          }}
+            className="flex items-center gap-2 px-6 py-3 rounded-xl text-xs font-black transition-all"
+            style={{ background: 'rgba(34,197,94,0.1)', color: '#22c55e', border: '1px solid rgba(34,197,94,0.25)' }}>
+            <Check size={14} /> Guardar Cambios
+          </button>
         </div>
       )}
 
@@ -451,6 +556,15 @@ export default function AdminPage() {
                   onFocus={e => e.target.style.borderColor = 'rgba(251,191,36,0.35)'}
                   onBlur={e => e.target.style.borderColor = 'rgba(255,255,255,0.08)'} />
             </div>
+
+            <div className="flex items-center gap-2 mt-4 mb-2">
+              <input type="checkbox" id="has_kd_check" 
+                checked={newServer.has_kd} 
+                onChange={e => setNewServer(s => ({ ...s, has_kd: e.target.checked }))} 
+                className="w-4 h-4 rounded border-zinc-700 bg-zinc-900 text-amber-500 focus:ring-amber-500" />
+              <label htmlFor="has_kd_check" className="text-xs font-bold text-zinc-300">Activar K/D (Bajas y Muertes) en este servidor</label>
+            </div>
+
             {serverMsg && <div className="text-xs font-bold text-zinc-400">{serverMsg}</div>}
             <button onClick={createServer}
               className="flex items-center gap-2 px-6 py-3 rounded-xl text-xs font-black transition-all"

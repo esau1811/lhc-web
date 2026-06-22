@@ -5,7 +5,18 @@ import Link from 'next/link';
 import { Trophy, Users, Clock, Crosshair } from 'lucide-react';
 import { useLang } from '@/components/LangProvider';
 
-function rankTier(elo, t) {
+function rankTier(team, t) {
+  if (team && team.manual_rank) {
+    const r = team.manual_rank.toLowerCase();
+    if (r === 'master') return { name: 'Maestro', color: '#f43f5e' };
+    if (r === 'diamond') return { name: t('c_rank_diamond'), color: '#5eead4' };
+    if (r === 'platinum') return { name: t('c_rank_platinum'), color: '#a78bfa' };
+    if (r === 'gold') return { name: t('c_rank_gold'), color: '#fbbf24' };
+    if (r === 'silver') return { name: t('c_rank_silver'), color: '#94a3b8' };
+    if (r === 'bronze') return { name: t('c_rank_bronze'), color: '#b45309' };
+    return { name: team.manual_rank, color: '#fff' };
+  }
+  const elo = team?.elo || (typeof team === 'number' ? team : 0);
   if (elo >= 1800) return { name: t('c_rank_diamond'),  color: '#5eead4' };
   if (elo >= 1600) return { name: t('c_rank_platinum'), color: '#a78bfa' };
   if (elo >= 1400) return { name: t('c_rank_gold'),     color: '#fbbf24' };
@@ -83,7 +94,7 @@ export default function ComunidadHome() {
               <div style={CARD} className="rounded-xl p-10 text-center text-zinc-600 text-sm">{t('c_no_teams')}</div>
             )}
             {teams.map((team, i) => {
-              const rank = rankTier(team.elo, t);
+              const rank = rankTier(team, t);
               return (
                 <Link key={team.id} href={`/comunidad/teams/${team.id}`}>
                   <div style={CARD} className="flex items-center gap-4 rounded-xl px-4 py-3 transition-all duration-200 cursor-pointer"

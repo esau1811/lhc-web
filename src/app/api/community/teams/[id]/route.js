@@ -8,7 +8,12 @@ export async function GET(request, { params }) {
   try {
     const db = getDb();
     const { id } = params;
-    const team = db.prepare(`SELECT * FROM teams WHERE id = ?`).get(id);
+    const team = db.prepare(`
+      SELECT t.*, s.has_kd
+      FROM teams t
+      LEFT JOIN servers s ON s.id = t.server_id
+      WHERE t.id = ?
+    `).get(id);
     if (!team) return NextResponse.json({ error: 'Team not found' }, { status: 404 });
     const players = db.prepare(`SELECT * FROM players WHERE team_id = ? ORDER BY kills DESC`).all(id);
     const matches = db.prepare(`
@@ -21,7 +26,7 @@ export async function GET(request, { params }) {
       WHERE m.winner_team_id = ? OR m.loser_team_id = ?
       ORDER BY m.played_at DESC LIMIT 10
     `).all(id, id);
-    return NextResponse.json({ team, players, matches });
+    return NextResponse.json({ team, players, matches, has_kd: team.has_kd ?? 1 });
   } catch (e) {
     return NextResponse.json({ error: e.message }, { status: 500 });
   }

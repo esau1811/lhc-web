@@ -10,8 +10,9 @@ export async function GET(request, { params }) {
     const { id } = params;
     // Support lookup by DB id or discord_id
     const player = db.prepare(`
-      SELECT p.*, t.name AS team_name, t.logo_url AS team_logo, t.elo AS team_elo
+      SELECT p.*, t.name AS team_name, t.logo_url AS team_logo, t.elo AS team_elo, t.manual_rank AS team_manual_rank, s.has_kd AS team_has_kd
       FROM players p LEFT JOIN teams t ON t.id = p.team_id
+      LEFT JOIN servers s ON s.id = t.server_id
       WHERE p.id = ? OR p.discord_id = ?
     `).get(id, id);
     if (!player) return NextResponse.json({ error: 'Player not found' }, { status: 404 });

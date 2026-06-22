@@ -27,6 +27,8 @@ export async function POST(request) {
     let logo_url = formData.get('logo_url') || null;
     const logo_file = formData.get('logo_file');
 
+    const has_kd = formData.get('has_kd') === 'false' ? 0 : 1;
+
     if (!name) return NextResponse.json({ error: 'name required' }, { status: 400 });
 
     if (logo_file && typeof logo_file === 'object') {
@@ -37,7 +39,7 @@ export async function POST(request) {
     }
 
     const db = getDb();
-    const result = db.prepare('INSERT INTO servers (name, logo_url) VALUES (?, ?)').run(name, logo_url);
+    const result = db.prepare('INSERT INTO servers (name, logo_url, has_kd) VALUES (?, ?, ?)').run(name, logo_url, has_kd);
     const server = db.prepare('SELECT * FROM servers WHERE id = ?').get(result.lastInsertRowid);
     return NextResponse.json(server, { status: 201 });
   } catch (e) {

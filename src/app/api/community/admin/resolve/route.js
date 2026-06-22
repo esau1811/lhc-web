@@ -11,7 +11,7 @@ export async function POST(request) {
   if (!session?.user?.isAdmin) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
   try {
-    const { ticket_id, winner_team_id, loser_team_id, winner_kills, loser_kills, notes, player_stats } = await request.json();
+    const { ticket_id, winner_team_id, loser_team_id, points_won, points_lost, winner_kills, loser_kills, notes, player_stats } = await request.json();
     if (!ticket_id || !winner_team_id || !loser_team_id) {
       return NextResponse.json({ error: 'Faltan datos requeridos' }, { status: 400 });
     }
@@ -25,8 +25,9 @@ export async function POST(request) {
     const loserTeam  = db.prepare(`SELECT * FROM teams WHERE id = ?`).get(loser_team_id);
     if (!winnerTeam || !loserTeam) return NextResponse.json({ error: 'Equipo no encontrado' }, { status: 404 });
 
-    // Calculate new ELOs
-    const { winnerNew, loserNew } = calcElo(winnerTeam.elo, loserTeam.elo);
+    // Calculate new ELOs using manual points
+    const winnerNew = winnerTeam.elo + (parseInt(points_won) || 0);
+    const loserNew  = Math.max(0, loserTeam.elo - (parseInt(points_lost) || 0));
 
     // Update winner team
     const winStreak = winnerTeam.streak >= 0 ? winnerTeam.streak + 1 : 1;

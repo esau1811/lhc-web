@@ -28,6 +28,7 @@ function initSchema(db) {
       id          INTEGER PRIMARY KEY AUTOINCREMENT,
       name        TEXT    NOT NULL UNIQUE,
       logo_url    TEXT    DEFAULT NULL,
+      has_kd      INTEGER NOT NULL DEFAULT 1,
       created_at  TEXT    NOT NULL DEFAULT (datetime('now'))
     );
 
@@ -39,6 +40,7 @@ function initSchema(db) {
       tag         TEXT    NOT NULL DEFAULT '',
       logo_url    TEXT    DEFAULT NULL,
       elo         INTEGER NOT NULL DEFAULT 1000,
+      manual_rank TEXT    DEFAULT NULL,
       wins        INTEGER NOT NULL DEFAULT 0,
       losses      INTEGER NOT NULL DEFAULT 0,
       kills       INTEGER NOT NULL DEFAULT 0,
@@ -70,7 +72,7 @@ function initSchema(db) {
       id              INTEGER PRIMARY KEY AUTOINCREMENT,
       server_id       INTEGER DEFAULT NULL REFERENCES servers(id) ON DELETE CASCADE,
       winner_team_id  INTEGER NOT NULL REFERENCES teams(id),
-      loser_team_id   INTEGER NOT NULL REFERENCES teams(id),
+      loser_team_id   INTEGER DEFAULT NULL REFERENCES teams(id),
       winner_kills    INTEGER NOT NULL DEFAULT 0,
       loser_kills     INTEGER NOT NULL DEFAULT 0,
       winner_elo_before INTEGER NOT NULL DEFAULT 0,
@@ -116,7 +118,11 @@ function initSchema(db) {
     try { db.exec(`ALTER TABLE ${table} ADD COLUMN ${col} ${def}`); } catch(e) {}
   };
 
-  if (hasTable('teams')) safeAddCol('teams', 'server_id', 'INTEGER DEFAULT NULL');
+  if (hasTable('servers')) safeAddCol('servers', 'has_kd', 'INTEGER NOT NULL DEFAULT 1');
+  if (hasTable('teams')) {
+    safeAddCol('teams', 'server_id', 'INTEGER DEFAULT NULL');
+    safeAddCol('teams', 'manual_rank', 'TEXT DEFAULT NULL');
+  }
   if (hasTable('players')) safeAddCol('players', 'server_id', 'INTEGER DEFAULT NULL');
   if (hasTable('matches')) safeAddCol('matches', 'server_id', 'INTEGER DEFAULT NULL');
   if (hasTable('tickets')) {
@@ -127,7 +133,7 @@ function initSchema(db) {
   // Create a default server if none exists
   const servers = db.prepare('SELECT COUNT(*) as c FROM servers').get();
   if (servers.c === 0) {
-    db.prepare("INSERT INTO servers (name) VALUES ('Global')").run();
+    db.prepare("INSERT INTO servers (name, has_kd) VALUES ('Global', 1)").run();
     // Assign everything to Global
     db.exec("UPDATE teams SET server_id = 1 WHERE server_id IS NULL");
     db.exec("UPDATE players SET server_id = 1 WHERE server_id IS NULL");

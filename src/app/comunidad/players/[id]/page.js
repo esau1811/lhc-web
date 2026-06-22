@@ -6,7 +6,18 @@ import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 import { useLang } from '@/components/LangProvider';
 
-function rankTier(elo, t) {
+function rankTier(team, t) {
+  if (team && team.manual_rank) {
+    const r = team.manual_rank.toLowerCase();
+    if (r === 'master') return { name: 'Maestro', color: '#f43f5e' };
+    if (r === 'diamond') return { name: t('c_rank_diamond'), color: '#5eead4' };
+    if (r === 'platinum') return { name: t('c_rank_platinum'), color: '#a78bfa' };
+    if (r === 'gold') return { name: t('c_rank_gold'), color: '#fbbf24' };
+    if (r === 'silver') return { name: t('c_rank_silver'), color: '#94a3b8' };
+    if (r === 'bronze') return { name: t('c_rank_bronze'), color: '#b45309' };
+    return { name: team.manual_rank, color: '#fff' };
+  }
+  const elo = team?.elo || (typeof team === 'number' ? team : 0);
   if (elo >= 1800) return { name: t('c_rank_diamond'),  color: '#5eead4' };
   if (elo >= 1600) return { name: t('c_rank_platinum'), color: '#a78bfa' };
   if (elo >= 1400) return { name: t('c_rank_gold'),     color: '#fbbf24' };
@@ -42,10 +53,11 @@ export default function PlayerProfilePage() {
   if (error)   return <div className="py-32 text-center text-red-400">{error}</div>;
 
   const { player, matches } = data;
+  const has_kd  = player.team_has_kd ?? 1;
   const kd      = player.deaths > 0 ? (player.kills / player.deaths).toFixed(2) : player.kills;
   const total   = player.wins + player.losses;
   const winPct  = total > 0 ? Math.round((player.wins / total) * 100) : 0;
-  const teamRank = player.team_elo ? rankTier(player.team_elo, t) : null;
+  const teamRank = player.team_elo ? rankTier({ elo: player.team_elo, manual_rank: player.team_manual_rank }, t) : null;
   const badge    = roleBadge(player.role);
 
   return (
@@ -81,7 +93,7 @@ export default function PlayerProfilePage() {
         {[
           { labelKey: 'c_team_wins',    value: player.wins,    color: '#22c55e' },
           { labelKey: 'c_team_losses',  value: player.losses,  color: '#ef4444' },
-          { labelKey: 'c_lb_kd',        value: kd,             color: '#94a3b8' },
+          ...(has_kd ? [{ labelKey: 'c_lb_kd', value: kd, color: '#94a3b8' }] : []),
           { labelKey: 'c_team_winrate', value: `${winPct}%`,   color: '#06b6d4' },
         ].map(s => (
           <div key={s.labelKey} className="rounded-xl p-4 text-center" style={{ background: CARD_BG, border: '1px solid rgba(255,255,255,0.07)' }}>

@@ -6,7 +6,18 @@ import { Search, Users } from 'lucide-react';
 import { useLang } from '@/components/LangProvider';
 import { useServer } from '@/components/ServerProvider';
 
-function rankTier(elo, t) {
+function rankTier(team, t) {
+  if (team && team.manual_rank) {
+    const r = team.manual_rank.toLowerCase();
+    if (r === 'master') return { name: 'Maestro', color: '#f43f5e' };
+    if (r === 'diamond') return { name: t('c_rank_diamond'), color: '#5eead4' };
+    if (r === 'platinum') return { name: t('c_rank_platinum'), color: '#a78bfa' };
+    if (r === 'gold') return { name: t('c_rank_gold'), color: '#fbbf24' };
+    if (r === 'silver') return { name: t('c_rank_silver'), color: '#94a3b8' };
+    if (r === 'bronze') return { name: t('c_rank_bronze'), color: '#b45309' };
+    return { name: team.manual_rank, color: '#fff' };
+  }
+  const elo = team?.elo || (typeof team === 'number' ? team : 0);
   if (elo >= 1800) return { name: t('c_rank_diamond'),  color: '#5eead4' };
   if (elo >= 1600) return { name: t('c_rank_platinum'), color: '#a78bfa' };
   if (elo >= 1400) return { name: t('c_rank_gold'),     color: '#fbbf24' };
@@ -23,6 +34,7 @@ export default function TeamsPage() {
   const [teams,   setTeams]   = useState([]);
   const [query,   setQuery]   = useState('');
   const [loading, setLoading] = useState(true);
+  const [serverInfo, setServerInfo] = useState(null);
 
   useEffect(() => {
     setLoading(true);
@@ -30,8 +42,16 @@ export default function TeamsPage() {
     const timer = setTimeout(() => {
       fetch(url).then(r => r.json()).then(d => { setTeams(Array.isArray(d) ? d : []); setLoading(false); });
     }, 300);
+    fetch(`/api/community/servers`).then(r => r.json()).then(servers => {
+      if (Array.isArray(servers)) {
+        const s = servers.find(sv => sv.id === Number(serverId));
+        setServerInfo(s || null);
+      }
+    });
     return () => clearTimeout(timer);
-  }, [query]);
+  }, [query, serverId]);
+
+  const hasKd = serverInfo ? Boolean(serverInfo.has_kd) : true;
 
   return (
     <div className="space-y-8">
@@ -60,7 +80,7 @@ export default function TeamsPage() {
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {teams.map((team, i) => {
-            const rank   = rankTier(team.elo, t);
+            const rank   = rankTier(team, t);
             const total  = team.wins + team.losses;
             const winPct = total > 0 ? Math.round((team.wins / total) * 100) : 0;
             const kd     = team.deaths > 0 ? (team.kills / team.deaths).toFixed(2) : team.kills;
@@ -86,25 +106,37 @@ export default function TeamsPage() {
                         </div>
                       </div>
                       <div className="font-black text-xl" style={{ color: rank.color }}>{team.elo}</div>
-                    </div>
-                    <div className="grid grid-cols-3 gap-2 mb-4">
-                      {[
-                        { label: 'V',   value: team.wins,  color: '#22c55e' },
-                        { label: 'D',   value: team.losses, color: '#ef4444' },
-                        { label: 'K/D', value: kd,         color: '#94a3b8' },
-                      ].map(s => (
-                        <div key={s.label} className="rounded-lg px-3 py-2 text-center" style={{ background: 'rgba(255,255,255,0.04)' }}>
-                          <div className="font-black text-sm" style={{ color: s.color }}>{s.value}</div>
-                          <div className="text-[9px] text-zinc-600 font-black uppercase tracking-wider">{s.label}</div>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mb-4">
+                      <div className="rounded-lg px-3 py-2 text-center" style={{ background: 'rgba(255,255,255,0.04)' }}>
+                        <div className="font-black text-sm text-green-500">{team.wins}</div>
+                        <div className="text-[9px] text-zinc-600 font-black uppercase tracking-wider">V</div>
+                      </div>
+                      <div className="rounded-lg px-3 py-2 text-center" style={{ background: 'rgba(255,255,255,0.04)' }}>
+                        <div className="font-black text-sm text-red-500">{team.losses}</div>
+                        <div className="text-[9px] text-zinc-600 font-black uppercase tracking-wider">D</div>
+                      </div>
+                      {hasKd && (
+                        <div className="rounded-lg px-3 py-2 text-center col-span-2 md:col-span-1" style={{ background: 'rgba(255,255,255,0.04)' }}>
+                          <div className="font-black text-sm text-slate-400">{kd}</div>
+                          <div className="text-[9px] text-zinc-600 font-black uppercase tracking-wider">K/D</div>
                         </div>
-                      ))}
+                      )}
                     </div>
-                    <div className="h-1 rounded-full mb-3" style={{ background: 'rgba(255,255,255,0.07)' }}>
-                      <div className="h-full rounded-full" style={{ width: `${winPct}%`, background: rank.color }} />
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-[10px] font-black" style={{ color: streakColor }}>{streak}</span>
-                      <span className="text-[10px] text-cyan-500 font-bold">{winPct}% {t('c_teams_winrate')}</span>
+                    <div className="space-y-2">
+                      <div className="flex justify-between items-center text-xs">
+                        <span className="text-zinc-500 uppercase font-black">{t('c_stat_win_pct')}</span>
+                        <span className="text-zinc-300 font-bold">{winPct}%</span>
+                      </div>
+                      {hasKd && (
+                        <div className="flex justify-between items-center text-xs">
+                          <span className="text-zinc-500 uppercase font-black">Kills Totales</span>
+                          <span className="text-zinc-300 font-bold">{team.kills}</span>
+                        </div>
+                      )}
+                      <div className="flex justify-between items-center text-xs">
+                        <span className="text-zinc-500 uppercase font-black">Streak</span>
+                        <span className="font-bold" style={{ color: streakColor }}>{streak}</span>
+                      </div>
                     </div>
                   </div>
                 </Link>
