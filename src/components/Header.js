@@ -2,9 +2,9 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useSession, signIn } from 'next-auth/react';
+import { useSession, signIn, signOut } from 'next-auth/react';
 import { motion } from 'framer-motion';
-import { Crown, Menu, X } from 'lucide-react';
+import { Crown, Menu, X, LogOut } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useLang } from '@/components/LangProvider';
 
@@ -91,12 +91,19 @@ export default function Header() {
             </Link>
             
             {session ? (
-              <div className="hidden md:flex items-center gap-3 bg-white/5 p-1.5 pr-4 rounded-full border border-white/5">
+              <div className="hidden md:flex items-center gap-3 bg-white/5 p-1.5 pr-3 rounded-full border border-white/5 group">
                 <img src={session.user.image} className="w-8 h-8 rounded-full" />
                 <div className="flex flex-col">
                   <span className="text-[11px] font-black text-white leading-tight uppercase">{session.user.name.split(' ')[0]}</span>
                   <span className="text-[9px] text-zinc-500 font-bold uppercase tracking-tighter">{t('conectado')}</span>
                 </div>
+                <button 
+                  onClick={() => signOut()}
+                  className="ml-2 bg-red-500/10 hover:bg-red-500/20 text-red-500 p-1.5 rounded-full transition-all opacity-0 group-hover:opacity-100"
+                  title={t('logout')}
+                >
+                  <LogOut size={14} />
+                </button>
               </div>
             ) : (
               <button 
@@ -171,15 +178,27 @@ export default function Header() {
             >
               {t('hazte_premium')} <Crown size={16} />
             </Link>
-            <button 
-              onClick={() => {
-                signIn('discord');
-                setIsMobileMenuOpen(false);
-              }}
-              className="bg-[#5865F2] text-white p-4 rounded-xl font-black uppercase text-xs shadow-lg shadow-indigo-500/20"
-            >
-              {t('login_btn') || 'Iniciar sesión'}
-            </button>
+            {session ? (
+              <button 
+                onClick={() => {
+                  signOut();
+                  setIsMobileMenuOpen(false);
+                }}
+                className="flex items-center justify-center gap-2 bg-red-500/10 hover:bg-red-500/20 text-red-500 p-4 rounded-xl font-black uppercase text-xs transition-all border border-red-500/20"
+              >
+                <LogOut size={16} /> {t('logout')}
+              </button>
+            ) : (
+              <button 
+                onClick={() => {
+                  signIn('discord');
+                  setIsMobileMenuOpen(false);
+                }}
+                className="bg-[#5865F2] text-white p-4 rounded-xl font-black uppercase text-xs shadow-lg shadow-indigo-500/20"
+              >
+                {t('login_btn') || 'Iniciar sesión'}
+              </button>
+            )}
           </div>
         </motion.div>
       )}
