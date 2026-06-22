@@ -76,19 +76,35 @@ export const authOptions = {
           else if (botToken) {
             try {
               const cleanBotToken = botToken.replace(/^Bot\s+/i, '').trim();
+              console.log(`[Auth] Intentando obtener roles del usuario ${profile.id} en el servidor ${targetGuildId}...`);
+              
               const memberRes = await fetch(
                 `https://discord.com/api/guilds/${targetGuildId}/members/${profile.id}`,
                 { headers: { Authorization: `Bot ${cleanBotToken}` } }
               );
+              
+              console.log(`[Auth] Respuesta de Discord: ${memberRes.status} ${memberRes.statusText}`);
+              
               if (memberRes.ok) {
                 const member = await memberRes.json();
+                console.log(`[Auth] Roles del usuario:`, member.roles);
+                console.log(`[Auth] Roles de Admin requeridos en el .env:`, adminIds);
+                
                 if (Array.isArray(member.roles) && member.roles.some(r => adminIds.includes(r))) {
                   token.isAdmin = true;
+                  console.log(`[Auth] ✅ Permiso de Admin concedido mediante rol!`);
+                } else {
+                  console.log(`[Auth] ❌ Permiso denegado: El usuario no tiene ninguno de los roles requeridos.`);
                 }
+              } else {
+                const errorText = await memberRes.text();
+                console.error(`[Auth] ❌ Error de la API de Discord:`, errorText);
               }
             } catch (e) {
-              console.error('Discord Admin Role Check Error:', e);
+              console.error('[Auth] ❌ Discord Admin Role Check Error:', e);
             }
+          } else {
+            console.log('[Auth] ❌ DISCORD_BOT_TOKEN no está configurado en el archivo .env');
           }
         }
       }
