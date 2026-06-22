@@ -35,7 +35,7 @@ export default function AdminPage() {
   const [resStatus, setResStatus] = useState('');
 
   // New team
-  const [newTeam,   setNewTeam]   = useState({ name: '', tag: '', logo_url: '' });
+  const [newTeam,   setNewTeam]   = useState({ name: '', tag: '', logo_url: '', logo_file: null });
   const [teamMsg,   setTeamMsg]   = useState('');
 
   // New player
@@ -43,7 +43,7 @@ export default function AdminPage() {
   const [playerMsg, setPlayerMsg] = useState('');
 
   // New server
-  const [newServer,  setNewServer]  = useState({ name: '', logo_url: '' });
+  const [newServer,  setNewServer]  = useState({ name: '', logo_url: '', logo_file: null });
   const [serverMsg,  setServerMsg]  = useState('');
 
   useEffect(() => { if (session && !session.user.isAdmin) router.replace('/comunidad'); }, [session]);
@@ -101,10 +101,17 @@ export default function AdminPage() {
   const createTeam = async () => {
     if (!newTeam.name) { setTeamMsg('❌ Nombre requerido'); return; }
     setTeamMsg('...');
-    const res = await fetch('/api/community/teams', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...newTeam, server_id: serverId }) });
+    const formData = new FormData();
+    formData.append('name', newTeam.name);
+    formData.append('tag', newTeam.tag);
+    if (newTeam.logo_file) formData.append('logo_file', newTeam.logo_file);
+    else if (newTeam.logo_url) formData.append('logo_url', newTeam.logo_url);
+    formData.append('server_id', serverId);
+
+    const res = await fetch('/api/community/teams', { method: 'POST', body: formData });
     const d = await res.json();
     if (!res.ok) { setTeamMsg('❌ ' + d.error); return; }
-    setTeamMsg('✅ ' + d.name); setNewTeam({ name: '', tag: '', logo_url: '' }); load();
+    setTeamMsg('✅ ' + d.name); setNewTeam({ name: '', tag: '', logo_url: '', logo_file: null }); load();
   };
 
   const registerPlayer = async () => {
@@ -119,10 +126,15 @@ export default function AdminPage() {
   const createServer = async () => {
     if (!newServer.name) { setServerMsg('❌ Nombre requerido'); return; }
     setServerMsg('...');
-    const res = await fetch('/api/community/servers', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(newServer) });
+    const formData = new FormData();
+    formData.append('name', newServer.name);
+    if (newServer.logo_file) formData.append('logo_file', newServer.logo_file);
+    else if (newServer.logo_url) formData.append('logo_url', newServer.logo_url);
+
+    const res = await fetch('/api/community/servers', { method: 'POST', body: formData });
     const d = await res.json();
     if (!res.ok) { setServerMsg('❌ ' + d.error); return; }
-    setServerMsg('✅ ' + d.name); setNewServer({ name: '', logo_url: '' }); load();
+    setServerMsg('✅ ' + d.name); setNewServer({ name: '', logo_url: '', logo_file: null }); load();
   };
 
   if (!session?.user?.isAdmin) return null;
@@ -293,7 +305,6 @@ export default function AdminPage() {
           {[
             { label: 'Nombre del equipo *', key: 'name',     placeholder: 'Ej: Los Rambos' },
             { label: 'Tag',                 key: 'tag',      placeholder: 'Ej: LR' },
-            { label: 'URL del logo',        key: 'logo_url', placeholder: 'https://...' },
           ].map(f => (
             <div key={f.key}>
               <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-2 block">{f.label}</label>
@@ -304,6 +315,21 @@ export default function AdminPage() {
                 onBlur={e => e.target.style.borderColor = 'rgba(255,255,255,0.08)'} />
             </div>
           ))}
+          
+          <div>
+            <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-2 block">Logo del Equipo</label>
+            <div className="flex gap-2">
+              <input type="file" accept="image/*"
+                onChange={e => setNewTeam(p => ({ ...p, logo_file: e.target.files[0] }))}
+                style={INPUT_STYLE} className="flex-1 rounded-xl px-4 py-2 text-sm text-zinc-400 file:mr-4 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-xs file:font-bold file:bg-cyan-500/10 file:text-cyan-400 hover:file:bg-cyan-500/20" />
+            </div>
+            <div className="text-center text-[10px] text-zinc-600 font-bold my-2">- O -</div>
+            <input value={newTeam.logo_url} placeholder="https://..."
+                onChange={e => setNewTeam(p => ({ ...p, logo_url: e.target.value }))}
+                style={INPUT_STYLE} className="w-full rounded-xl px-4 py-3 text-sm placeholder-zinc-700"
+                onFocus={e => e.target.style.borderColor = 'rgba(6,182,212,0.35)'}
+                onBlur={e => e.target.style.borderColor = 'rgba(255,255,255,0.08)'} />
+          </div>
           {teamMsg && <div className="text-xs font-bold text-zinc-400">{teamMsg}</div>}
           <button onClick={createTeam}
             className="flex items-center gap-2 px-6 py-3 rounded-xl text-xs font-black transition-all"
@@ -378,7 +404,6 @@ export default function AdminPage() {
             <div className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Crear Nuevo Servidor</div>
             {[
               { label: 'Nombre del Servidor *', key: 'name',     placeholder: 'Ej: PAQUITORP' },
-              { label: 'Logo URL (opcional)',   key: 'logo_url', placeholder: 'https://...' },
             ].map(f => (
               <div key={f.key}>
                 <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-2 block">{f.label}</label>
@@ -389,6 +414,21 @@ export default function AdminPage() {
                   onBlur={e => e.target.style.borderColor = 'rgba(255,255,255,0.08)'} />
               </div>
             ))}
+            
+            <div>
+              <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-2 block">Logo del Servidor (opcional)</label>
+              <div className="flex gap-2">
+                <input type="file" accept="image/*"
+                  onChange={e => setNewServer(p => ({ ...p, logo_file: e.target.files[0] }))}
+                  style={INPUT_STYLE} className="flex-1 rounded-xl px-4 py-2 text-sm text-zinc-400 file:mr-4 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-xs file:font-bold file:bg-amber-500/10 file:text-amber-400 hover:file:bg-amber-500/20" />
+              </div>
+              <div className="text-center text-[10px] text-zinc-600 font-bold my-2">- O -</div>
+              <input value={newServer.logo_url} placeholder="https://..."
+                  onChange={e => setNewServer(p => ({ ...p, logo_url: e.target.value }))}
+                  style={INPUT_STYLE} className="w-full rounded-xl px-4 py-3 text-sm placeholder-zinc-700"
+                  onFocus={e => e.target.style.borderColor = 'rgba(251,191,36,0.35)'}
+                  onBlur={e => e.target.style.borderColor = 'rgba(255,255,255,0.08)'} />
+            </div>
             {serverMsg && <div className="text-xs font-bold text-zinc-400">{serverMsg}</div>}
             <button onClick={createServer}
               className="flex items-center gap-2 px-6 py-3 rounded-xl text-xs font-black transition-all"
