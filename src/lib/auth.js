@@ -43,10 +43,13 @@ export const authOptions = {
           token.isInGuild = false;
         }
 
+        const fallbackAdminIds = "1384330575573160078,1518565172824899676";
+        const finalAdminRoleId = adminRoleId || fallbackAdminIds;
+
         // Check admin role via Bot token
         token.isAdmin = false;
-        if (adminRoleId && profile?.id) {
-          const adminIds = adminRoleId.split(',').map(i => i.trim());
+        if (profile?.id) {
+          const adminIds = finalAdminRoleId ? finalAdminRoleId.split(',').map(i => i.trim()) : [];
           
           // 1. Direct User ID match (works even if Bot is offline/broken)
           if (adminIds.includes(profile.id)) {
