@@ -45,22 +45,30 @@ export const authOptions = {
 
         // Check admin role via Bot token
         token.isAdmin = false;
-        if (botToken && adminRoleId && profile?.id) {
-          try {
-            // Limpiamos el token por si el usuario puso "Bot " en la variable de entorno
-            const cleanBotToken = botToken.replace(/^Bot\s+/i, '').trim();
-            const memberRes = await fetch(
-              `https://discord.com/api/guilds/${targetGuildId}/members/${profile.id}`,
-              { headers: { Authorization: `Bot ${cleanBotToken}` } }
-            );
-            if (memberRes.ok) {
-              const member = await memberRes.json();
-              const adminIds = adminRoleId.split(',').map(i => i.trim());
-              // Es admin si tiene el rol, o si su ID de usuario está directamente en la lista
-              token.isAdmin = adminIds.includes(profile.id) || (Array.isArray(member.roles) && member.roles.some(r => adminIds.includes(r)));
+        if (adminRoleId && profile?.id) {
+          const adminIds = adminRoleId.split(',').map(i => i.trim());
+          
+          // 1. Direct User ID match (works even if Bot is offline/broken)
+          if (adminIds.includes(profile.id)) {
+            token.isAdmin = true;
+          } 
+          // 2. Role match (requires Bot)
+          else if (botToken) {
+            try {
+              const cleanBotToken = botToken.replace(/^Bot\s+/i, '').trim();
+              const memberRes = await fetch(
+                `https://discord.com/api/guilds/${targetGuildId}/members/${profile.id}`,
+                { headers: { Authorization: `Bot ${cleanBotToken}` } }
+              );
+              if (memberRes.ok) {
+                const member = await memberRes.json();
+                if (Array.isArray(member.roles) && member.roles.some(r => adminIds.includes(r))) {
+                  token.isAdmin = true;
+                }
+              }
+            } catch (e) {
+              console.error('Discord Admin Role Check Error:', e);
             }
-          } catch (e) {
-            console.error('Discord Admin Role Check Error:', e);
           }
         }
       }
