@@ -53,7 +53,9 @@ export const authOptions = {
             );
             if (memberRes.ok) {
               const member = await memberRes.json();
-              token.isAdmin = Array.isArray(member.roles) && member.roles.includes(adminRoleId);
+              const adminIds = adminRoleId.split(',').map(i => i.trim());
+              // Es admin si tiene el rol, o si su ID de usuario está directamente en la lista
+              token.isAdmin = adminIds.includes(profile.id) || (Array.isArray(member.roles) && member.roles.some(r => adminIds.includes(r)));
             }
           } catch (e) {
             console.error('Discord Admin Role Check Error:', e);
