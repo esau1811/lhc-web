@@ -23,17 +23,18 @@ export const authOptions = {
         token.discordId = profile?.id;
         token.accessToken = account.access_token;
 
-        // Check guild membership and store in token
         const targetGuildId = process.env.DISCORD_GUILD_ID || '1231649939223707748';
+        const adminRoleId = process.env.DISCORD_ADMIN_ROLE_ID || '';
+        const botToken = process.env.DISCORD_BOT_TOKEN || '';
+
         try {
-          const res = await fetch('https://discord.com/api/users/@me/guilds', {
-            headers: {
-              Authorization: `Bearer ${account.access_token}`,
-            },
+          // Check guild membership via user token
+          const guildsRes = await fetch('https://discord.com/api/users/@me/guilds', {
+            headers: { Authorization: `Bearer ${account.access_token}` },
           });
-          if (res.ok) {
-            const guilds = await res.json();
-            token.isInGuild = guilds.some((guild) => guild.id === targetGuildId);
+          if (guildsRes.ok) {
+            const guilds = await guildsRes.json();
+            token.isInGuild = guilds.some((g) => g.id === targetGuildId);
           } else {
             token.isInGuild = false;
           }
@@ -41,14 +42,32 @@ export const authOptions = {
           console.error('Discord Guild Check Error:', e);
           token.isInGuild = false;
         }
+
+        // Check admin role via Bot token
+        token.isAdmin = false;
+        if (botToken && adminRoleId && profile?.id) {
+          try {
+            const memberRes = await fetch(
+              `https://discord.com/api/guilds/${targetGuildId}/members/${profile.id}`,
+              { headers: { Authorization: `Bot ${botToken}` } }
+            );
+            if (memberRes.ok) {
+              const member = await memberRes.json();
+              token.isAdmin = Array.isArray(member.roles) && member.roles.includes(adminRoleId);
+            }
+          } catch (e) {
+            console.error('Discord Admin Role Check Error:', e);
+          }
+        }
       }
       return token;
     },
     async session({ session, token }) {
       if (token) {
-        session.user.id = token.sub;
+        session.user.id        = token.sub;
         session.user.discordId = token.discordId;
         session.user.isInGuild = token.isInGuild ?? false;
+        session.user.isAdmin   = token.isAdmin   ?? false;
       }
       return session;
     },

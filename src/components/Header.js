@@ -27,7 +27,7 @@ export default function Header() {
   const navLinks = [
     { name: t('nav_inicio'), path: '/' },
     { name: t('nav_herramientas'), path: '/tools' },
-    { name: t('nav_comunidad'), path: 'https://discord.gg/lhcds' },
+    { name: t('nav_comunidad'), path: '/comunidad' },
     { name: t('nav_premium'), path: '/premium' },
     { name: t('nav_soporte'), path: 'https://discord.gg/lhcds' },
   ];
