@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { Trophy, TrendingUp, Crosshair } from 'lucide-react';
 import { useLang } from '@/components/LangProvider';
+import { useServer } from '@/components/ServerProvider';
 
 function rankTier(team, t) {
   if (team && team.manual_rank) {
@@ -29,7 +30,7 @@ const ROW_HOVER = '#16161a';
 
 export default function LeaderboardPage() {
   const { t } = useLang();
-  const [teams,   setTeams]   = useState([]);
+  const { serverId } = useServer();
   const [teams, setTeams] = useState([]);
   const [tab, setTab] = useState('elo');
   const [loading, setLoading] = useState(true);
