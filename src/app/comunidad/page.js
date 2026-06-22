@@ -3,9 +3,7 @@ import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { Trophy, Users, Clock, TrendingUp } from 'lucide-react';
-import { getRankTier } from '@/lib/communityDb';
 
-// We import getRankTier from a client-safe version
 function rankTier(elo) {
   if (elo >= 1800) return { name: 'Diamond',  color: '#5eead4' };
   if (elo >= 1600) return { name: 'Platinum', color: '#a78bfa' };

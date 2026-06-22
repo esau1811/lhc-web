@@ -1,6 +1,11 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Prevent Next.js from trying to bundle native Node.js modules
+  serverExternalPackages: ['better-sqlite3'],
+
   outputFileTracingIncludes: {
+    // Include the better-sqlite3 native binary for serverless deployments
+    '/api/community(.*)': ['./node_modules/better-sqlite3/build/Release/**'],
     '/api/generate-rpf': [
       './src/app/api/generate-rpf/bin/keys/**',
       './src/app/api/generate-rpf/assets/**',
