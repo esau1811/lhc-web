@@ -1560,13 +1560,13 @@ export default function SkinForge3D() {
             📂 OBJ Custom
           </button>
 
-          {/* RPF Custom weapon upload button */}
-          <button
+          {/* RPF Custom weapon upload button — desactivado temporalmente */}
+          {/* <button
             onClick={() => { setRpfModalOpen(true); setRpfFile(null); setRpfDetected(null); setRpfCustomName(''); setRpfParseError(''); }}
             className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 bg-orange-500/15 hover:bg-orange-500/30 border border-orange-500/30 hover:border-orange-500/60 text-orange-400 hover:text-orange-300 rounded-lg text-[10px] font-black transition-all"
           >
             📦 RPF Custom
-          </button>
+          </button> */}
         </div>
 
         {/* ── CUSTOM WEAPON MODAL (OBJ) ── */}
