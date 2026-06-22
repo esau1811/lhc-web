@@ -106,6 +106,7 @@ export default function TeamsPage() {
                         </div>
                       </div>
                       <div className="font-black text-xl" style={{ color: rank.color }}>{team.elo}</div>
+                    </div>
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mb-4">
                       <div className="rounded-lg px-3 py-2 text-center" style={{ background: 'rgba(255,255,255,0.04)' }}>
                         <div className="font-black text-sm text-green-500">{team.wins}</div>
