@@ -71,20 +71,19 @@ export async function POST(request) {
       }
     }
 
-    // Resolve ticket and delete image
+    // Resolve ticket and delete image/clip from DB
     const resolverPlayer = db.prepare(`SELECT id FROM players WHERE discord_id = ?`).get(session.user.discordId);
     db.prepare(`
-      UPDATE tickets SET status = 'resolved', resolved_at = datetime('now'), resolved_by = ?
+      UPDATE tickets SET status = 'resolved', resolved_at = datetime('now'), resolved_by = ?, image_path = NULL, clip_url = NULL
       WHERE id = ?
     `).run(resolverPlayer?.id || null, ticket_id);
 
-    // Delete image and clip after resolution
+    // Delete image file from disk if it was uploaded locally
     if (ticket.image_path && !ticket.image_path.startsWith('data:')) {
       try {
         await unlink(path.join(process.cwd(), 'public', ticket.image_path));
       } catch (_) { /* imagen ya borrada o no existe */ }
     }
-    // clip_url is just a URL so nothing to delete from filesystem
 
     const match = db.prepare(`
       SELECT m.*,

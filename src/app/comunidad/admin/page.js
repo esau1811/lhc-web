@@ -50,6 +50,9 @@ export default function AdminPage() {
   const [manageTeam, setManageTeam] = useState({ team_id: '', points_delta: '', manual_rank: '' });
   const [manageTeamMsg, setManageTeamMsg] = useState('');
 
+  // Manage players
+  const [managePlayerId, setManagePlayerId] = useState('');
+
   useEffect(() => { if (session && !session.user.isAdmin) router.replace('/comunidad'); }, [session]);
 
   const load = () => {
@@ -140,6 +143,25 @@ export default function AdminPage() {
     const d = await res.json();
     if (!res.ok) { setPlayerMsg('❌ ' + d.error); return; }
     setPlayerMsg('✅ ' + d.discord_name); setNewPlayer({ discord_id: '', discord_name: '', discord_avatar: '', discord_avatar_file: null, team_id: '' });
+  };
+
+  const deleteTeam = async (id) => {
+    if (!confirm('¿Seguro que quieres eliminar este equipo?')) return;
+    try {
+      const res = await fetch(`/api/community/teams/${id}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error('Error al borrar');
+      setManageTeam({ team_id: '', points_delta: '', manual_rank: '' });
+      load();
+    } catch (e) { alert(e.message); }
+  };
+
+  const deletePlayer = async (id) => {
+    if (!confirm('¿Seguro que quieres eliminar este jugador?')) return;
+    try {
+      const res = await fetch(`/api/community/players/${id}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error('Error al borrar');
+      load();
+    } catch (e) { alert(e.message); }
   };
 
   const createServer = async () => {
@@ -389,25 +411,35 @@ export default function AdminPage() {
           
           {manageTeamMsg && <div className="text-xs font-bold text-zinc-400">{manageTeamMsg}</div>}
           
-          <button onClick={async () => {
-            if (!manageTeam.team_id) { setManageTeamMsg('❌ Selecciona un equipo'); return; }
-            setManageTeamMsg('...');
-            try {
-              const res = await fetch('/api/community/admin/manage-teams', {
-                method: 'POST', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(manageTeam)
-              });
-              const data = await res.json();
-              if (!res.ok) throw new Error(data.error);
-              setManageTeamMsg('✅ Equipo actualizado');
-              setManageTeam({ team_id: '', points_delta: '', manual_rank: '' });
-              load();
-            } catch (e) { setManageTeamMsg('❌ ' + e.message); }
-          }}
-            className="flex items-center gap-2 px-6 py-3 rounded-xl text-xs font-black transition-all"
-            style={{ background: 'rgba(34,197,94,0.1)', color: '#22c55e', border: '1px solid rgba(34,197,94,0.25)' }}>
-            <Check size={14} /> Guardar Cambios
-          </button>
+          <div className="flex gap-2 flex-wrap">
+            <button onClick={async () => {
+              if (!manageTeam.team_id) { setManageTeamMsg('❌ Selecciona un equipo'); return; }
+              setManageTeamMsg('...');
+              try {
+                const res = await fetch('/api/community/admin/manage-teams', {
+                  method: 'POST', headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify(manageTeam)
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error);
+                setManageTeamMsg('✅ Equipo actualizado');
+                setManageTeam({ team_id: '', points_delta: '', manual_rank: '' });
+                load();
+              } catch (e) { setManageTeamMsg('❌ ' + e.message); }
+            }}
+              className="flex items-center gap-2 px-6 py-3 rounded-xl text-xs font-black transition-all"
+              style={{ background: 'rgba(34,197,94,0.1)', color: '#22c55e', border: '1px solid rgba(34,197,94,0.25)' }}>
+              <Check size={14} /> Guardar Cambios
+            </button>
+
+            {manageTeam.team_id && (
+              <button onClick={() => deleteTeam(manageTeam.team_id)}
+                className="flex items-center gap-2 px-6 py-3 rounded-xl text-xs font-black transition-all"
+                style={{ background: 'rgba(239,68,68,0.1)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.25)' }}>
+                Eliminar Equipo
+              </button>
+            )}
+          </div>
         </div>
       )}
 
@@ -503,6 +535,28 @@ export default function AdminPage() {
             style={{ background: 'rgba(6,182,212,0.1)', color: '#22d3ee', border: '1px solid rgba(6,182,212,0.25)' }}>
             <Plus size={14} /> Registrar Jugador
           </button>
+
+          <hr className="border-zinc-800 my-6" />
+
+          <div className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Eliminar Jugador</div>
+          <div>
+            <div className="relative">
+              <select value={managePlayerId} onChange={e => setManagePlayerId(e.target.value)}
+                style={{ ...SELECT_STYLE, background: '#111114' }} className="w-full rounded-xl px-4 py-3 text-sm">
+                <option value="" style={{ background: '#111' }}>Selecciona un jugador...</option>
+                {players.map(p => <option key={p.id} value={p.id} style={{ background: '#111' }}>{p.discord_name}</option>)}
+              </select>
+              <div className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-zinc-600">▾</div>
+            </div>
+          </div>
+          {managePlayerId && (
+            <button onClick={() => deletePlayer(managePlayerId)}
+              className="flex items-center gap-2 px-6 py-3 rounded-xl text-xs font-black transition-all mt-2"
+              style={{ background: 'rgba(239,68,68,0.1)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.25)' }}>
+              Eliminar Jugador
+            </button>
+          )}
+
         </div>
       )}
 
