@@ -2,7 +2,8 @@ import Database from 'better-sqlite3';
 import path from 'path';
 import fs from 'fs';
 
-const DB_DIR  = path.join(process.cwd(), 'data');
+const isVercel = process.env.VERCEL || process.env.NODE_ENV === 'production';
+const DB_DIR  = isVercel ? '/tmp/data' : path.join(process.cwd(), 'data');
 const DB_PATH = path.join(DB_DIR, 'community.db');
 
 let _db = null;
