@@ -54,3 +54,16 @@ export async function PATCH(request, { params }) {
     return NextResponse.json({ error: e.message }, { status: 500 });
   }
 }
+
+export async function DELETE(request, { params }) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.isAdmin) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  try {
+    const db = getDb();
+    const { id } = params;
+    db.prepare(`DELETE FROM players WHERE id = ?`).run(id);
+    return NextResponse.json({ success: true });
+  } catch (e) {
+    return NextResponse.json({ error: e.message }, { status: 500 });
+  }
+}
