@@ -6,7 +6,7 @@ import { getDb } from '@/lib/communityDb';
 
 export async function GET(request) {
   try {
-    const db = getDb();
+    const client = getDb();
     const { searchParams } = new URL(request.url);
     const q       = searchParams.get('q')       || '';
     const team_id = searchParams.get('team_id') || '';
@@ -16,8 +16,8 @@ export async function GET(request) {
     if (q)       { sql += ` AND p.discord_name LIKE ?`; args.push(`%${q}%`); }
     if (team_id) { sql += ` AND p.team_id = ?`;          args.push(team_id); }
     sql += ` ORDER BY p.kills DESC`;
-    const players = db.prepare(sql).all(...args);
-    return NextResponse.json(players);
+    const res = await client.execute({ sql, args });
+    return NextResponse.json(res.rows);
   } catch (e) {
     return NextResponse.json({ error: e.message }, { status: 500 });
   }
@@ -44,17 +44,22 @@ export async function POST(request) {
       discord_avatar = `data:${mimeType};base64,${buffer.toString('base64')}`;
     }
 
-    const db = getDb();
-    const existing = db.prepare(`SELECT * FROM players WHERE discord_id = ?`).get(discord_id);
+    const client = getDb();
+    const existingRes = await client.execute({ sql: `SELECT * FROM players WHERE discord_id = ?`, args: [discord_id] });
+    const existing = existingRes.rows[0];
     if (existing) {
-      db.prepare(`UPDATE players SET discord_name = ?, discord_avatar = ?, team_id = ?, server_id = ? WHERE discord_id = ?`)
-        .run(discord_name, discord_avatar || existing.discord_avatar, team_id ?? existing.team_id, server_id || existing.server_id || 1, discord_id);
+      await client.execute({
+        sql: `UPDATE players SET discord_name = ?, discord_avatar = ?, team_id = ?, server_id = ? WHERE discord_id = ?`,
+        args: [discord_name, discord_avatar || existing.discord_avatar, team_id ?? existing.team_id, server_id || existing.server_id || 1, discord_id]
+      });
     } else {
-      db.prepare(`INSERT INTO players (discord_id, discord_name, discord_avatar, team_id, server_id) VALUES (?, ?, ?, ?, ?)`)
-        .run(discord_id, discord_name, discord_avatar || null, team_id || null, server_id || 1);
+      await client.execute({
+        sql: `INSERT INTO players (discord_id, discord_name, discord_avatar, team_id, server_id) VALUES (?, ?, ?, ?, ?)`,
+        args: [discord_id, discord_name, discord_avatar || null, team_id || null, server_id || 1]
+      });
     }
-    const player = db.prepare(`SELECT * FROM players WHERE discord_id = ?`).get(discord_id);
-    return NextResponse.json(player, { status: 201 });
+    const playerRes = await client.execute({ sql: `SELECT * FROM players WHERE discord_id = ?`, args: [discord_id] });
+    return NextResponse.json(playerRes.rows[0], { status: 201 });
   } catch (e) {
     return NextResponse.json({ error: e.message }, { status: 500 });
   }

@@ -12,8 +12,9 @@ export async function POST(request) {
     const { team_id, points_delta, manual_rank } = await request.json();
     if (!team_id) return NextResponse.json({ error: 'Faltan datos requeridos' }, { status: 400 });
 
-    const db = getDb();
-    const team = db.prepare(`SELECT * FROM teams WHERE id = ?`).get(team_id);
+    const client = getDb();
+    const teamRes = await client.execute({ sql: `SELECT * FROM teams WHERE id = ?`, args: [team_id] });
+    const team = teamRes.rows[0];
     if (!team) return NextResponse.json({ error: 'Equipo no encontrado' }, { status: 404 });
 
     let newElo = team.elo;
@@ -29,14 +30,14 @@ export async function POST(request) {
       rankToSave = null;
     }
 
-    db.prepare(`UPDATE teams SET elo = ?, manual_rank = ? WHERE id = ?`).run(newElo, rankToSave, team_id);
+    await client.execute({ sql: `UPDATE teams SET elo = ?, manual_rank = ? WHERE id = ?`, args: [newElo, rankToSave, team_id] });
 
     // If points changed, log it to matches to show up on the graph
     if (newElo !== team.elo) {
-      db.prepare(`
-        INSERT INTO matches (winner_team_id, winner_elo_before, winner_elo_after, notes)
-        VALUES (?, ?, ?, ?)
-      `).run(team_id, team.elo, newElo, `Ajuste manual: ${parseInt(points_delta) > 0 ? '+' : ''}${points_delta} puntos`);
+      await client.execute({
+        sql: `INSERT INTO matches (winner_team_id, winner_elo_before, winner_elo_after, notes) VALUES (?, ?, ?, ?)`,
+        args: [team_id, team.elo, newElo, `Ajuste manual: ${parseInt(points_delta) > 0 ? '+' : ''}${points_delta} puntos`]
+      });
     }
 
     return NextResponse.json({ success: true, newElo, manual_rank: rankToSave });

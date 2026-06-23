@@ -16,10 +16,11 @@ export async function GET(request) {
   try {
     const { searchParams } = new URL(request.url);
     const server_id = searchParams.get('server_id') || 1;
-    const db = getDb();
-    let tickets;
+    const client = getDb();
+    let res;
     if (session.user.isAdmin) {
-      tickets = db.prepare(`
+      res = await client.execute({
+        sql: `
         SELECT t.*, 
           p.discord_name AS submitter_name, p.discord_avatar AS submitter_avatar,
           ta.name AS team_a_name, tb.name AS team_b_name
@@ -29,11 +30,13 @@ export async function GET(request) {
         JOIN teams   tb ON tb.id = t.team_b_id
         WHERE t.status = 'pending' AND t.server_id = ?
         ORDER BY t.created_at DESC
-      `).all(server_id);
+      `, args: [server_id] });
     } else {
-      const player = db.prepare(`SELECT * FROM players WHERE discord_id = ?`).get(session.user.discordId);
+      const playerRes = await client.execute({ sql: `SELECT * FROM players WHERE discord_id = ?`, args: [session.user.discordId] });
+      const player = playerRes.rows[0];
       if (!player) return NextResponse.json([]);
-      tickets = db.prepare(`
+      res = await client.execute({
+        sql: `
         SELECT t.*,
           ta.name AS team_a_name, tb.name AS team_b_name
         FROM tickets t
@@ -41,9 +44,9 @@ export async function GET(request) {
         JOIN teams tb ON tb.id = t.team_b_id
         WHERE t.submitter_id = ? AND t.server_id = ?
         ORDER BY t.created_at DESC LIMIT 20
-      `).all(player.id, server_id);
+      `, args: [player.id, server_id] });
     }
-    return NextResponse.json(tickets);
+    return NextResponse.json(res.rows);
   } catch (e) {
     return NextResponse.json({ error: e.message }, { status: 500 });
   }
@@ -64,13 +67,17 @@ export async function POST(request) {
       return NextResponse.json({ error: 'team_a_id y team_b_id requeridos' }, { status: 400 });
     }
 
-    const db = getDb();
+    const client = getDb();
 
-    let player = db.prepare(`SELECT * FROM players WHERE discord_id = ?`).get(session.user.discordId);
+    const playerRes = await client.execute({ sql: `SELECT * FROM players WHERE discord_id = ?`, args: [session.user.discordId] });
+    let player = playerRes.rows[0];
     if (!player) {
-      const res = db.prepare(`INSERT INTO players (discord_id, discord_name, discord_avatar, server_id) VALUES (?, ?, ?, ?)`)
-        .run(session.user.discordId, session.user.name, session.user.image, server_id);
-      player = db.prepare(`SELECT * FROM players WHERE id = ?`).get(res.lastInsertRowid);
+      const res = await client.execute({
+        sql: `INSERT INTO players (discord_id, discord_name, discord_avatar, server_id) VALUES (?, ?, ?, ?)`,
+        args: [session.user.discordId, session.user.name, session.user.image, server_id]
+      });
+      const newPlayerRes = await client.execute({ sql: `SELECT * FROM players WHERE id = ?`, args: [res.lastInsertRowid] });
+      player = newPlayerRes.rows[0];
     }
 
     // Save image
@@ -82,13 +89,13 @@ export async function POST(request) {
       image_path     = `data:${mimeType};base64,${buffer.toString('base64')}`;
     }
 
-    const result = db.prepare(`
-      INSERT INTO tickets (server_id, submitter_id, team_a_id, team_b_id, image_path, clip_url)
-      VALUES (?, ?, ?, ?, ?, ?)
-    `).run(server_id, player.id, team_a_id, team_b_id, image_path, clip_url || null);
+    const result = await client.execute({
+      sql: `INSERT INTO tickets (server_id, submitter_id, team_a_id, team_b_id, image_path, clip_url) VALUES (?, ?, ?, ?, ?, ?)`,
+      args: [server_id, player.id, team_a_id, team_b_id, image_path, clip_url || null]
+    });
 
-    const ticket = db.prepare(`SELECT * FROM tickets WHERE id = ?`).get(result.lastInsertRowid);
-    return NextResponse.json(ticket, { status: 201 });
+    const ticketRes = await client.execute({ sql: `SELECT * FROM tickets WHERE id = ?`, args: [result.lastInsertRowid] });
+    return NextResponse.json(ticketRes.rows[0], { status: 201 });
   } catch (e) {
     return NextResponse.json({ error: e.message }, { status: 500 });
   }

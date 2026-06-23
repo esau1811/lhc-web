@@ -10,17 +10,17 @@ const UPLOAD_DIR = path.join(process.cwd(), 'public', 'uploads', 'teams');
 
 export async function GET(request) {
   try {
-    const db = getDb();
+    const client = getDb();
     const { searchParams } = new URL(request.url);
     const q = searchParams.get('q') || '';
     const server_id = searchParams.get('server_id') || 1;
-    let teams;
+    let res;
     if (q) {
-      teams = db.prepare(`SELECT * FROM teams WHERE server_id = ? AND name LIKE ? ORDER BY elo DESC`).all(server_id, `%${q}%`);
+      res = await client.execute({ sql: `SELECT * FROM teams WHERE server_id = ? AND name LIKE ? ORDER BY elo DESC`, args: [server_id, `%${q}%`] });
     } else {
-      teams = db.prepare(`SELECT * FROM teams WHERE server_id = ? ORDER BY elo DESC`).all(server_id);
+      res = await client.execute({ sql: `SELECT * FROM teams WHERE server_id = ? ORDER BY elo DESC`, args: [server_id] });
     }
-    return NextResponse.json(teams);
+    return NextResponse.json(res.rows);
   } catch (e) {
     return NextResponse.json({ error: e.message }, { status: 500 });
   }
@@ -46,10 +46,13 @@ export async function POST(request) {
       logo_url = `data:${mimeType};base64,${buffer.toString('base64')}`;
     }
 
-    const db = getDb();
-    const result = db.prepare(`INSERT INTO teams (server_id, name, tag, logo_url) VALUES (?, ?, ?, ?)`).run(server_id || 1, name, tag, logo_url);
-    const team = db.prepare(`SELECT * FROM teams WHERE id = ?`).get(result.lastInsertRowid);
-    return NextResponse.json(team, { status: 201 });
+    const client = getDb();
+    const result = await client.execute({
+      sql: `INSERT INTO teams (server_id, name, tag, logo_url) VALUES (?, ?, ?, ?)`,
+      args: [server_id || 1, name, tag, logo_url]
+    });
+    const teamRes = await client.execute({ sql: `SELECT * FROM teams WHERE id = ?`, args: [result.lastInsertRowid] });
+    return NextResponse.json(teamRes.rows[0], { status: 201 });
   } catch (e) {
     return NextResponse.json({ error: e.message }, { status: 500 });
   }

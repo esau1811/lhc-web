@@ -4,7 +4,7 @@ import { getDb } from '@/lib/communityDb';
 
 export async function GET(request) {
   try {
-    const db = getDb();
+    const client = getDb();
     const { searchParams } = new URL(request.url);
     const team_id = searchParams.get('team_id') || '';
     let sql = `
@@ -19,8 +19,8 @@ export async function GET(request) {
     const args = [];
     if (team_id) { sql += ` AND (m.winner_team_id = ? OR m.loser_team_id = ?)`; args.push(team_id, team_id); }
     sql += ` ORDER BY m.played_at DESC LIMIT 50`;
-    const matches = db.prepare(sql).all(...args);
-    return NextResponse.json(matches);
+    const res = await client.execute({ sql, args });
+    return NextResponse.json(res.rows);
   } catch (e) {
     return NextResponse.json({ error: e.message }, { status: 500 });
   }

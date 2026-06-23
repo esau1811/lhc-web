@@ -10,9 +10,9 @@ const UPLOAD_DIR = path.join(process.cwd(), 'public', 'uploads', 'servers');
 
 export async function GET(request) {
   try {
-    const db = getDb();
-    const servers = db.prepare('SELECT * FROM servers ORDER BY id ASC').all();
-    return NextResponse.json(servers);
+    const client = getDb();
+    const res = await client.execute('SELECT * FROM servers ORDER BY id ASC');
+    return NextResponse.json(res.rows);
   } catch (e) {
     return NextResponse.json({ error: e.message }, { status: 500 });
   }
@@ -38,10 +38,10 @@ export async function POST(request) {
       logo_url = `data:${mimeType};base64,${buffer.toString('base64')}`;
     }
 
-    const db = getDb();
-    const result = db.prepare('INSERT INTO servers (name, logo_url, has_kd) VALUES (?, ?, ?)').run(name, logo_url, has_kd);
-    const server = db.prepare('SELECT * FROM servers WHERE id = ?').get(result.lastInsertRowid);
-    return NextResponse.json(server, { status: 201 });
+    const client = getDb();
+    const result = await client.execute({ sql: 'INSERT INTO servers (name, logo_url, has_kd) VALUES (?, ?, ?)', args: [name, logo_url, has_kd] });
+    const serverRes = await client.execute({ sql: 'SELECT * FROM servers WHERE id = ?', args: [result.lastInsertRowid] });
+    return NextResponse.json(serverRes.rows[0], { status: 201 });
   } catch (e) {
     return NextResponse.json({ error: e.message }, { status: 500 });
   }
