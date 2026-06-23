@@ -164,6 +164,21 @@ export default function AdminPage() {
     } catch (e) { alert(e.message); }
   };
 
+  const deleteServer = async (id) => {
+    if (!confirm('¿Seguro que quieres eliminar este servidor? Se borrarán sus equipos, jugadores y tickets.')) return;
+    try {
+      const res = await fetch(`/api/community/servers/${id}`, { method: 'DELETE' });
+      const d = await res.json();
+      if (!res.ok) throw new Error(d.error || 'Error al borrar');
+      if (serverId == id) {
+        // If we deleted the active server, we might want to clear it or reload
+        window.location.href = '/comunidad';
+        return;
+      }
+      load();
+    } catch (e) { alert(e.message); }
+  };
+
   const createServer = async () => {
     if (!newServer.name) { setServerMsg('❌ Nombre requerido'); return; }
     setServerMsg('...');
@@ -492,10 +507,41 @@ export default function AdminPage() {
 
           {teamMsg && <div className="text-xs font-bold text-zinc-400">{teamMsg}</div>}
           <button onClick={createTeam}
-            className="flex items-center gap-2 px-6 py-3 rounded-xl text-xs font-black transition-all"
+            className="flex items-center gap-2 px-6 py-3 rounded-xl text-xs font-black transition-all mb-8"
             style={{ background: 'rgba(6,182,212,0.1)', color: '#22d3ee', border: '1px solid rgba(6,182,212,0.25)' }}>
             <Plus size={14} /> Crear Equipo
           </button>
+
+          <hr className="border-zinc-800 my-6" />
+
+          <div className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-4">Equipos Existentes en este servidor</div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {teams.map(tm => (
+              <div key={tm.id} className="flex items-center justify-between rounded-xl p-3"
+                style={{ background: CARD_BG, border: '1px solid rgba(255,255,255,0.07)' }}>
+                <div className="flex items-center gap-3">
+                  {tm.logo_url ? (
+                    <img src={tm.logo_url} alt="logo" className="w-8 h-8 rounded-lg object-cover" />
+                  ) : (
+                    <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-zinc-800 text-zinc-500 text-[10px] font-bold">
+                      {tm.tag || tm.name.substring(0, 2).toUpperCase()}
+                    </div>
+                  )}
+                  <div>
+                    <div className="text-xs font-black text-white">{tm.name}</div>
+                    {tm.tag && <div className="text-[10px] text-zinc-600">[{tm.tag}]</div>}
+                  </div>
+                </div>
+                <button onClick={() => deleteTeam(tm.id)} 
+                  className="p-2 text-zinc-500 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-colors">
+                  <X size={14} />
+                </button>
+              </div>
+            ))}
+            {teams.length === 0 && (
+              <div className="text-xs text-zinc-600 col-span-2">No hay equipos en este servidor.</div>
+            )}
+          </div>
         </div>
       )}
 
@@ -595,16 +641,22 @@ export default function AdminPage() {
           {/* Existing servers */}
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
             {servers.map(srv => (
-              <div key={srv.id} className="flex items-center gap-3 rounded-xl p-4"
+              <div key={srv.id} className="flex items-center justify-between rounded-xl p-4"
                 style={{ background: CARD_BG, border: '1px solid rgba(255,255,255,0.07)' }}>
-                <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
-                  style={{ background: 'rgba(251,191,36,0.1)', border: '1px solid rgba(251,191,36,0.2)' }}>
-                  <Server size={14} className="text-amber-400" />
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+                    style={{ background: 'rgba(251,191,36,0.1)', border: '1px solid rgba(251,191,36,0.2)' }}>
+                    <Server size={14} className="text-amber-400" />
+                  </div>
+                  <div>
+                    <div className="text-sm font-black text-white">{srv.name}</div>
+                    <div className="text-[10px] text-zinc-600">ID {srv.id}</div>
+                  </div>
                 </div>
-                <div>
-                  <div className="text-sm font-black text-white">{srv.name}</div>
-                  <div className="text-[10px] text-zinc-600">ID {srv.id}</div>
-                </div>
+                <button onClick={() => deleteServer(srv.id)} 
+                  className="p-2 text-zinc-500 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-colors">
+                  <X size={16} />
+                </button>
               </div>
             ))}
           </div>
