@@ -35,11 +35,11 @@ export default function AdminPage() {
   const [resStatus, setResStatus] = useState('');
 
   // New team
-  const [newTeam,   setNewTeam]   = useState({ name: '', tag: '', logo_url: '', logo_file: null });
+  const [newTeam,   setNewTeam]   = useState({ name: '', tag: '', logo_url: '', logo_file: null, server_id: serverId || '' });
   const [teamMsg,   setTeamMsg]   = useState('');
 
   // New player
-  const [newPlayer, setNewPlayer] = useState({ discord_id: '', discord_name: '', discord_avatar: '', discord_avatar_file: null, team_id: '' });
+  const [newPlayer, setNewPlayer] = useState({ discord_id: '', discord_name: '', discord_avatar: '', discord_avatar_file: null, team_id: '', server_id: serverId || '' });
   const [playerMsg, setPlayerMsg] = useState('');
 
   // New server
@@ -120,12 +120,12 @@ export default function AdminPage() {
     formData.append('tag', newTeam.tag);
     if (newTeam.logo_file) formData.append('logo_file', newTeam.logo_file);
     else if (newTeam.logo_url) formData.append('logo_url', newTeam.logo_url);
-    formData.append('server_id', serverId);
+    formData.append('server_id', newTeam.server_id || serverId);
 
     const res = await fetch('/api/community/teams', { method: 'POST', body: formData });
     const d = await res.json();
     if (!res.ok) { setTeamMsg('❌ ' + d.error); return; }
-    setTeamMsg('✅ ' + d.name); setNewTeam({ name: '', tag: '', logo_url: '', logo_file: null }); load();
+    setTeamMsg('✅ ' + d.name); setNewTeam({ name: '', tag: '', logo_url: '', logo_file: null, server_id: serverId || '' }); load();
   };
 
   const registerPlayer = async () => {
@@ -137,12 +137,12 @@ export default function AdminPage() {
     if (newPlayer.discord_avatar_file) formData.append('discord_avatar_file', newPlayer.discord_avatar_file);
     else if (newPlayer.discord_avatar) formData.append('discord_avatar', newPlayer.discord_avatar);
     if (newPlayer.team_id) formData.append('team_id', newPlayer.team_id);
-    formData.append('server_id', serverId);
+    formData.append('server_id', newPlayer.server_id || serverId);
 
     const res = await fetch('/api/community/players', { method: 'POST', body: formData });
     const d = await res.json();
     if (!res.ok) { setPlayerMsg('❌ ' + d.error); return; }
-    setPlayerMsg('✅ ' + d.discord_name); setNewPlayer({ discord_id: '', discord_name: '', discord_avatar: '', discord_avatar_file: null, team_id: '' });
+    setPlayerMsg('✅ ' + d.discord_name); setNewPlayer({ discord_id: '', discord_name: '', discord_avatar: '', discord_avatar_file: null, team_id: '', server_id: serverId || '' });
   };
 
   const deleteTeam = async (id) => {
@@ -475,6 +475,21 @@ export default function AdminPage() {
                 onFocus={e => e.target.style.borderColor = 'rgba(6,182,212,0.35)'}
                 onBlur={e => e.target.style.borderColor = 'rgba(255,255,255,0.08)'} />
           </div>
+
+          <div>
+            <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-2 block">Servidor</label>
+            <div className="relative">
+              <select value={newTeam.server_id} onChange={e => setNewTeam(p => ({ ...p, server_id: e.target.value }))}
+                style={{ ...SELECT_STYLE }} className="w-full rounded-xl px-4 py-3 text-sm"
+                onFocus={e => e.target.style.borderColor = 'rgba(6,182,212,0.35)'}
+                onBlur={e => e.target.style.borderColor = 'rgba(255,255,255,0.08)'}>
+                <option value="" disabled style={{ background: '#111' }}>Selecciona servidor...</option>
+                {servers.map(t => <option key={t.id} value={t.id} style={{ background: '#111' }}>{t.name}</option>)}
+              </select>
+              <div className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-zinc-600">▾</div>
+            </div>
+          </div>
+
           {teamMsg && <div className="text-xs font-bold text-zinc-400">{teamMsg}</div>}
           <button onClick={createTeam}
             className="flex items-center gap-2 px-6 py-3 rounded-xl text-xs font-black transition-all"
@@ -529,6 +544,20 @@ export default function AdminPage() {
               <div className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-zinc-600">▾</div>
             </div>
           </div>
+          <div>
+            <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-2 block">Servidor</label>
+            <div className="relative">
+              <select value={newPlayer.server_id} onChange={e => setNewPlayer(p => ({ ...p, server_id: e.target.value }))}
+                style={{ ...SELECT_STYLE }} className="w-full rounded-xl px-4 py-3 text-sm"
+                onFocus={e => e.target.style.borderColor = 'rgba(6,182,212,0.35)'}
+                onBlur={e => e.target.style.borderColor = 'rgba(255,255,255,0.08)'}>
+                <option value="" disabled style={{ background: '#111' }}>Selecciona servidor...</option>
+                {servers.map(t => <option key={t.id} value={t.id} style={{ background: '#111' }}>{t.name}</option>)}
+              </select>
+              <div className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-zinc-600">▾</div>
+            </div>
+          </div>
+
           {playerMsg && <div className="text-xs font-bold text-zinc-400">{playerMsg}</div>}
           <button onClick={registerPlayer}
             className="flex items-center gap-2 px-6 py-3 rounded-xl text-xs font-black transition-all"

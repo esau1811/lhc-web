@@ -87,45 +87,44 @@ export default function ComunidadLayout({ children }) {
     <div className="min-h-screen text-white" style={{ background: '#050505' }}>
       <Header />
 
+      {/* Server Sidebar (Discord Style) */}
+      <div className="fixed top-[72px] left-0 bottom-0 w-[72px] z-50 flex flex-col items-center py-4 gap-3 overflow-y-auto"
+        style={{ background: '#09090b', borderRight: '1px solid rgba(255,255,255,0.05)', scrollbarWidth: 'none' }}>
+        {servers.map(srv => {
+          const isActive = srv.id === serverId;
+          const initials = srv.name.substring(0, 2).toUpperCase();
+          return (
+            <div key={srv.id} className="relative group flex items-center justify-center w-full">
+              {/* Active Indicator */}
+              <div className={`absolute left-0 w-1 bg-white rounded-r-full transition-all duration-300 ${isActive ? 'h-10' : 'h-0 group-hover:h-5'}`} />
+              
+              <button
+                onClick={() => setServer({ id: srv.id, name: srv.name })}
+                className={`w-12 h-12 flex items-center justify-center rounded-[24px] hover:rounded-[16px] transition-all duration-300 overflow-hidden relative ${isActive ? 'rounded-[16px]' : ''}`}
+                style={{ 
+                  background: isActive ? '#fbbf24' : 'rgba(255,255,255,0.05)',
+                  color: isActive ? '#000' : '#a1a1aa'
+                }}>
+                {srv.logo_url ? (
+                  <img src={srv.logo_url} alt={srv.name} className="w-full h-full object-cover" />
+                ) : (
+                  <span className="text-sm font-black tracking-wider">{initials}</span>
+                )}
+              </button>
+              
+              {/* Tooltip */}
+              <div className="absolute left-full ml-4 px-3 py-1.5 bg-black text-white text-xs font-bold rounded-lg opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap z-50 transition-opacity">
+                {srv.name}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
       {/* Sub-nav */}
-      <div className="fixed top-[72px] left-0 right-0 z-40 border-b border-white/5" style={{ background: '#09090b' }}>
+      <div className="fixed top-[72px] left-[72px] right-0 z-40 border-b border-white/5" style={{ background: '#09090b' }}>
         <div className="max-w-[1400px] mx-auto px-6">
           <div className="flex items-center gap-1 overflow-x-auto py-2" style={{ scrollbarWidth: 'none' }}>
-
-            {/* Server selector */}
-            <div className="relative flex-shrink-0 mr-2" ref={serverRef}>
-              <button
-                onClick={() => setServerOpen(o => !o)}
-                className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-[11px] font-black uppercase tracking-wider whitespace-nowrap transition-all border"
-                style={{ background: 'rgba(251,191,36,0.08)', color: '#fbbf24', borderColor: 'rgba(251,191,36,0.2)' }}>
-                <Server size={11} />
-                {serverName}
-                <ChevronDown size={11} className={`transition-transform ${serverOpen ? 'rotate-180' : ''}`} />
-              </button>
-
-              <AnimatePresence>
-                {serverOpen && (
-                  <motion.div
-                    initial={{ opacity: 0, y: -8, scale: 0.95 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: -8, scale: 0.95 }}
-                    transition={{ duration: 0.15 }}
-                    className="absolute left-0 top-full mt-1 min-w-[180px] rounded-xl overflow-hidden z-50 shadow-2xl"
-                    style={{ background: '#111114', border: '1px solid rgba(255,255,255,0.1)' }}>
-                    {servers.map(srv => (
-                      <button
-                        key={srv.id}
-                        onClick={() => { setServer({ id: srv.id, name: srv.name }); setServerOpen(false); }}
-                        className="w-full flex items-center justify-between gap-2 px-4 py-2.5 text-xs font-bold text-left transition-colors hover:bg-white/5"
-                        style={{ color: srv.id === serverId ? '#fbbf24' : '#a1a1aa' }}>
-                        {srv.name}
-                        {srv.id === serverId && <Check size={11} />}
-                      </button>
-                    ))}
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
 
             {navLinks.map(link => (
               <Link key={link.href} href={link.href}
@@ -151,7 +150,7 @@ export default function ComunidadLayout({ children }) {
         </div>
       </div>
 
-      <main className="max-w-[1400px] mx-auto px-6 pt-36 pb-20">
+      <main className="max-w-[1400px] mx-auto pl-[96px] pr-6 pt-36 pb-20">
         {children}
       </main>
     </div>
